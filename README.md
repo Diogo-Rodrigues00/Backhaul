@@ -38,7 +38,7 @@ backhaul/
 | Responsável | Tarefa | Status |
 |---|---|---|
 | Diogo | Script SQL de dados de exemplo (INSERTs) | 🔄 Em andamento |
-| guilherme508 | README explicando tabelas e relacionamentos | ⏳ A fazer |
+| guilherme508 | README explicando tabelas e relacionamentos | ✅ Concluído   |
 | MateuHuTv | Configurar Board/Kanban no GitHub (Issues + labels) | ⏳ A fazer |
 | GustavoF | Preencher atas reais (S03/S04) + revisar cronograma | ⏳ A fazer |
 | PedroAugusto2208 | Apoio geral e revisão da entrega do checkpoint | ⏳ A fazer |
