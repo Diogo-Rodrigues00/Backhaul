@@ -62,7 +62,7 @@ export function exigirAutenticacao(req: Request, res: Response, next: NextFuncti
 // 401 = "não sei quem você é"; 403 = "sei quem você é, mas você não pode isso".
 export function exigirTipo(...tipos: TipoUsuario[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-       if (!req.usuario || !tipos.includes(req.usuario.tipo)) {
+    if (!req.usuario || !tipos.includes(req.usuario.tipo)) {
       res.status(403).json({ erro: "acesso negado para este tipo de usuário" });
       return;
     }
