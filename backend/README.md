@@ -35,12 +35,14 @@ src/
   env.ts                 carrega o .env (precisa ser o primeiro import)
   db.ts                  pool de conexões com o Postgres + helper emTransacao()
   server.ts              cria o app Express, liga as rotas e trata erros
-  validacao.ts           validação de formato (e-mail, senha, CPF, CNPJ...)
+  validacao.ts           validação de formato (e-mail, senha, CPF, CNPJ, carga...)
   middleware/
-    autenticacao.ts      gera e confere tokens JWT (exigirAutenticacao)
+    autenticacao.ts      gera e confere tokens JWT (exigirAutenticacao, exigirTipo)
   rotas/
     cadastro.ts          POST /cadastro/motorista e POST /cadastro/empresa
     login.ts             POST /login e GET /eu
+    certificacoes.ts     GET /certificacoes
+    cargas.ts            POST /cargas e GET /cargas/minhas
 ```
 
 ## Rotas
@@ -52,8 +54,13 @@ src/
 | POST   | `/cadastro/empresa`   | não        | Cria o usuário (tipo empresa) e o perfil de empresa     |
 | POST   | `/login`              | não        | Confere e-mail e senha e devolve um token JWT (7 dias) |
 | GET    | `/eu`                 | **sim**    | Devolve os dados básicos do usuário logado             |
+| GET    | `/certificacoes`      | **sim**    | Lista as certificações (MOPP/ONU)                      |
+| POST   | `/cargas`             | **empresa** | Publica uma carga da empresa logada                   |
+| GET    | `/cargas/minhas`      | **empresa** | Cargas da empresa logada, com total de propostas      |
 
-**Códigos de resposta:** `201` criado · `400` dados inválidos · `401` login inválido ou token ausente/expirado · `409` e-mail, CPF ou CNPJ já cadastrado · `500` erro interno.
+**Códigos de resposta:** `201` criado · `400` dados inválidos · `401` login inválido ou token ausente/expirado · `403` logado, mas o tipo de usuário não pode usar a rota · `404` não encontrado · `409` e-mail, CPF ou CNPJ já cadastrado · `500` erro interno · `503` banco fora do ar (só no `/saude`).
+
+O formato completo de cada rota (corpo, respostas, regras) está em [`../docs/api.md`](../docs/api.md).
 
 **Formatos aceitos:** e-mail válido; senha com no mínimo 8 caracteres; CPF com 11 dígitos e CNPJ com 14. Pode mandar CPF e CNPJ com pontuação, ela é removida antes de salvar. O e-mail é salvo em minúsculas.
 
@@ -89,6 +96,20 @@ Dados do usuário logado (troque SEU_TOKEN pelo token recebido no login):
 curl http://localhost:3000/eu -H "Authorization: Bearer SEU_TOKEN"
 # 200 {"usuario":{"id":"...","email":"joao@exemplo.com","tipo":"motorista","ativo":true,"criado_em":"...","nome":"João da Silva"}}
 ```
+
+Publicar uma carga (com o token de uma **empresa**; de motorista dá 403):
+```bash
+curl -X POST http://localhost:3000/cargas   -H "Content-Type: application/json" -H "Authorization: Bearer SEU_TOKEN"   -d '{"tipo_carga":"Grãos","origem":{"lat":-18.9186,"lng":-48.2772},"destino":{"lat":-19.7469,"lng":-47.9319},"peso_kg":8000,"valor_oferecido":3500,"urgencia":"urgente","expira_em":"2026-12-01T18:00:00Z"}'
+# 201 {"carga":{"id":"...","origem":{"lat":-18.9186,"lng":-48.2772},...,"status":"aberto"}}
+```
+
+Listar as cargas da empresa:
+```bash
+curl http://localhost:3000/cargas/minhas -H "Authorization: Bearer SEU_TOKEN"
+# 200 {"cargas":[{"id":"...","tipo_carga":"Grãos",...,"certificacao_exigida":null,"total_propostas":0}]}
+```
+
+> Coordenadas: a API sempre usa `{lat, lng}`, mas o PostGIS guarda o ponto como (longitude, latitude). A troca de ordem acontece só dentro de `rotas/cargas.ts`.
 
 > Os exemplos usam a sintaxe do Git Bash / Linux. No PowerShell, use `curl.exe` e coloque o comando em uma linha só.
 

@@ -3,6 +3,8 @@ import "./env";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { pool } from "./db";
 import { rotasCadastro } from "./rotas/cadastro";
+import { rotasCargas } from "./rotas/cargas";
+import { rotasCertificacoes } from "./rotas/certificacoes";
 import { rotasLogin } from "./rotas/login";
 
 const app = express();
@@ -13,13 +15,18 @@ app.use(express.json());
 
 app.use("/cadastro", rotasCadastro);
 app.use(rotasLogin);
+app.use("/certificacoes", rotasCertificacoes);
+app.use("/cargas", rotasCargas);
 
 app.get("/saude", async (_req, res) => {
   try {
     await pool.query("SELECT 1");
     res.json({ status: "ok", banco: "conectado" });
   } catch (erro) {
-    // TODO(human): o banco não respondeu. Decida o que a rota devolve.
+    // 503 = "serviço indisponível": a API está de pé, mas depende do banco, que não respondeu.
+    // A mensagem do Postgres (host, porta, usuário...) vai só para o log, nunca para o cliente.
+    console.error("GET /saude: banco indisponível", erro);
+    res.status(503).json({ status: "erro", banco: "indisponivel" });
   }
 });
 
