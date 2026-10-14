@@ -22,6 +22,30 @@ curl http://localhost:3000/saude
 # {"status":"ok","banco":"conectado"}
 ```
 
+### Em produção (hospedagem)
+
+Na hospedagem não se usa o `npm run dev`: o TypeScript é compilado **uma vez** e o servidor roda JavaScript puro, que é mais rápido e não depende das ferramentas de desenvolvimento.
+
+```bash
+npm install
+npm run build   # gera dist/ a partir de src/
+npm start       # roda node dist/server.js
+```
+
+No painel da hospedagem, configure: comando de build `npm install && npm run build`, comando de start `npm start`, pasta raiz `backend`.
+O `.env` **não** vai para o servidor: as variáveis abaixo são cadastradas no painel da hospedagem.
+
+## Variáveis de ambiente
+
+| Variável       | Obrigatória? | Para que serve |
+|----------------|--------------|----------------|
+| `DATABASE_URL` | sim | Endereço do Postgres: `postgres://USUARIO:SENHA@HOST:PORTA/BANCO` |
+| `JWT_SECRET`   | sim | Segredo que assina os tokens de login. Texto longo e aleatório; trocar invalida todos os tokens |
+| `PORT`         | não (padrão `3000`) | Porta da API. Na hospedagem, quem define é o próprio serviço |
+| `CORS_ORIGIN`  | em produção | Sites que podem chamar a API pelo navegador, separados por vírgula (ex.: `http://localhost:8081,https://backhaul.exemplo.com`) |
+
+Sem `DATABASE_URL` ou `JWT_SECRET` o servidor nem sobe: ele avisa logo na inicialização, em vez de falhar na primeira requisição.
+
 ## Scripts
 | Comando         | O que faz                                                       |
 |-----------------|-----------------------------------------------------------------|
@@ -34,7 +58,7 @@ curl http://localhost:3000/saude
 src/
   env.ts                 carrega o .env (precisa ser o primeiro import)
   db.ts                  pool de conexões com o Postgres + helper emTransacao()
-  server.ts              cria o app Express, liga as rotas e trata erros
+  server.ts              cria o app Express, liga CORS e as rotas, trata erros
   validacao.ts           validação de formato (e-mail, senha, CPF, CNPJ, carga...)
   middleware/
     autenticacao.ts      gera e confere tokens JWT (exigirAutenticacao, exigirTipo)

@@ -1,5 +1,6 @@
 // Tem que ser o primeiro import: db.ts lê process.env assim que é carregado.
 import "./env";
+import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { pool } from "./db";
 import { rotasCadastro } from "./rotas/cadastro";
@@ -8,7 +9,22 @@ import { rotasCertificacoes } from "./rotas/certificacoes";
 import { rotasLogin } from "./rotas/login";
 
 const app = express();
+// Em produção a hospedagem (Render, Railway...) escolhe a porta e avisa por PORT.
 const PORT = Number(process.env.PORT) || 3000;
+
+// CORS: o NAVEGADOR só deixa um site ler respostas de outro domínio se a API
+// disser que aquela origem é permitida. (App nativo não passa por essa regra.)
+// Vem antes das rotas para responder também o "preflight" (requisição OPTIONS).
+
+const origens = (process.env.CORS_ORIGIN ?? "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter((o) => o.length > 0);
+
+// Se nenhuma origem foi configurada, o que fazer?
+// true  = libera qualquer site (cômodo, mas inseguro em produção)
+// false = não libera nenhum (seguro, mas o navegador bloqueia o app)
+app.use(cors({ origin: origens.length > 0 ? origens : false }));
 
 // Transforma o corpo JSON da requisição em objeto JavaScript (req.body).
 app.use(express.json());

@@ -3,9 +3,11 @@
 Este arquivo é o combinado entre o backend e as telas. **Quem quiser mudar uma rota avisa o grupo antes** e atualiza este arquivo no mesmo commit.
 
 - **URL base (local):** `http://localhost:3000`
+- **URL base (produção):** *a definir* (será anunciada aqui quando a API for hospedada).
 - **Formato:** JSON nas duas direções (`Content-Type: application/json`).
 - **Autenticação:** depois do login, enviar o token em todas as rotas protegidas:
   `Authorization: Bearer <token>`. O token vale 7 dias.
+- **CORS:** só importa para quem chama a API **pelo navegador** (Expo Web, painel web). O app nativo não é afetado. Em produção, só as origens listadas na variável `CORS_ORIGIN` do servidor são aceitas; se a sua tela web receber erro de CORS, peça para incluírem a origem dela (ex.: `http://localhost:8081`).
 - **Legenda:** ✅ já implementada · 🔜 planejada (contrato proposto, ainda não existe no servidor).
 
 ## Erros (formato padrão)
@@ -116,7 +118,7 @@ Respostas:
 } }
 ```
 - **400:** dados inválidos, ou certificação inexistente: `{ "erros": ["certificacao_requerida_id não corresponde a nenhuma certificação"] }`
-- **401** sem token · **403** usuário não é empresa: `{ "erro": "rota disponível apenas para: empresa" }` · **404** usuário sem perfil de empresa.
+- **401** sem token · **403** usuário não é empresa: `{ "erro": "acesso negado para este tipo de usuário" }` · **404** usuário sem perfil de empresa.
 
 ### GET /cargas/minhas 🔒 *(só empresa)*
 Cargas publicadas pela empresa logada, **mais recentes primeiro**, com a quantidade de propostas e o nome da certificação exigida.
