@@ -55,3 +55,17 @@ export function exigirAutenticacao(req: Request, res: Response, next: NextFuncti
     res.status(401).json({ erro: "token inválido ou expirado" });
   }
 }
+
+// Fábrica de middleware: exigirTipo("empresa") DEVOLVE uma função de middleware
+// que já "lembra" quais tipos podem passar. Deve vir DEPOIS de exigirAutenticacao,
+// porque depende de req.usuario já estar preenchido.
+// 401 = "não sei quem você é"; 403 = "sei quem você é, mas você não pode isso".
+export function exigirTipo(...tipos: TipoUsuario[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+       if (!req.usuario || !tipos.includes(req.usuario.tipo)) {
+      res.status(403).json({ erro: "acesso negado para este tipo de usuário" });
+      return;
+    }
+    next();
+  };
+}
