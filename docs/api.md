@@ -3,7 +3,7 @@
 Este arquivo é o combinado entre o backend e as telas. **Quem quiser mudar uma rota avisa o grupo antes** e atualiza este arquivo no mesmo commit.
 
 - **URL base (local):** `http://localhost:3000`
-- **URL base (produção):** *a definir* (será anunciada aqui quando a API for hospedada).
+- **URL base (produção):** `https://backhaul-api.onrender.com` (no plano grátis, a primeira chamada depois de um tempo parado demora ~50 s)
 - **Formato:** JSON nas duas direções (`Content-Type: application/json`).
 - **Autenticação:** depois do login, enviar o token em todas as rotas protegidas:
   `Authorization: Bearer <token>`. O token vale 7 dias.
