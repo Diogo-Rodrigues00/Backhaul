@@ -70,6 +70,7 @@ src/
     cargas.ts            POST /cargas, GET /cargas/minhas, GET /cargas/proximas e GET /cargas/:id/propostas
     disponibilidades.ts  POST /disponibilidades
     propostas.ts         POST /propostas e POST /propostas/:id/responder
+    fretes.ts            GET /fretes/meus, PATCH /fretes/:id/status e POST /fretes/:id/pagamento
 ```
 
 ## Rotas
@@ -89,8 +90,11 @@ src/
 | POST   | `/propostas`          | **motorista** | Aceite ou contraproposta (uma só por carga) para uma carga aberta |
 | GET    | `/cargas/:id/propostas` | **empresa dona** | Propostas da carga, com motorista, veículo e certificações |
 | POST   | `/propostas/:id/responder` | **empresa dona** | Aceitar (cria o frete e fecha a carga e a disponibilidade) ou recusar |
+| GET    | `/fretes/meus`        | **motorista ou empresa** | Fretes do usuário logado, com os dados da outra parte |
+| PATCH  | `/fretes/:id/status`  | **motorista do frete** | Avança a entrega: `aceito` → `em_transito` → `entregue` |
+| POST   | `/fretes/:id/pagamento` | **empresa dona** | Pagamento simulado: transação com 5% de comissão, `retido` até a entrega |
 
-**Códigos de resposta:** `201` criado · `400` dados inválidos · `401` login inválido ou token ausente/expirado · `403` logado, mas o tipo de usuário não pode usar a rota · `404` não encontrado (inclusive carga/proposta de outra empresa) · `409` e-mail, CPF ou CNPJ já cadastrado, carga que não está mais aberta, proposta já respondida ou segunda contraproposta · `500` erro interno · `503` banco fora do ar (só no `/saude`).
+**Códigos de resposta:** `201` criado · `400` dados inválidos · `401` login inválido ou token ausente/expirado · `403` logado, mas o tipo de usuário não pode usar a rota · `404` não encontrado (inclusive carga/proposta/frete de outro usuário) · `409` e-mail, CPF ou CNPJ já cadastrado, carga que não está mais aberta, proposta já respondida, segunda contraproposta, transição de status de frete fora de ordem ou frete já pago · `500` erro interno · `503` banco fora do ar (só no `/saude`).
 
 O formato completo de cada rota (corpo, respostas, regras) está em [`../docs/api.md`](../docs/api.md).
 
@@ -168,6 +172,22 @@ curl http://localhost:3000/cargas/ID_DA_CARGA/propostas -H "Authorization: Beare
 curl -X POST http://localhost:3000/propostas/ID_DA_PROPOSTA/responder   -H "Content-Type: application/json" -H "Authorization: Bearer SEU_TOKEN"   -d '{"acao":"aceitar"}'
 # 200 {"frete":{"id":"...","valor_final":3200,"status_entrega":"aceito",...}}
 ```
+
+Ver os fretes, pagar (empresa) e avançar a entrega (motorista):
+```bash
+curl http://localhost:3000/fretes/meus -H "Authorization: Bearer SEU_TOKEN"
+# 200 {"fretes":[{"id":"...","tipo_carga":"Grãos","valor_final":3500,"status_entrega":"aceito","status_pagamento":null,"motorista":{...}}]}
+
+curl -X POST http://localhost:3000/fretes/ID_DO_FRETE/pagamento -H "Authorization: Bearer TOKEN_DA_EMPRESA"
+# 201 {"transacao":{"valor_frete":3500,"percentual_comissao":5,"valor_comissao":175,"status_pagamento":"retido",...}}
+# 409 {"erro":"frete já foi pago"}
+
+curl -X PATCH http://localhost:3000/fretes/ID_DO_FRETE/status   -H "Content-Type: application/json" -H "Authorization: Bearer TOKEN_DO_MOTORISTA"   -d '{"status_entrega":"em_transito"}'
+# 200 {"frete":{"status_entrega":"em_transito","coleta_em":"...","status_pagamento":"retido",...}}
+# 409 {"erro":"não é possível mudar o frete de aceito para entregue"}
+```
+
+> Pagamento simulado: o dinheiro fica `retido` pela plataforma (escrow) e só vira `liberado` quando o motorista marca `entregue`, na mesma transação do banco que muda o status. A comissão de 5% é calculada em centavos inteiros para não ter erro de arredondamento de ponto flutuante.
 
 > Aceitar uma proposta roda numa transação que trava a linha da carga (`SELECT ... FOR UPDATE`): duas aceitações ao mesmo tempo não criam dois fretes; a segunda espera e recebe 409.
 
