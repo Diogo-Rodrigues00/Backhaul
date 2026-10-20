@@ -18,9 +18,10 @@ function erro(status: number, mensagem: string): Resposta {
 // NUMERIC(5,2)); o número 5 é usado na conta em centavos.
 const PERCENTUAL_COMISSAO = 5;
 
-// Para quem cada status pode ir. Status que não aparece aqui (ou lista vazia) = fim
-// da linha: nenhuma mudança é permitida a partir dele.
-const TRANSICOES: Partial<Record<StatusEntrega, readonly StatusEntrega[]>> = {
+// Para quem cada status pode ir. Lista vazia = fim da linha: nenhuma mudança é
+// permitida a partir dele. Record (e não Partial) obriga a ter TODOS os status:
+// se um valor novo entrar no ENUM, o build quebra até ele ser incluído aqui.
+const TRANSICOES: Record<StatusEntrega, readonly StatusEntrega[]> = {
   aceito: ["em_transito"],
   em_transito: ["entregue"],
   entregue: [],
@@ -28,7 +29,7 @@ const TRANSICOES: Partial<Record<StatusEntrega, readonly StatusEntrega[]>> = {
 };
 
 function transicaoPermitida(atual: StatusEntrega, novo: StatusEntrega): boolean {
-  return (TRANSICOES[atual] ?? []).includes(novo);
+  return TRANSICOES[atual].includes(novo);
 }
 
 // "3500.00" (como o pg entrega um NUMERIC) → 350000. Só conta com inteiros:
