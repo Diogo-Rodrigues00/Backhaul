@@ -33,3 +33,9 @@ Decisões fechadas antes do grill (kickoff, 2026-10-20). Novas decisões entram 
 | 2026-10-20 | PRD e MVP aprovados pelo Pedro (Fase 1 concluída) | Pedro |
 | 2026-10-20 | Designer adiantado para rodar em paralelo à Fase 2 (prazo 24/10); protótipos continuam exigindo aprovação antes dos cards de tela | Orquestrador |
 | 2026-10-20 | Orquestrador autorizado a commitar e mergear PRs (squash) em `front` sem pedir a cada vez; continua proibido tocar na `main` e force push | Pedro |
+| 2026-10-20 | Aprovados: ADRs 0001–0015, arquitetura e os 35 cards (Fase 2 concluída) | Pedro |
+| 2026-10-20 | Expo SDK 57 (não 58); Pedro instala Expo Go agora, desliga atualização automática de apps até 12/11 e usa a mesma conta Expo no iPhone e no CLI | Pedro |
+| 2026-10-20 | Se Performance mobile não chegar a 100: aceitar a nota registrada no PR; Acessibilidade, Boas práticas e SEO seguem 100 em mobile e desktop | Pedro |
+| 2026-10-20 | Tela "Conectando ao servidor" só aparece se `/saude` passar de 0,5 s | Pedro |
+| 2026-10-20 | Barlow hospedada no próprio site com `font-display: optional` | Pedro (proposta do tech-lead) |
+| 2026-10-20 | Design system e protótipo aprovados: Crítico em vermelho (separado do âmbar do Urgente); corpo 17 px; nome em caixa alta; carga MOPP da demo é "Crítico"; admin e "Minhas disponibilidades" sem protótipo próprio | Pedro |

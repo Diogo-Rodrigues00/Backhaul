@@ -55,7 +55,7 @@ Preparação (fora do palco): ping em `/saude` (Diogo) e abertura prévia da URL
 | # | Janela | Ação | O que o público vê |
 |---|---|---|---|
 | 0 | A e B | Abrir a URL | Se o servidor estiver dormindo: "Conectando ao servidor", e o app libera sozinho |
-| 1 | A | Empresa publica carga urgente com exigência de MOPP | Carga aparece em "Minhas cargas" com 0 propostas |
+| 1 | A | Empresa publica carga **crítica** com exigência de MOPP | Carga aparece em "Minhas cargas" com 0 propostas |
 | 2 | B | Cadastro ao vivo de motorista sem MOPP → entra direto → publica disponibilidade (cidade ou GPS) | Cargas próximas com distância; a carga MOPP **não aparece** (filtro de certificação) |
 | 3 | B | Sair e entrar com o motorista demo com MOPP aprovado → disponibilidade → cargas próximas | A carga MOPP aparece no topo (ordem por urgência), com distância em km |
 | 4 | B | Enviar contraproposta | "Proposta enviada"; aparece em "Minhas propostas" como pendente |

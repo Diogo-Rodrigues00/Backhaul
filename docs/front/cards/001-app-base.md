@@ -42,7 +42,7 @@ Nenhuma. Criar só `mocks/handlers/index.ts` com `criarHandlers(baseUrl)` conten
 - [ ] `npm run lint`, `npm run typecheck`, `npm test` passam.
 - [ ] `package.json` só com as libs do ADR 0001 (nenhuma proibida; template sem reanimated/gesture-handler).
 - [ ] Busca por `onrender.com` em `app/` encontra só `.env.example`.
-- [ ] **Portão de viabilidade (ADR 0011):** medir o JS inicial gzip de `dist/index.html` e rodar Lighthouse mobile e desktop em `/` (ex.: `npx serve dist` + `npx @lhci/cli@0.15.1 collect --url=http://localhost:3000/ && npx @lhci/cli@0.15.1 assert`); colocar os números no PR. **Se Performance mobile < 100, parar e reportar ao orquestrador** sem tentar contornar fora dos ADRs.
+- [ ] **Portão de viabilidade (ADR 0011):** medir o JS inicial gzip de `dist/index.html` e rodar Lighthouse mobile e desktop em `/` (ex.: `npx serve dist` + `npx @lhci/cli@0.15.1 collect --url=http://localhost:3000/ && npx @lhci/cli@0.15.1 assert`); colocar os números no PR. Se Performance mobile < 100, **registrar a nota no PR e seguir** (decisão do Pedro, 2026-10-20: aceitar a nota registrada; Acessibilidade, Boas práticas e SEO continuam 100 em mobile e desktop). Não contornar fora dos ADRs.
 
 ## Testes exigidos
 - RNTL: `/` tem um `heading` nível 1 "Backhaul"; `+not-found` tem `heading` e link para `/`.
