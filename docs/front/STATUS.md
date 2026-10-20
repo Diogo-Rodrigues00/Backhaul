@@ -3,13 +3,13 @@
 _Atualizado em 2026-10-20._
 
 ## Fase atual
-**Fase 1 — Grill do produto** (próxima; Fase 0 concluída)
+**Fase 1 — Grill do produto**: grill concluído; PRD + MVP em redação (agente `produto`), aguardando aprovação do Pedro
 
 ## Fases
 | Fase | Estado |
 |---|---|
 | 0 — Preparação | concluída (PR #13 mergeado em `front`) |
-| 1 — Grill do produto | pendente |
+| 1 — Grill do produto | em andamento (grill feito; PRD/MVP em redação) |
 | 2 — Arquitetura e cards | pendente |
 | 3 — Fundação | pendente |
 | 4 — Execução dos cards | pendente |
@@ -24,6 +24,11 @@ _Atualizado em 2026-10-20._
 - [x] PR #13 da preparação mergeado em `front`
 - [ ] Expo Go no iPhone do Pedro (**pendente: Pedro**)
 
+## Fase 1 — checklist
+- [x] Grill do produto (decisões em `decisoes.md`, origem "Grill F1")
+- [ ] `prd.md` e `mvp.md` escritos pelo `produto`
+- [ ] Aprovação do Pedro (PRD + MVP)
+
 ## Cards por estado
 Nenhum ainda.
 
@@ -34,5 +39,6 @@ Nenhum ainda.
 ## Depende do Pedro
 - Instalar Expo Go no iPhone.
 - Avisar o Diogo: PR da base (`feat/app-base`) vai para `front` e sai depois do grill do PRD.
-- Pedir ao Diogo: rotas faltantes (fora do contrato) e inclusão no `CORS_ORIGIN` de `http://localhost:8081` e do domínio da Vercel.
-- Aprovações: PRD + MVP (Fase 1); lista de cards (Fase 2).
+- Pedir ao Diogo (ver item abaixo): rotas faltantes (fora do contrato) e inclusão no `CORS_ORIGIN` de `http://localhost:8081` e do domínio da Vercel.
+- Aprovações: PRD + MVP (Fase 1); lista de cards (Fase 2); protótipos do designer em Artifact (antes dos cards de tela).
+- Mandar ao Diogo: rotas B/C1/C2 e prazos, `CORS_ORIGIN`, ping no `/saude` nos dias de apresentação, seed da demo (texto pronto no fim do grill).
