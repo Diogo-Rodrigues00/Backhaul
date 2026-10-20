@@ -62,7 +62,14 @@ export type DadosProposta = {
 
 export type AcaoResposta = "aceitar" | "recusar";
 
+export type StatusEntrega = "aceito" | "em_transito" | "entregue" | "cancelado";
+
 const SENHA_MINIMO = 8;
+
+// Mesmos valores do ENUM status_entrega do schema.sql. Aqui só se confere se o valor
+// EXISTE (senão 400); se a mudança é permitida a partir do status atual, quem decide
+// é a tabela de transições em rotas/fretes.ts (senão 409).
+const STATUS_ENTREGA: readonly StatusEntrega[] = ["aceito", "em_transito", "entregue", "cancelado"];
 
 // Mesmos valores do ENUM tipo_proposta do schema.sql.
 const TIPOS_PROPOSTA: readonly TipoProposta[] = ["aceite", "contraproposta"];
@@ -340,6 +347,13 @@ export function validarRespostaProposta(body: unknown): Resultado<AcaoResposta> 
   return ACOES_RESPOSTA.includes(acao)
     ? { ok: true, dados: acao }
     : { ok: false, erros: [`acao deve ser ${ACOES_RESPOSTA.join(" ou ")}`] };
+}
+
+export function validarStatusEntrega(body: unknown): Resultado<StatusEntrega> {
+  const status = corpo(body).status_entrega as StatusEntrega;
+  return STATUS_ENTREGA.includes(status)
+    ? { ok: true, dados: status }
+    : { ok: false, erros: [`status_entrega deve ser ${STATUS_ENTREGA.join(", ")}`] };
 }
 
 // Recebe req.query. Aqui os três parâmetros são obrigatórios: sem ponto não há "perto de".
