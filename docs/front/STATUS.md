@@ -3,15 +3,15 @@
 _Atualizado em 2026-10-20._
 
 ## Fase atual
-**Fase 1 — Grill do produto**: grill concluído; PRD + MVP em redação (agente `produto`), aguardando aprovação do Pedro
+**Fase 3/4 — Fundação e execução dos cards** (Fase 2 aprovada em 2026-10-20)
 
 ## Fases
 | Fase | Estado |
 |---|---|
 | 0 — Preparação | concluída (PR #13 mergeado em `front`) |
-| 1 — Grill do produto | em andamento (grill feito; PRD/MVP em redação) |
-| 2 — Arquitetura e cards | pendente |
-| 3 — Fundação | pendente |
+| 1 — Grill do produto | concluída (PRD + MVP aprovados em 2026-10-20) |
+| 2 — Arquitetura e cards | concluída (cards, ADRs, DS e protótipo aprovados) |
+| 3 — Fundação | em andamento (card 001) |
 | 4 — Execução dos cards | pendente |
 | 5 — Fechamento | pendente |
 
@@ -26,11 +26,27 @@ _Atualizado em 2026-10-20._
 
 ## Fase 1 — checklist
 - [x] Grill do produto (decisões em `decisoes.md`, origem "Grill F1")
-- [ ] `prd.md` e `mvp.md` escritos pelo `produto`
-- [ ] Aprovação do Pedro (PRD + MVP)
+- [x] `prd.md` e `mvp.md` escritos pelo `produto`
+- [x] Aprovação do Pedro (PRD + MVP)
+
+## Fase 2 — checklist
+- [x] ADRs e estrutura de pastas (tech-lead)
+- [x] Lista de cards com dependências e modelo (tech-lead)
+- [x] Design system + protótipos (designer, adiantado)
+- [x] Aprovação do Pedro: lista de cards
+- [x] Aprovação do Pedro: protótipos (Artifact)
+- [ ] Issues criadas no GitHub
 
 ## Cards por estado
-Nenhum ainda.
+Lista completa em `cards/README.md`.
+
+| Estado | Cards |
+|---|---|
+| Em execução | 001 |
+| Prontos para começar (após 001) | 002, 003, 004, 006 · 005 e 008 dependem só da cadeia · 007 espera LISTA |
+| Mergeados | — |
+
+Protótipo aprovado: https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP
 
 ## Bloqueios
 - Skill `react-native-skills` não existe com esse nome; usando `vercel-react-native-skills` (confirmado pelo Pedro).
