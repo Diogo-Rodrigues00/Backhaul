@@ -18,7 +18,7 @@ Este arquivo é o combinado entre o backend e as telas. **Quem quiser mudar uma 
 | 401 | Sem token, token inválido/expirado ou login errado | `{ "erro": "token ausente" }` |
 | 403 | Usuário logado, mas o tipo dele não pode usar a rota | `{ "erro": "..." }` |
 | 404 | Item não encontrado | `{ "erro": "..." }` |
-| 409 | Valor repetido (e-mail, CPF ou CNPJ) | `{ "erro": "cnpj já cadastrado" }` |
+| 409 | Valor repetido (e-mail, CPF ou CNPJ) ou conflito de estado (carga fechada, proposta já respondida, contraproposta repetida) | `{ "erro": "cnpj já cadastrado" }` |
 | 500 | Falha interna (o detalhe fica só no log do servidor) | `{ "erro": "erro interno" }` |
 
 ---
@@ -166,6 +166,57 @@ Parâmetros (todos obrigatórios): `lat` entre -90 e 90, `lng` entre -180 e 180,
 - `distancia_origem_km`: distância em linha reta (calculada pelo PostGIS) até a origem da carga, com 1 casa decimal. `certificacao_exigida` é `null` quando a carga não exige certificação. Lista vazia: `{ "cargas": [] }`.
 - **400** parâmetro ausente ou inválido · **401** · **403** usuário não é motorista · **404** usuário sem perfil de motorista.
 
+### POST /propostas 🔒 *(só motorista)*
+O motorista logado faz uma proposta para uma carga, usando uma disponibilidade **dele**.
+```json
+{ "chamado_carga_id": "uuid", "chamado_disp_id": "uuid", "tipo": "contraproposta", "valor_proposto": 3200.00 }
+```
+Regras:
+- `tipo`: `"aceite"` (aceita o valor da carga) ou `"contraproposta"` (pede outro valor).
+- `valor_proposto`: obrigatório na contraproposta (número maior que zero). No `aceite` é **ignorado**: vale o `valor_oferecido` da carga.
+- A carga precisa estar com status `aberto` e não expirada.
+- Se a carga exige certificação, o motorista precisa tê-la **aprovada pelo admin e dentro da validade** (mesma regra do `GET /cargas/proximas`).
+- **Contraproposta única:** cada motorista só pode fazer **uma** contraproposta por carga.
+
+Respostas:
+- **201:**
+```json
+{ "proposta": { "id": "uuid", "chamado_carga_id": "uuid", "chamado_disp_id": "uuid", "tipo": "contraproposta",
+                "valor_proposto": 3200, "status": "pendente", "criado_em": "2026-10-14T19:00:00.000Z" } }
+```
+- **400** dados inválidos · **401** · **403** usuário não é motorista · **403** `"motorista sem a certificação exigida"`
+- **404** `"disponibilidade não encontrada"` (não existe ou é de outro motorista) · `"carga não encontrada"` · usuário sem perfil de motorista
+- **409** `"carga não está mais aberta para propostas"` (fechada, cancelada ou expirada) · `"você já fez a contraproposta única para esta carga"`
+
+### GET /cargas/:id/propostas 🔒 *(só a empresa dona da carga)*
+Propostas recebidas pela carga, com os dados do motorista. Ordem: pendentes primeiro, depois as mais antigas.
+- **200:**
+```json
+{ "propostas": [ {
+    "id": "uuid", "tipo": "contraproposta", "valor_proposto": 3200, "status": "pendente",
+    "criado_em": "2026-10-14T19:00:00.000Z",
+    "motorista": {
+      "id": "uuid", "nome_completo": "João da Silva", "veiculo_tipo": "carreta", "veiculo_placa": "ABC1D23",
+      "capacidade_kg": 15000,
+      "certificacoes": [ { "nome": "MOPP - Classe 3 Inflamáveis", "validade": "2027-05-01", "validado_por_admin": true } ]
+    }
+} ] }
+```
+- `certificacoes` é `[]` quando o motorista não tem nenhuma. Lista vazia: `{ "propostas": [] }`.
+- **400** id inválido · **401** · **403** usuário não é empresa · **404** carga não existe **ou é de outra empresa** (mesma resposta nos dois casos).
+
+### POST /propostas/:id/responder 🔒 *(só a empresa dona da carga)*
+Corpo: `{ "acao": "aceitar" }` ou `{ "acao": "recusar" }`
+- **200 (recusar):** `{ "proposta": { "id": "uuid", "status": "recusada" } }`
+- **200 (aceitar):** numa única transação, a proposta vira `aceita`, as outras propostas **pendentes** da carga viram `recusada`, a carga e a disponibilidade usada pelo motorista viram `fechado` e o frete é criado:
+```json
+{ "frete": { "id": "uuid", "proposta_id": "uuid", "valor_final": 3200, "status_entrega": "aceito",
+             "criado_em": "2026-10-14T19:00:00.000Z" } }
+```
+- `valor_final` = `valor_proposto` da proposta aceita.
+- **400** id ou `acao` inválidos · **401** · **403** usuário não é empresa · **404** proposta não existe ou é de carga de outra empresa
+- **409** `"proposta já está aceita"` / `"... recusada"` (já respondida) · `"carga não está mais aberta"`. Duas aceitações ao mesmo tempo nunca criam dois fretes: a segunda espera a primeira terminar e recebe 409.
+
 ---
 
 ## 🔜 Rotas planejadas — semana 2 (contrato proposto)
@@ -177,23 +228,6 @@ Parâmetros (todos obrigatórios): `lat` entre -90 e 90, `lng` entre -180 e 180,
 - `urgencia`: `"normal" | "urgente" | "critico"`.
 - Valores em reais, como número (`3500.00`). Datas em ISO 8601.
 - Distâncias em km, calculadas pelo banco (PostGIS).
-
-### Propostas (oferta e uma única contraproposta)
-
-**POST /propostas** 🔒 *(motorista)*
-```json
-{ "chamado_carga_id": "uuid", "chamado_disp_id": "uuid", "tipo": "aceite", "valor_proposto": 3500.00 }
-```
-- `tipo: "aceite"` aceita o valor da carga; `tipo: "contraproposta"` pede outro valor (só uma por carga).
-- **201:** `{ "proposta": { "id", "tipo", "valor_proposto", "status": "pendente" } }`
-- **409** se esse motorista já fez a contraproposta única.
-
-**GET /cargas/:id/propostas** 🔒 *(empresa dona da carga)* — propostas recebidas, com dados do motorista (nome, veículo, certificações).
-
-**POST /propostas/:id/responder** 🔒 *(empresa)*
-Corpo: `{ "acao": "aceitar" }` ou `{ "acao": "recusar" }`
-- **200 (aceitar):** cria o frete e fecha a carga → `{ "frete": { "id", "valor_final", "status_entrega": "aceito" } }`
-- **200 (recusar):** `{ "proposta": { "status": "recusada" } }`
 
 ### Fretes e pagamento simulado
 
