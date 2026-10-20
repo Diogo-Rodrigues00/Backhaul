@@ -41,14 +41,23 @@ Ordem de entrega combinada com o responsável do backend (Diogo): (1) rodar no n
 - **Nunca editar `backend/` nem `database/`.** Rota faltando ou divergência: construir contra proposta de contrato, testar com MSW e avisar o orquestrador.
 
 ## Comandos do app
-> Preencher quando o card `feat/app-base` for mergeado.
+Node `>=22.13`. Instale pacotes sempre com `npx expo install <pacote>` (escolhe a versão do SDK 57).
 
 ```bash
 cd app
+cp .env.example .env              # ajuste EXPO_PUBLIC_API_URL se precisar (o .env fica fora do Git)
 npm install
-npx expo start          # Expo Go (iPhone) e web
-npx expo start --web    # navegador
+npx expo login                    # Expo Go no iPhone físico exige a MESMA conta Expo aqui e no app
+npx expo start                    # Expo Go (iPhone) e web
+npx expo start --web              # navegador (http://localhost:8081)
+
+npm run lint                      # expo lint (inclui libs proibidas do ADR 0001)
+npm run typecheck                 # tsc --noEmit
+npm test                          # Jest + RNTL
+npm run export:ci                 # expo export -p web → dist/
 ```
+
+No iPhone: instale o **Expo Go** (App Store), entre na mesma conta Expo e escaneie o QR code do `npx expo start`. O Expo Go da loja roda só SDK 57 (ADR 0001); desative a atualização automática de apps até 12/11.
 
 ## Links
 - Contrato da API (fonte da verdade): `../docs/api.md`
@@ -58,4 +67,4 @@ npx expo start --web    # navegador
 - Cards: `../docs/front/cards/`
 - PRD / MVP: `../docs/front/prd.md`, `../docs/front/mvp.md` (após o grill)
 - Design system: `../docs/front/design-system.md` (após a Fase 3)
-- API em produção: https://backhaul-api.onrender.com (cold start de ~50 s no plano grátis)
+- API em produção: URL em `EXPO_PUBLIC_API_URL` (exemplo no `.env.example`); cold start de ~50 s no plano grátis

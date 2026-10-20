@@ -9,11 +9,7 @@ export default function Raiz({ children }: PropsWithChildren) {
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <title>Backhaul</title>
-        <meta
-          name="description"
-          content="Plataforma que conecta caminhoneiros disponíveis a cargas urgentes próximas."
-        />
+        {/* <title> e meta description entram pelo <Head> do _layout (SDK 57): um <title> aqui duplicaria a tag. */}
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>
