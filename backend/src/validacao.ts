@@ -41,7 +41,27 @@ export type DadosCarga = {
   expira_em: Date;
 };
 
+export type DadosDisponibilidade = {
+  local: Ponto;
+  raio_busca_km: number;
+  urgencia: Urgencia;
+  expira_em: Date;
+};
+
+export type DadosBuscaProximas = { lat: number; lng: number; raio_km: number };
+
 const SENHA_MINIMO = 8;
+
+// Raio padrão: o mesmo DEFAULT 50 de chamados_disponibilidade.raio_busca_km.
+const RAIO_PADRAO_KM = 50;
+
+// Limite de negócio (um motorista não busca carga a 2000 km) e também de banco:
+// raio_busca_km é NUMERIC(6,2), que estoura acima de 9999.99 (erro 22003 → 500).
+const RAIO_MAXIMO_KM = 500;
+
+// Número escrito na query string: "-18.9186" passa; "", "abc", "1e3" e "12," não.
+// Necessário porque Number("") dá 0, e um lat vazio viraria a linha do Equador.
+const REGEX_NUMERO = /^-?\d+(\.\d+)?$/;
 
 // Formato simples: algo@algo.algo, sem espaços. Não tenta cobrir a RFC inteira.
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -111,13 +131,31 @@ function validarPonto(valor: unknown, nome: string, erros: string[]): Ponto {
   const p = corpo(valor);
   const lat = typeof p.lat === "number" ? p.lat : NaN;
   const lng = typeof p.lng === "number" ? p.lng : NaN;
-  if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
-    erros.push(`${nome}.lat deve ser um número entre -90 e 90`);
+  return {
+    lat: entre(lat, -90, 90, `${nome}.lat`, erros),
+    lng: entre(lng, -180, 180, `${nome}.lng`, erros),
+  };
+}
+
+function entre(n: number, min: number, max: number, nome: string, erros: string[]): number {
+  if (!Number.isFinite(n) || n < min || n > max) {
+    erros.push(`${nome} deve ser um número entre ${min} e ${max}`);
   }
-  if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
-    erros.push(`${nome}.lng deve ser um número entre -180 e 180`);
+  return n;
+}
+
+// Mesma regra para o raio do POST /disponibilidades e do GET /cargas/proximas.
+function validarRaio(n: number, nome: string, erros: string[]): number {
+  if (!Number.isFinite(n) || n <= 0 || n > RAIO_MAXIMO_KM) {
+    erros.push(`${nome} deve ser um número maior que zero e até ${RAIO_MAXIMO_KM}`);
   }
-  return { lat, lng };
+  return n;
+}
+
+// Tudo que vem na query string é texto (ou lista, se o parâmetro se repetir: ?lat=1&lat=2).
+// Qualquer coisa fora do formato vira NaN, e quem chamou acusa o erro.
+function numeroDaQuery(valor: unknown): number {
+  return typeof valor === "string" && REGEX_NUMERO.test(valor.trim()) ? Number(valor) : NaN;
 }
 
 // Campo opcional: se não vier, a urgência fica "normal" (mesmo DEFAULT do banco).
@@ -213,6 +251,41 @@ export function validarCarga(body: unknown): Resultado<DadosCarga> {
       erros,
     ),
     expira_em: validarDataFutura(b.expira_em, "expira_em", erros),
+  };
+
+  return erros.length ? { ok: false, erros } : { ok: true, dados };
+}
+
+export function validarDisponibilidade(body: unknown): Resultado<DadosDisponibilidade> {
+  const b = corpo(body);
+  const erros: string[] = [];
+
+  // raio_busca_km é opcional, como a urgência: se não vier, vale o DEFAULT do banco.
+  // Se vier, tem que ser number de verdade (texto "80" não passa, igual ao peso_kg).
+  const raio =
+    b.raio_busca_km === undefined || b.raio_busca_km === null
+      ? RAIO_PADRAO_KM
+      : typeof b.raio_busca_km === "number" ? b.raio_busca_km : NaN;
+
+  const dados: DadosDisponibilidade = {
+    local: validarPonto(b.local, "local", erros),
+    raio_busca_km: validarRaio(raio, "raio_busca_km", erros),
+    urgencia: validarUrgencia(b.urgencia, erros),
+    expira_em: validarDataFutura(b.expira_em, "expira_em", erros),
+  };
+
+  return erros.length ? { ok: false, erros } : { ok: true, dados };
+}
+
+// Recebe req.query. Aqui os três parâmetros são obrigatórios: sem ponto não há "perto de".
+export function validarBuscaProximas(query: unknown): Resultado<DadosBuscaProximas> {
+  const q = corpo(query);
+  const erros: string[] = [];
+
+  const dados: DadosBuscaProximas = {
+    lat: entre(numeroDaQuery(q.lat), -90, 90, "lat", erros),
+    lng: entre(numeroDaQuery(q.lng), -180, 180, "lng", erros),
+    raio_km: validarRaio(numeroDaQuery(q.raio_km), "raio_km", erros),
   };
 
   return erros.length ? { ok: false, erros } : { ok: true, dados };

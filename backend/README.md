@@ -59,14 +59,16 @@ src/
   env.ts                 carrega o .env (precisa ser o primeiro import)
   db.ts                  pool de conexões com o Postgres + helper emTransacao()
   server.ts              cria o app Express, liga CORS e as rotas, trata erros
-  validacao.ts           validação de formato (e-mail, senha, CPF, CNPJ, carga...)
+  validacao.ts           validação de formato (e-mail, senha, CPF, CNPJ, carga, raio...)
+  perfis.ts              acha o id de empresa/motorista a partir do usuário do token
   middleware/
     autenticacao.ts      gera e confere tokens JWT (exigirAutenticacao, exigirTipo)
   rotas/
     cadastro.ts          POST /cadastro/motorista e POST /cadastro/empresa
     login.ts             POST /login e GET /eu
     certificacoes.ts     GET /certificacoes
-    cargas.ts            POST /cargas e GET /cargas/minhas
+    cargas.ts            POST /cargas, GET /cargas/minhas e GET /cargas/proximas
+    disponibilidades.ts  POST /disponibilidades
 ```
 
 ## Rotas
@@ -81,6 +83,8 @@ src/
 | GET    | `/certificacoes`      | **sim**    | Lista as certificações (MOPP/ONU)                      |
 | POST   | `/cargas`             | **empresa** | Publica uma carga da empresa logada                   |
 | GET    | `/cargas/minhas`      | **empresa** | Cargas da empresa logada, com total de propostas      |
+| POST   | `/disponibilidades`   | **motorista** | Motorista avisa que está livre numa região          |
+| GET    | `/cargas/proximas`    | **motorista** | Cargas abertas no raio que o motorista pode pegar   |
 
 **Códigos de resposta:** `201` criado · `400` dados inválidos · `401` login inválido ou token ausente/expirado · `403` logado, mas o tipo de usuário não pode usar a rota · `404` não encontrado · `409` e-mail, CPF ou CNPJ já cadastrado · `500` erro interno · `503` banco fora do ar (só no `/saude`).
 
@@ -133,7 +137,21 @@ curl http://localhost:3000/cargas/minhas -H "Authorization: Bearer SEU_TOKEN"
 # 200 {"cargas":[{"id":"...","tipo_carga":"Grãos",...,"certificacao_exigida":null,"total_propostas":0}]}
 ```
 
-> Coordenadas: a API sempre usa `{lat, lng}`, mas o PostGIS guarda o ponto como (longitude, latitude). A troca de ordem acontece só dentro de `rotas/cargas.ts`.
+Informar disponibilidade (com o token de um **motorista**):
+```bash
+curl -X POST http://localhost:3000/disponibilidades   -H "Content-Type: application/json" -H "Authorization: Bearer SEU_TOKEN"   -d '{"local":{"lat":-18.9186,"lng":-48.2772},"raio_busca_km":80,"urgencia":"urgente","expira_em":"2026-12-01T18:00:00Z"}'
+# 201 {"disponibilidade":{"id":"...","local":{"lat":-18.9186,"lng":-48.2772},"raio_busca_km":80,...,"status":"aberto"}}
+```
+
+Buscar cargas próximas (motorista):
+```bash
+curl "http://localhost:3000/cargas/proximas?lat=-18.9186&lng=-48.2772&raio_km=100" -H "Authorization: Bearer SEU_TOKEN"
+# 200 {"cargas":[{"id":"...","empresa":"Transportes Exemplo LTDA",...,"distancia_origem_km":12.4}]}
+```
+
+> Cargas que exigem certificação só aparecem para o motorista que tem essa certificação em `motorista_certificacoes` com `validado_por_admin = true` e `validade` não vencida. Ainda não há rota para isso: por enquanto, cadastre direto no banco para testar.
+
+> Coordenadas: a API sempre usa `{lat, lng}`, mas o PostGIS guarda o ponto como (longitude, latitude). A troca de ordem acontece só dentro das rotas, na hora de montar o SQL (`ST_MakePoint(lng, lat)`).
 
 > Os exemplos usam a sintaxe do Git Bash / Linux. No PowerShell, use `curl.exe` e coloque o comando em uma linha só.
 

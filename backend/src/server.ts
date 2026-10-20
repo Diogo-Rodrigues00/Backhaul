@@ -6,6 +6,7 @@ import { pool } from "./db";
 import { rotasCadastro } from "./rotas/cadastro";
 import { rotasCargas } from "./rotas/cargas";
 import { rotasCertificacoes } from "./rotas/certificacoes";
+import { rotasDisponibilidades } from "./rotas/disponibilidades";
 import { rotasLogin } from "./rotas/login";
 
 const app = express();
@@ -33,6 +34,7 @@ app.use("/cadastro", rotasCadastro);
 app.use(rotasLogin);
 app.use("/certificacoes", rotasCertificacoes);
 app.use("/cargas", rotasCargas);
+app.use("/disponibilidades", rotasDisponibilidades);
 
 app.get("/saude", async (_req, res) => {
   try {
