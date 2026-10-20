@@ -18,7 +18,7 @@ Este arquivo é o combinado entre o backend e as telas. **Quem quiser mudar uma 
 | 401 | Sem token, token inválido/expirado ou login errado | `{ "erro": "token ausente" }` |
 | 403 | Usuário logado, mas o tipo dele não pode usar a rota | `{ "erro": "..." }` |
 | 404 | Item não encontrado | `{ "erro": "..." }` |
-| 409 | Valor repetido (e-mail, CPF ou CNPJ) ou conflito de estado (carga fechada, proposta já respondida, contraproposta repetida) | `{ "erro": "cnpj já cadastrado" }` |
+| 409 | Valor repetido (e-mail, CPF ou CNPJ) ou conflito de estado (carga fechada, proposta já respondida, contraproposta repetida, transição de status de frete inválida, frete já pago) | `{ "erro": "cnpj já cadastrado" }` |
 | 500 | Falha interna (o detalhe fica só no log do servidor) | `{ "erro": "erro interno" }` |
 
 ---
@@ -217,6 +217,57 @@ Corpo: `{ "acao": "aceitar" }` ou `{ "acao": "recusar" }`
 - **400** id ou `acao` inválidos · **401** · **403** usuário não é empresa · **404** proposta não existe ou é de carga de outra empresa
 - **409** `"proposta já está aceita"` / `"... recusada"` (já respondida) · `"carga não está mais aberta"`. Duas aceitações ao mesmo tempo nunca criam dois fretes: a segunda espera a primeira terminar e recebe 409.
 
+### GET /fretes/meus 🔒 *(motorista ou empresa)*
+Fretes do usuário logado, **mais recentes primeiro**. Para o motorista: os fretes das propostas dele. Para a empresa: os fretes das cargas dela. Cada lado recebe os dados da **outra parte**.
+- **200 (motorista):**
+```json
+{ "fretes": [ {
+    "id": "uuid", "tipo_carga": "Grãos", "valor_final": 3500, "status_entrega": "em_transito",
+    "coleta_em": "2026-10-15T08:00:00.000Z", "entrega_em": null, "criado_em": "2026-10-14T19:00:00.000Z",
+    "status_pagamento": "retido",
+    "empresa": { "id": "uuid", "razao_social": "Transportes Rápidos LTDA" }
+} ] }
+```
+- **200 (empresa):** mesmos campos, mas no lugar de `empresa` vem
+  `"motorista": { "id": "uuid", "nome_completo": "João da Silva", "veiculo_tipo": "carreta", "veiculo_placa": "ABC1D23" }`.
+- `coleta_em` / `entrega_em` ficam `null` até o frete ir para `em_transito` / `entregue`. `status_pagamento` é `null` enquanto a empresa não pagou. Lista vazia: `{ "fretes": [] }`.
+- **401** · **403** usuário admin · **404** usuário sem perfil de motorista/empresa.
+
+### PATCH /fretes/:id/status 🔒 *(só o motorista do frete)*
+Corpo: `{ "status_entrega": "em_transito" }` ou `{ "status_entrega": "entregue" }`
+
+Regras:
+- Única ordem permitida: `aceito` → `em_transito` → `entregue`. Não dá para pular etapa nem voltar.
+- Ao ir para `em_transito`, `coleta_em` recebe a hora atual; ao ir para `entregue`, `entrega_em`.
+- Ao ir para `entregue`, se o frete já foi pago, a transação passa de `retido` para `liberado` **na mesma transação do banco** (ou as duas mudanças acontecem, ou nenhuma).
+
+Respostas:
+- **200:**
+```json
+{ "frete": { "id": "uuid", "valor_final": 3500, "status_entrega": "entregue",
+             "coleta_em": "2026-10-15T08:00:00.000Z", "entrega_em": "2026-10-15T14:00:00.000Z",
+             "status_pagamento": "liberado" } }
+```
+- **400** id inválido ou `status_entrega` fora de `aceito, em_transito, entregue, cancelado`
+- **401** · **403** usuário não é motorista · **404** frete não existe **ou é de outro motorista** (mesma resposta)
+- **409** transição não permitida: `{ "erro": "não é possível mudar o frete de aceito para entregue" }`
+
+### POST /fretes/:id/pagamento 🔒 *(só a empresa dona do frete)*
+Pagamento **simulado** (não há gateway): registra a transação com a comissão da plataforma de **5%**. Sem corpo.
+
+- O valor fica **`retido`** pela plataforma até a entrega (o motorista sabe que o dinheiro existe, a empresa só o vê repassado quando a carga chega). Quando o frete vira `entregue`, passa para **`liberado`**.
+- Se a empresa pagar um frete que **já está** `entregue`, a transação já nasce `liberado`.
+- `valor_comissao` = `valor_frete` × 5%, arredondado para o centavo (meio centavo sobe). A conta é feita em centavos inteiros, sem erro de ponto flutuante.
+
+Respostas:
+- **201:**
+```json
+{ "transacao": { "id": "uuid", "frete_id": "uuid", "valor_frete": 3500.00, "percentual_comissao": 5.00,
+                 "valor_comissao": 175.00, "status_pagamento": "retido", "criado_em": "2026-10-14T19:00:00.000Z" } }
+```
+- **400** id inválido · **401** · **403** usuário não é empresa · **404** frete não existe **ou é de outra empresa**
+- **409** `"frete já foi pago"` (cada frete só pode ser pago uma vez) · `"frete cancelado não pode ser pago"`
+
 ---
 
 ## 🔜 Rotas planejadas — semana 2 (contrato proposto)
@@ -229,19 +280,7 @@ Corpo: `{ "acao": "aceitar" }` ou `{ "acao": "recusar" }`
 - Valores em reais, como número (`3500.00`). Datas em ISO 8601.
 - Distâncias em km, calculadas pelo banco (PostGIS).
 
-### Fretes e pagamento simulado
-
-**GET /fretes/meus** 🔒 *(motorista ou empresa)* — fretes do usuário logado.
-- **200:** `{ "fretes": [ { "id", "tipo_carga", "valor_final", "status_entrega", "coleta_em", "entrega_em" } ] }`
-
-**PATCH /fretes/:id/status** 🔒 — Corpo: `{ "status_entrega": "em_transito" }` ou `"entregue"`.
-
-**POST /fretes/:id/pagamento** 🔒 *(empresa)* — pagamento **simulado**: registra a transação com a comissão da plataforma (5%).
-- **201:**
-```json
-{ "transacao": { "id": "uuid", "valor_frete": 3500.00, "percentual_comissao": 5.00,
-                 "valor_comissao": 175.00, "status_pagamento": "retido" } }
-```
+Nenhuma rota pendente no momento.
 
 ---
 

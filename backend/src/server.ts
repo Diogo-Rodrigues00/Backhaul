@@ -8,6 +8,7 @@ import { rotasCargas } from "./rotas/cargas";
 import { rotasCertificacoes } from "./rotas/certificacoes";
 import { rotasDisponibilidades } from "./rotas/disponibilidades";
 import { rotasLogin } from "./rotas/login";
+import { rotasFretes } from "./rotas/fretes";
 import { rotasPropostas } from "./rotas/propostas";
 
 const app = express();
@@ -37,6 +38,7 @@ app.use("/certificacoes", rotasCertificacoes);
 app.use("/cargas", rotasCargas);
 app.use("/disponibilidades", rotasDisponibilidades);
 app.use("/propostas", rotasPropostas);
+app.use("/fretes", rotasFretes);
 
 app.get("/saude", async (_req, res) => {
   try {
