@@ -67,8 +67,9 @@ src/
     cadastro.ts          POST /cadastro/motorista e POST /cadastro/empresa
     login.ts             POST /login e GET /eu
     certificacoes.ts     GET /certificacoes
-    cargas.ts            POST /cargas, GET /cargas/minhas e GET /cargas/proximas
+    cargas.ts            POST /cargas, GET /cargas/minhas, GET /cargas/proximas e GET /cargas/:id/propostas
     disponibilidades.ts  POST /disponibilidades
+    propostas.ts         POST /propostas e POST /propostas/:id/responder
 ```
 
 ## Rotas
@@ -85,8 +86,11 @@ src/
 | GET    | `/cargas/minhas`      | **empresa** | Cargas da empresa logada, com total de propostas      |
 | POST   | `/disponibilidades`   | **motorista** | Motorista avisa que está livre numa região          |
 | GET    | `/cargas/proximas`    | **motorista** | Cargas abertas no raio que o motorista pode pegar   |
+| POST   | `/propostas`          | **motorista** | Aceite ou contraproposta (uma só por carga) para uma carga aberta |
+| GET    | `/cargas/:id/propostas` | **empresa dona** | Propostas da carga, com motorista, veículo e certificações |
+| POST   | `/propostas/:id/responder` | **empresa dona** | Aceitar (cria o frete e fecha a carga) ou recusar |
 
-**Códigos de resposta:** `201` criado · `400` dados inválidos · `401` login inválido ou token ausente/expirado · `403` logado, mas o tipo de usuário não pode usar a rota · `404` não encontrado · `409` e-mail, CPF ou CNPJ já cadastrado · `500` erro interno · `503` banco fora do ar (só no `/saude`).
+**Códigos de resposta:** `201` criado · `400` dados inválidos · `401` login inválido ou token ausente/expirado · `403` logado, mas o tipo de usuário não pode usar a rota · `404` não encontrado (inclusive carga/proposta de outra empresa) · `409` e-mail, CPF ou CNPJ já cadastrado, carga que não está mais aberta, proposta já respondida ou segunda contraproposta · `500` erro interno · `503` banco fora do ar (só no `/saude`).
 
 O formato completo de cada rota (corpo, respostas, regras) está em [`../docs/api.md`](../docs/api.md).
 
@@ -148,6 +152,24 @@ Buscar cargas próximas (motorista):
 curl "http://localhost:3000/cargas/proximas?lat=-18.9186&lng=-48.2772&raio_km=100" -H "Authorization: Bearer SEU_TOKEN"
 # 200 {"cargas":[{"id":"...","empresa":"Transportes Exemplo LTDA",...,"distancia_origem_km":12.4}]}
 ```
+
+Fazer uma contraproposta (motorista; `chamado_disp_id` tem que ser uma disponibilidade dele):
+```bash
+curl -X POST http://localhost:3000/propostas   -H "Content-Type: application/json" -H "Authorization: Bearer SEU_TOKEN"   -d '{"chamado_carga_id":"ID_DA_CARGA","chamado_disp_id":"ID_DA_DISPONIBILIDADE","tipo":"contraproposta","valor_proposto":3200}'
+# 201 {"proposta":{"id":"...","tipo":"contraproposta","valor_proposto":3200,"status":"pendente",...}}
+# 409 {"erro":"você já fez a contraproposta única para esta carga"}
+```
+
+Ver as propostas de uma carga e aceitar uma (empresa dona da carga):
+```bash
+curl http://localhost:3000/cargas/ID_DA_CARGA/propostas -H "Authorization: Bearer SEU_TOKEN"
+# 200 {"propostas":[{"id":"...","tipo":"contraproposta","valor_proposto":3200,"motorista":{"nome_completo":"...","certificacoes":[]}}]}
+
+curl -X POST http://localhost:3000/propostas/ID_DA_PROPOSTA/responder   -H "Content-Type: application/json" -H "Authorization: Bearer SEU_TOKEN"   -d '{"acao":"aceitar"}'
+# 200 {"frete":{"id":"...","valor_final":3200,"status_entrega":"aceito",...}}
+```
+
+> Aceitar uma proposta roda numa transação que trava a linha da carga (`SELECT ... FOR UPDATE`): duas aceitações ao mesmo tempo não criam dois fretes; a segunda espera e recebe 409.
 
 > Cargas que exigem certificação só aparecem para o motorista que tem essa certificação em `motorista_certificacoes` com `validado_por_admin = true` e `validade` não vencida. Ainda não há rota para isso: por enquanto, cadastre direto no banco para testar.
 
