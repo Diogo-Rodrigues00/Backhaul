@@ -126,6 +126,46 @@ Cargas publicadas pela empresa logada, **mais recentes primeiro**, com a quantid
 - `certificacao_exigida` é `null` quando a carga não exige certificação. `total_propostas` é `0` quando ninguém fez proposta.
 - **401** · **403** · **404** como no `POST /cargas`.
 
+### POST /disponibilidades 🔒 *(só motorista)*
+O motorista logado avisa que está livre e procurando carga numa região até um horário. O motorista é descoberto pelo token.
+```json
+{ "local": { "lat": -18.9186, "lng": -48.2772 }, "raio_busca_km": 80, "urgencia": "urgente",
+  "expira_em": "2026-10-16T18:00:00.000Z" }
+```
+Regras:
+- `local`: `lat` entre -90 e 90 e `lng` entre -180 e 180, como número.
+- `raio_busca_km`: número (não texto) maior que zero e até 500. **Opcional**: se não vier, fica `50`.
+- `urgencia`: `"normal" | "urgente" | "critico"`. **Opcional**: se não vier, fica `"normal"`.
+- `expira_em`: data ISO 8601 no futuro.
+
+Respostas:
+- **201:**
+```json
+{ "disponibilidade": {
+    "id": "uuid", "local": { "lat": -18.9186, "lng": -48.2772 }, "raio_busca_km": 80,
+    "urgencia": "urgente", "status": "aberto", "expira_em": "2026-10-16T18:00:00.000Z",
+    "criado_em": "2026-10-14T19:00:00.000Z"
+} }
+```
+- **400** dados inválidos · **401** sem token · **403** usuário não é motorista · **404** usuário sem perfil de motorista.
+
+### GET /cargas/proximas?lat=-18.9186&lng=-48.2772&raio_km=100 🔒 *(só motorista)*
+Cargas com status `aberto` e ainda não expiradas cuja **origem** está dentro do raio informado. Só aparecem as cargas que o motorista pode pegar: se a carga exige certificação, o motorista precisa ter essa certificação **aprovada pelo admin e dentro da validade**. Ordem: urgência (`critico`, `urgente`, `normal`) e depois distância (mais perto primeiro).
+
+Parâmetros (todos obrigatórios): `lat` entre -90 e 90, `lng` entre -180 e 180, `raio_km` maior que zero e até 500.
+- **200:**
+```json
+{ "cargas": [ {
+    "id": "uuid", "tipo_carga": "Produtos inflamáveis", "empresa": "Transportes Rápidos LTDA",
+    "peso_kg": 8000, "valor_oferecido": 3500.00, "urgencia": "urgente",
+    "distancia_origem_km": 12.4, "certificacao_exigida": "MOPP - Classe 3 Inflamáveis",
+    "origem": { "lat": -18.9186, "lng": -48.2772 }, "destino": { "lat": -19.7469, "lng": -47.9319 },
+    "expira_em": "2026-10-16T18:00:00.000Z"
+} ] }
+```
+- `distancia_origem_km`: distância em linha reta (calculada pelo PostGIS) até a origem da carga, com 1 casa decimal. `certificacao_exigida` é `null` quando a carga não exige certificação. Lista vazia: `{ "cargas": [] }`.
+- **400** parâmetro ausente ou inválido · **401** · **403** usuário não é motorista · **404** usuário sem perfil de motorista.
+
 ---
 
 ## 🔜 Rotas planejadas — semana 2 (contrato proposto)
@@ -137,28 +177,6 @@ Cargas publicadas pela empresa logada, **mais recentes primeiro**, com a quantid
 - `urgencia`: `"normal" | "urgente" | "critico"`.
 - Valores em reais, como número (`3500.00`). Datas em ISO 8601.
 - Distâncias em km, calculadas pelo banco (PostGIS).
-
-### Motorista informa disponibilidade e busca cargas
-
-**POST /disponibilidades** 🔒 *(só motorista)*
-```json
-{ "local": { "lat": -18.9186, "lng": -48.2772 }, "raio_busca_km": 80, "urgencia": "urgente",
-  "expira_em": "2026-10-16T18:00:00.000Z" }
-```
-- **201:** `{ "disponibilidade": { "id": "uuid", "status": "aberto", ... } }`
-
-**GET /cargas/proximas?lat=-18.9186&lng=-48.2772&raio_km=100** 🔒 *(só motorista)*
-Cargas abertas perto do ponto informado. Só aparecem as cargas que o motorista pode pegar (se a carga exige certificação, o motorista precisa ter a certificação válida). Ordem: urgência (mais urgente primeiro) e depois distância.
-- **200:**
-```json
-{ "cargas": [ {
-    "id": "uuid", "tipo_carga": "Produtos inflamáveis", "empresa": "Transportes Rápidos LTDA",
-    "peso_kg": 8000, "valor_oferecido": 3500.00, "urgencia": "urgente",
-    "distancia_origem_km": 12.4, "certificacao_exigida": "MOPP - Classe 3 Inflamáveis",
-    "origem": { "lat": -18.9186, "lng": -48.2772 }, "destino": { "lat": -19.7469, "lng": -47.9319 },
-    "expira_em": "2026-10-16T18:00:00.000Z"
-} ] }
-```
 
 ### Propostas (oferta e uma única contraproposta)
 
