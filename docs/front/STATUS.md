@@ -3,12 +3,12 @@
 _Atualizado em 2026-10-20._
 
 ## Fase atual
-**Fase 0 — Preparação** (em andamento)
+**Fase 1 — Grill do produto** (próxima; Fase 0 concluída)
 
 ## Fases
 | Fase | Estado |
 |---|---|
-| 0 — Preparação | em andamento |
+| 0 — Preparação | concluída (PR #13 mergeado em `front`) |
 | 1 — Grill do produto | pendente |
 | 2 — Arquitetura e cards | pendente |
 | 3 — Fundação | pendente |
@@ -21,7 +21,7 @@ _Atualizado em 2026-10-20._
 - [x] 10 agentes criados em `~/.claude/agents/`
 - [x] `app/CLAUDE.md` e estrutura `docs/front/`
 - [x] Relatório inicial do `integracao-api`: `relatorio-api-inicial.md`
-- [ ] PR da preparação para `front`
+- [x] PR #13 da preparação mergeado em `front`
 - [ ] Expo Go no iPhone do Pedro (**pendente: Pedro**)
 
 ## Cards por estado
@@ -29,7 +29,7 @@ Nenhum ainda.
 
 ## Bloqueios
 - Skill `react-native-skills` não existe com esse nome; usando `vercel-react-native-skills` (confirmado pelo Pedro).
-- `/mattpocock-skills:grill-me` não aparece na lista de skills; alternativas: `mattpocock-skills:grilling`, `anthropic-skills:grill-me`.
+- Grill da Fase 1 usa `anthropic-skills:grill-me` (escolha do Pedro). Agentes novos só carregam em sessão nova: iniciar com `claude --agent orquestrador`.
 
 ## Depende do Pedro
 - Instalar Expo Go no iPhone.

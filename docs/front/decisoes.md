@@ -13,3 +13,4 @@ Decisões fechadas antes do grill (kickoff, 2026-10-20). Novas decisões entram 
 | 2026-10-20 | Git: branch `front` como integração, `feat/*` por card, `feat/app-base` para a base; nunca tocar na `main` | Kickoff |
 | 2026-10-20 | Retentativas: até 3 por card; na 2ª falha Haiku → Sonnet; na 3ª parar e reportar | Kickoff |
 | 2026-10-20 | Skill de React Native a usar: `vercel-react-native-skills` (no lugar de `react-native-skills`) | Pedro |
+| 2026-10-20 | Grill da Fase 1 conduzido com `anthropic-skills:grill-me` | Pedro |
