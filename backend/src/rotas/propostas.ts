@@ -22,13 +22,35 @@ function erro(status: number, mensagem: string): Resposta {
 // "vigente" já vem calculado pelo relógio do banco, o mesmo usado no GET /cargas/proximas.
 async function travarCarga(client: PoolClient, cargaId: string) {
   const { rows } = await client.query(
-    `SELECT id, status, valor_oferecido, expira_em > now() AS vigente
+    `SELECT id, status, valor_oferecido, certificacao_requerida_id, expira_em > now() AS vigente
        FROM chamados_carga
       WHERE id = $1
       FOR UPDATE`,
     [cargaId],
   );
-  return rows[0] as { id: string; status: string; valor_oferecido: string; vigente: boolean } | undefined;
+  return rows[0] as
+    | { id: string; status: string; valor_oferecido: string; certificacao_requerida_id: string | null; vigente: boolean }
+    | undefined;
+}
+
+// Mesma regra do filtro do GET /cargas/proximas: certificação aprovada pelo admin e
+// dentro da validade. Repetida aqui porque esconder a carga na busca não impede alguém
+// de mandar o id direto no POST /propostas.
+async function temCertificacaoValida(
+  client: PoolClient,
+  motoristaId: string,
+  certificacaoId: string,
+): Promise<boolean> {
+  const r = await client.query(
+    `SELECT 1
+       FROM motorista_certificacoes
+      WHERE motorista_id = $1
+        AND certificacao_id = $2
+        AND validado_por_admin = TRUE
+        AND validade >= CURRENT_DATE`,
+    [motoristaId, certificacaoId],
+  );
+  return (r.rowCount ?? 0) > 0;
 }
 
 // Regra da contraproposta única: cada motorista só pode fazer UMA contraproposta por carga.
@@ -80,6 +102,14 @@ rotasPropostas.post("/", exigirAutenticacao, exigirTipo("motorista"), async (req
     if (!carga) return erro(404, "carga não encontrada");
     if (carga.status !== "aberto" || !carga.vigente) {
       return erro(409, "carga não está mais aberta para propostas");
+    }
+
+    // 403, e não 404: a carga existe e o motorista é quem diz ser, só não pode pegá-la.
+    if (
+      carga.certificacao_requerida_id &&
+      !(await temCertificacaoValida(client, motoristaId, carga.certificacao_requerida_id))
+    ) {
+      return erro(403, "motorista sem a certificação exigida");
     }
 
     if (d.tipo === "contraproposta" && (await jaFezContraproposta(client, carga.id, motoristaId))) {
@@ -137,7 +167,7 @@ rotasPropostas.post("/:id/responder", exigirAutenticacao, exigirTipo("empresa"),
     // 3) Lê a proposta DEPOIS da trava. No READ COMMITTED cada comando enxerga o que
     //    já foi confirmado até ele começar, então aqui o status já está atualizado.
     const { rows: [proposta] } = await client.query(
-      "SELECT id, status, valor_proposto FROM propostas WHERE id = $1",
+      "SELECT id, status, valor_proposto, chamado_disp_id FROM propostas WHERE id = $1",
       [id.dados],
     );
     if (proposta.status !== "pendente") return erro(409, `proposta já está ${proposta.status}`);
@@ -161,6 +191,11 @@ rotasPropostas.post("/:id/responder", exigirAutenticacao, exigirTipo("empresa"),
       [carga.id, proposta.id],
     );
     await client.query("UPDATE chamados_carga SET status = 'fechado' WHERE id = $1", [carga.id]);
+    // O motorista foi contratado: a disponibilidade usada na proposta deixa de estar aberta.
+    // Mesmo ENUM status_chamado da carga, por isso o mesmo valor 'fechado'.
+    await client.query("UPDATE chamados_disponibilidade SET status = 'fechado' WHERE id = $1", [
+      proposta.chamado_disp_id,
+    ]);
 
     // status_entrega tem DEFAULT 'aceito', mas fica explícito porque é a regra de negócio.
     const { rows } = await client.query(

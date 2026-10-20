@@ -175,6 +175,7 @@ Regras:
 - `tipo`: `"aceite"` (aceita o valor da carga) ou `"contraproposta"` (pede outro valor).
 - `valor_proposto`: obrigatório na contraproposta (número maior que zero). No `aceite` é **ignorado**: vale o `valor_oferecido` da carga.
 - A carga precisa estar com status `aberto` e não expirada.
+- Se a carga exige certificação, o motorista precisa tê-la **aprovada pelo admin e dentro da validade** (mesma regra do `GET /cargas/proximas`).
 - **Contraproposta única:** cada motorista só pode fazer **uma** contraproposta por carga.
 
 Respostas:
@@ -183,7 +184,7 @@ Respostas:
 { "proposta": { "id": "uuid", "chamado_carga_id": "uuid", "chamado_disp_id": "uuid", "tipo": "contraproposta",
                 "valor_proposto": 3200, "status": "pendente", "criado_em": "2026-10-14T19:00:00.000Z" } }
 ```
-- **400** dados inválidos · **401** · **403** usuário não é motorista
+- **400** dados inválidos · **401** · **403** usuário não é motorista · **403** `"motorista sem a certificação exigida"`
 - **404** `"disponibilidade não encontrada"` (não existe ou é de outro motorista) · `"carga não encontrada"` · usuário sem perfil de motorista
 - **409** `"carga não está mais aberta para propostas"` (fechada, cancelada ou expirada) · `"você já fez a contraproposta única para esta carga"`
 
@@ -207,7 +208,7 @@ Propostas recebidas pela carga, com os dados do motorista. Ordem: pendentes prim
 ### POST /propostas/:id/responder 🔒 *(só a empresa dona da carga)*
 Corpo: `{ "acao": "aceitar" }` ou `{ "acao": "recusar" }`
 - **200 (recusar):** `{ "proposta": { "id": "uuid", "status": "recusada" } }`
-- **200 (aceitar):** numa única transação, a proposta vira `aceita`, as outras propostas **pendentes** da carga viram `recusada`, a carga vira `fechado` e o frete é criado:
+- **200 (aceitar):** numa única transação, a proposta vira `aceita`, as outras propostas **pendentes** da carga viram `recusada`, a carga e a disponibilidade usada pelo motorista viram `fechado` e o frete é criado:
 ```json
 { "frete": { "id": "uuid", "proposta_id": "uuid", "valor_final": 3200, "status_entrega": "aceito",
              "criado_em": "2026-10-14T19:00:00.000Z" } }

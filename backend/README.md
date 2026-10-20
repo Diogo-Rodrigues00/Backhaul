@@ -88,7 +88,7 @@ src/
 | GET    | `/cargas/proximas`    | **motorista** | Cargas abertas no raio que o motorista pode pegar   |
 | POST   | `/propostas`          | **motorista** | Aceite ou contraproposta (uma só por carga) para uma carga aberta |
 | GET    | `/cargas/:id/propostas` | **empresa dona** | Propostas da carga, com motorista, veículo e certificações |
-| POST   | `/propostas/:id/responder` | **empresa dona** | Aceitar (cria o frete e fecha a carga) ou recusar |
+| POST   | `/propostas/:id/responder` | **empresa dona** | Aceitar (cria o frete e fecha a carga e a disponibilidade) ou recusar |
 
 **Códigos de resposta:** `201` criado · `400` dados inválidos · `401` login inválido ou token ausente/expirado · `403` logado, mas o tipo de usuário não pode usar a rota · `404` não encontrado (inclusive carga/proposta de outra empresa) · `409` e-mail, CPF ou CNPJ já cadastrado, carga que não está mais aberta, proposta já respondida ou segunda contraproposta · `500` erro interno · `503` banco fora do ar (só no `/saude`).
 
@@ -171,7 +171,7 @@ curl -X POST http://localhost:3000/propostas/ID_DA_PROPOSTA/responder   -H "Cont
 
 > Aceitar uma proposta roda numa transação que trava a linha da carga (`SELECT ... FOR UPDATE`): duas aceitações ao mesmo tempo não criam dois fretes; a segunda espera e recebe 409.
 
-> Cargas que exigem certificação só aparecem para o motorista que tem essa certificação em `motorista_certificacoes` com `validado_por_admin = true` e `validade` não vencida. Ainda não há rota para isso: por enquanto, cadastre direto no banco para testar.
+> Cargas que exigem certificação só aparecem (e só aceitam proposta, senão 403) para o motorista que tem essa certificação em `motorista_certificacoes` com `validado_por_admin = true` e `validade` não vencida. Ainda não há rota para isso: por enquanto, cadastre direto no banco para testar.
 
 > Coordenadas: a API sempre usa `{lat, lng}`, mas o PostGIS guarda o ponto como (longitude, latitude). A troca de ordem acontece só dentro das rotas, na hora de montar o SQL (`ST_MakePoint(lng, lat)`).
 
