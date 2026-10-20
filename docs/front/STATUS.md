@@ -3,14 +3,14 @@
 _Atualizado em 2026-10-20._
 
 ## Fase atual
-**Fase 1 — Grill do produto**: grill concluído; PRD + MVP em redação (agente `produto`), aguardando aprovação do Pedro
+**Fase 2 — Arquitetura e cards** (tech-lead) + design system e protótipos (designer) em paralelo
 
 ## Fases
 | Fase | Estado |
 |---|---|
 | 0 — Preparação | concluída (PR #13 mergeado em `front`) |
-| 1 — Grill do produto | em andamento (grill feito; PRD/MVP em redação) |
-| 2 — Arquitetura e cards | pendente |
+| 1 — Grill do produto | concluída (PRD + MVP aprovados em 2026-10-20) |
+| 2 — Arquitetura e cards | em andamento |
 | 3 — Fundação | pendente |
 | 4 — Execução dos cards | pendente |
 | 5 — Fechamento | pendente |
@@ -26,8 +26,16 @@ _Atualizado em 2026-10-20._
 
 ## Fase 1 — checklist
 - [x] Grill do produto (decisões em `decisoes.md`, origem "Grill F1")
-- [ ] `prd.md` e `mvp.md` escritos pelo `produto`
-- [ ] Aprovação do Pedro (PRD + MVP)
+- [x] `prd.md` e `mvp.md` escritos pelo `produto`
+- [x] Aprovação do Pedro (PRD + MVP)
+
+## Fase 2 — checklist
+- [ ] ADRs e estrutura de pastas (tech-lead)
+- [ ] Lista de cards com dependências e modelo (tech-lead)
+- [ ] Design system + protótipos (designer, adiantado)
+- [ ] Aprovação do Pedro: lista de cards
+- [ ] Aprovação do Pedro: protótipos (Artifact)
+- [ ] Issues criadas no GitHub
 
 ## Cards por estado
 Nenhum ainda.
@@ -37,6 +45,7 @@ Nenhum ainda.
 - Grill da Fase 1 usa `anthropic-skills:grill-me` (escolha do Pedro). Agentes novos só carregam em sessão nova: iniciar com `claude --agent orquestrador`.
 
 ## Depende do Pedro
+- Mergear PR #14 em `front` (orquestrador sem permissão de merge).
 - Instalar Expo Go no iPhone.
 - Avisar o Diogo: PR da base (`feat/app-base`) vai para `front` e sai depois do grill do PRD.
 - Pedir ao Diogo (ver item abaixo): rotas faltantes (fora do contrato) e inclusão no `CORS_ORIGIN` de `http://localhost:8081` e do domínio da Vercel.

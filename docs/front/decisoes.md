@@ -30,3 +30,5 @@ Decisões fechadas antes do grill (kickoff, 2026-10-20). Novas decisões entram 
 | 2026-10-20 | Protótipos do designer publicados como Artifact e aprovados pelo Pedro antes de qualquer card de tela ser executado | Pedro |
 | 2026-10-20 | Padrões: sessão 7 dias, 401 volta ao login com aviso; vencido aparece "expirada" (pelo `expira_em`); frete sem botão cancelar; erros tratam `erro`, `erros` e não-JSON | Grill F1 (padrão) |
 | 2026-10-20 | Q1–Q7 do PRD resolvidas com a recomendação do PO: cidades montadas pelos membros sem código (IBGE, cobrindo o seed); prazo 22/10 ao Diogo para `/propostas/minhas` e `/disponibilidades/minhas`, plano B decidido em 23/10; pedir comissão em `GET /fretes/meus`; previews da Vercel só com MSW; "Minhas cargas" sem atualização automática; pedir correção da disponibilidade em dois fretes (5.1); Pedro confirma PWA com o professor antes de 24/10 | Pedro |
+| 2026-10-20 | PRD e MVP aprovados pelo Pedro (Fase 1 concluída) | Pedro |
+| 2026-10-20 | Designer adiantado para rodar em paralelo à Fase 2 (prazo 24/10); protótipos continuam exigindo aprovação antes dos cards de tela | Orquestrador |
