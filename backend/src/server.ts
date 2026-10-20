@@ -8,6 +8,7 @@ import { rotasCargas } from "./rotas/cargas";
 import { rotasCertificacoes } from "./rotas/certificacoes";
 import { rotasDisponibilidades } from "./rotas/disponibilidades";
 import { rotasLogin } from "./rotas/login";
+import { rotasPropostas } from "./rotas/propostas";
 
 const app = express();
 // Em produção a hospedagem (Render, Railway...) escolhe a porta e avisa por PORT.
@@ -35,6 +36,7 @@ app.use(rotasLogin);
 app.use("/certificacoes", rotasCertificacoes);
 app.use("/cargas", rotasCargas);
 app.use("/disponibilidades", rotasDisponibilidades);
+app.use("/propostas", rotasPropostas);
 
 app.get("/saude", async (_req, res) => {
   try {

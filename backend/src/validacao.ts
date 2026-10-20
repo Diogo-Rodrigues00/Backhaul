@@ -50,7 +50,27 @@ export type DadosDisponibilidade = {
 
 export type DadosBuscaProximas = { lat: number; lng: number; raio_km: number };
 
+export type TipoProposta = "aceite" | "contraproposta";
+
+// valor_proposto é null no "aceite": quem decide o valor é a carga (valor_oferecido).
+export type DadosProposta = {
+  chamado_carga_id: string;
+  chamado_disp_id: string;
+  tipo: TipoProposta;
+  valor_proposto: number | null;
+};
+
+export type AcaoResposta = "aceitar" | "recusar";
+
 const SENHA_MINIMO = 8;
+
+// Mesmos valores do ENUM tipo_proposta do schema.sql.
+const TIPOS_PROPOSTA: readonly TipoProposta[] = ["aceite", "contraproposta"];
+
+const ACOES_RESPOSTA: readonly AcaoResposta[] = ["aceitar", "recusar"];
+
+// valor_proposto é NUMERIC(10,2): acima disso o Postgres dá erro 22003, que viraria 500.
+const VALOR_MAXIMO = 99_999_999.99;
 
 // Raio padrão: o mesmo DEFAULT 50 de chamados_disponibilidade.raio_busca_km.
 const RAIO_PADRAO_KM = 50;
@@ -176,6 +196,12 @@ function validarUuidOpcional(valor: unknown, nome: string, erros: string[]): str
   return t;
 }
 
+function validarUuidObrigatorio(valor: unknown, nome: string, erros: string[]): string {
+  const t = texto(valor);
+  if (!REGEX_UUID.test(t)) erros.push(`${nome} deve ser um UUID válido`);
+  return t;
+}
+
 // Data em ISO 8601 (ex.: "2026-10-16T18:00:00.000Z") e obrigatoriamente no futuro.
 function validarDataFutura(valor: unknown, nome: string, erros: string[]): Date {
   const data = new Date(texto(valor));
@@ -275,6 +301,45 @@ export function validarDisponibilidade(body: unknown): Resultado<DadosDisponibil
   };
 
   return erros.length ? { ok: false, erros } : { ok: true, dados };
+}
+
+// Para ids que chegam na URL (ex.: /cargas/:id/propostas). Mesmo motivo do REGEX_UUID:
+// sem isso, "/cargas/abc/propostas" viraria erro 22P02 no Postgres e 500 aqui.
+export function validarId(valor: unknown, nome: string): Resultado<string> {
+  const t = texto(valor);
+  return REGEX_UUID.test(t) ? { ok: true, dados: t } : { ok: false, erros: [`${nome} deve ser um UUID válido`] };
+}
+
+export function validarProposta(body: unknown): Resultado<DadosProposta> {
+  const b = corpo(body);
+  const erros: string[] = [];
+
+  const tipo = b.tipo as TipoProposta;
+  if (!TIPOS_PROPOSTA.includes(tipo)) erros.push(`tipo deve ser ${TIPOS_PROPOSTA.join(" ou ")}`);
+
+  // No aceite o valor que vier é ignorado (a rota usa o valor_oferecido da carga).
+  // Na contraproposta ele é o motivo da proposta existir, então é obrigatório.
+  let valor: number | null = null;
+  if (tipo === "contraproposta") {
+    valor = numeroPositivo(b.valor_proposto, "valor_proposto", erros);
+    if (valor > VALOR_MAXIMO) erros.push(`valor_proposto deve ser no máximo ${VALOR_MAXIMO}`);
+  }
+
+  const dados: DadosProposta = {
+    chamado_carga_id: validarUuidObrigatorio(b.chamado_carga_id, "chamado_carga_id", erros),
+    chamado_disp_id: validarUuidObrigatorio(b.chamado_disp_id, "chamado_disp_id", erros),
+    tipo,
+    valor_proposto: valor,
+  };
+
+  return erros.length ? { ok: false, erros } : { ok: true, dados };
+}
+
+export function validarRespostaProposta(body: unknown): Resultado<AcaoResposta> {
+  const acao = corpo(body).acao as AcaoResposta;
+  return ACOES_RESPOSTA.includes(acao)
+    ? { ok: true, dados: acao }
+    : { ok: false, erros: [`acao deve ser ${ACOES_RESPOSTA.join(" ou ")}`] };
 }
 
 // Recebe req.query. Aqui os três parâmetros são obrigatórios: sem ponto não há "perto de".

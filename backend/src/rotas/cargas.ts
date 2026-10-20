@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { pool } from "../db";
 import { exigirAutenticacao, exigirTipo } from "../middleware/autenticacao";
 import { buscarEmpresaId, buscarMotoristaId } from "../perfis";
-import { validarBuscaProximas, validarCarga } from "../validacao";
+import { validarBuscaProximas, validarCarga, validarId } from "../validacao";
 
 export const rotasCargas = Router();
 
@@ -169,4 +169,61 @@ rotasCargas.get("/proximas", ...soMotorista, async (req, res) => {
     [lng, lat, raio_km, motoristaId],
   );
   res.json({ cargas: rows });
+});
+
+// Propostas recebidas por uma carga. Só a empresa dona vê: carga de outra empresa
+// responde 404 (igual a "não existe"), para não confirmar que aquele id existe.
+rotasCargas.get("/:id/propostas", ...soEmpresa, async (req, res) => {
+  const id = validarId(req.params.id, "id");
+  if (!id.ok) {
+    res.status(400).json({ erros: id.erros });
+    return;
+  }
+
+  const empresaId = await buscarEmpresaId(req.usuario!.id);
+  if (!empresaId) {
+    responderSemPerfil(res, "empresa");
+    return;
+  }
+
+  const carga = await pool.query(
+    "SELECT 1 FROM chamados_carga WHERE id = $1 AND empresa_id = $2",
+    [id.dados, empresaId],
+  );
+  if (carga.rowCount === 0) {
+    res.status(404).json({ erro: "carga não encontrada" });
+    return;
+  }
+
+  // A proposta não guarda o motorista: ele vem pela disponibilidade (chamado_disp_id).
+  // As certificações viram uma lista JSON com uma subconsulta por motorista;
+  // um JOIN direto repetiria a proposta uma vez para cada certificação.
+  // COALESCE: json_agg de zero linhas dá NULL, e a tela espera [] nesse caso.
+  // Pendentes primeiro (é o que a empresa precisa responder), depois as mais antigas.
+  const { rows } = await pool.query(
+    `SELECT p.id, p.tipo, p.valor_proposto::float8 AS valor_proposto, p.status, p.criado_em,
+            json_build_object(
+              'id', m.id,
+              'nome_completo', m.nome_completo,
+              'veiculo_tipo', m.veiculo_tipo,
+              'veiculo_placa', m.veiculo_placa,
+              'capacidade_kg', m.capacidade_kg::float8,
+              'certificacoes', COALESCE((
+                SELECT json_agg(json_build_object(
+                         'nome', cert.nome,
+                         'validade', mc.validade,
+                         'validado_por_admin', mc.validado_por_admin)
+                       ORDER BY cert.nome)
+                  FROM motorista_certificacoes mc
+                  JOIN certificacoes cert ON cert.id = mc.certificacao_id
+                 WHERE mc.motorista_id = m.id), '[]'::json)
+            ) AS motorista
+       FROM propostas p
+       JOIN chamados_disponibilidade d ON d.id = p.chamado_disp_id
+       JOIN motoristas m               ON m.id = d.motorista_id
+      WHERE p.chamado_carga_id = $1
+      ORDER BY (p.status = 'pendente') DESC, p.criado_em ASC`,
+    [id.dados],
+  );
+  res.json({ propostas: rows });
 });
