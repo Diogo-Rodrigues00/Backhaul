@@ -45,7 +45,6 @@ Nenhum ainda.
 - Grill da Fase 1 usa `anthropic-skills:grill-me` (escolha do Pedro). Agentes novos só carregam em sessão nova: iniciar com `claude --agent orquestrador`.
 
 ## Depende do Pedro
-- Mergear PR #14 em `front` (orquestrador sem permissão de merge).
 - Instalar Expo Go no iPhone.
 - Avisar o Diogo: PR da base (`feat/app-base`) vai para `front` e sai depois do grill do PRD.
 - Pedir ao Diogo (ver item abaixo): rotas faltantes (fora do contrato) e inclusão no `CORS_ORIGIN` de `http://localhost:8081` e do domínio da Vercel.

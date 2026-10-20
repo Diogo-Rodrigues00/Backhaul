@@ -32,3 +32,4 @@ Decisões fechadas antes do grill (kickoff, 2026-10-20). Novas decisões entram 
 | 2026-10-20 | Q1–Q7 do PRD resolvidas com a recomendação do PO: cidades montadas pelos membros sem código (IBGE, cobrindo o seed); prazo 22/10 ao Diogo para `/propostas/minhas` e `/disponibilidades/minhas`, plano B decidido em 23/10; pedir comissão em `GET /fretes/meus`; previews da Vercel só com MSW; "Minhas cargas" sem atualização automática; pedir correção da disponibilidade em dois fretes (5.1); Pedro confirma PWA com o professor antes de 24/10 | Pedro |
 | 2026-10-20 | PRD e MVP aprovados pelo Pedro (Fase 1 concluída) | Pedro |
 | 2026-10-20 | Designer adiantado para rodar em paralelo à Fase 2 (prazo 24/10); protótipos continuam exigindo aprovação antes dos cards de tela | Orquestrador |
+| 2026-10-20 | Orquestrador autorizado a commitar e mergear PRs (squash) em `front` sem pedir a cada vez; continua proibido tocar na `main` e force push | Pedro |
