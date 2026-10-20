@@ -1,7 +1,8 @@
 import { Router, type Response } from "express";
 import { pool } from "../db";
 import { exigirAutenticacao, exigirTipo } from "../middleware/autenticacao";
-import { validarCarga } from "../validacao";
+import { buscarEmpresaId, buscarMotoristaId } from "../perfis";
+import { validarBuscaProximas, validarCarga } from "../validacao";
 
 export const rotasCargas = Router();
 
@@ -24,15 +25,8 @@ const COLUNAS_CARGA = `
   c.peso_kg::float8 AS peso_kg, c.valor_oferecido::float8 AS valor_oferecido,
   c.urgencia, c.status, c.certificacao_requerida_id, c.expira_em, c.criado_em`;
 
-// O token só traz o id do USUÁRIO; a carga pertence à EMPRESA (outra tabela, outro id).
-// Devolve null se o usuário não tiver perfil de empresa.
-async function buscarEmpresaId(usuarioId: string): Promise<string | null> {
-  const { rows } = await pool.query("SELECT id FROM empresas WHERE usuario_id = $1", [usuarioId]);
-  return rows[0]?.id ?? null;
-}
-
-function responderSemPerfil(res: Response) {
-  res.status(404).json({ erro: "perfil de empresa não encontrado" });
+function responderSemPerfil(res: Response, perfil: "empresa" | "motorista") {
+  res.status(404).json({ erro: `perfil de ${perfil} não encontrado` });
 }
 
 // Certificação inexistente vira 400 (o cliente mandou um id que não existe).
@@ -44,9 +38,10 @@ function responderCertificacaoOuRelancar(erro: unknown, res: Response) {
 }
 
 // Os middlewares rodam em ordem: primeiro "quem é você?" (401), depois "você pode?" (403).
-// Ficam em cada rota, e não num rotasCargas.use(), porque /cargas/proximas (planejada)
-// vai ser do motorista e mora neste mesmo router.
+// Ficam em cada rota, e não num rotasCargas.use(), porque este router mistura
+// rotas da empresa (POST /, GET /minhas) e do motorista (GET /proximas).
 const soEmpresa = [exigirAutenticacao, exigirTipo("empresa")];
+const soMotorista = [exigirAutenticacao, exigirTipo("motorista")];
 
 rotasCargas.post("/", ...soEmpresa, async (req, res) => {
   const validacao = validarCarga(req.body);
@@ -58,7 +53,7 @@ rotasCargas.post("/", ...soEmpresa, async (req, res) => {
 
   const empresaId = await buscarEmpresaId(req.usuario!.id);
   if (!empresaId) {
-    responderSemPerfil(res);
+    responderSemPerfil(res, "empresa");
     return;
   }
 
@@ -90,7 +85,7 @@ rotasCargas.post("/", ...soEmpresa, async (req, res) => {
 rotasCargas.get("/minhas", ...soEmpresa, async (req, res) => {
   const empresaId = await buscarEmpresaId(req.usuario!.id);
   if (!empresaId) {
-    responderSemPerfil(res);
+    responderSemPerfil(res, "empresa");
     return;
   }
 
@@ -109,6 +104,69 @@ rotasCargas.get("/minhas", ...soEmpresa, async (req, res) => {
       GROUP BY c.id, cert.id
       ORDER BY c.criado_em DESC`,
     [empresaId],
+  );
+  res.json({ cargas: rows });
+});
+
+// Regra do api.md: primeiro por urgência (critico, urgente, normal), depois pela distância
+// (mais perto primeiro). O ENUM nivel_urgencia ordena pela ordem de declaração
+// (normal < urgente < critico), por isso a urgência vai em DESC.
+// A distância usa o valor exato, não o arredondado de distancia_origem_km, para não haver empate falso.
+const ORDEM_PROXIMAS = `
+  ORDER BY c.urgencia DESC,
+           ST_Distance(c.origem, ponto.geo) ASC
+`;
+
+rotasCargas.get("/proximas", ...soMotorista, async (req, res) => {
+  const validacao = validarBuscaProximas(req.query);
+  if (!validacao.ok) {
+    res.status(400).json({ erros: validacao.erros });
+    return;
+  }
+  const { lat, lng, raio_km } = validacao.dados;
+
+  const motoristaId = await buscarMotoristaId(req.usuario!.id);
+  if (!motoristaId) {
+    responderSemPerfil(res, "motorista");
+    return;
+  }
+
+  // - "ponto" monta uma vez o local do motorista (lng, lat!) e é reaproveitado
+  //   no filtro e no cálculo da distância.
+  // - ST_DWithin(a, b, metros): com GEOGRAPHY a unidade é METRO, por isso raio_km * 1000.
+  //   Ele usa o índice GiST idx_chamados_carga_origem; ST_Distance < raio não usaria.
+  // - ST_Distance também volta em metros: / 1000 para km e ROUND com 1 casa.
+  //   ROUND(x, 1) só existe para NUMERIC, daí o ::numeric antes e o ::float8 depois.
+  // - Certificação: se a carga exige uma, o motorista precisa tê-la aprovada pelo admin
+  //   e dentro da validade (o índice idx_motorista_certificacoes_validade cobre essa busca).
+  //   EXISTS só pergunta "existe pelo menos uma linha?" e não duplica a carga como um JOIN faria.
+  const { rows } = await pool.query(
+    `WITH ponto AS (
+       SELECT ST_SetSRID(ST_MakePoint($1::float8, $2::float8), 4326)::geography AS geo
+     )
+     SELECT c.id, c.tipo_carga, e.razao_social AS empresa,
+            c.peso_kg::float8 AS peso_kg, c.valor_oferecido::float8 AS valor_oferecido,
+            c.urgencia,
+            ROUND((ST_Distance(c.origem, ponto.geo) / 1000)::numeric, 1)::float8 AS distancia_origem_km,
+            cert.nome AS certificacao_exigida,
+            json_build_object('lat', ST_Y(c.origem::geometry),  'lng', ST_X(c.origem::geometry))  AS origem,
+            json_build_object('lat', ST_Y(c.destino::geometry), 'lng', ST_X(c.destino::geometry)) AS destino,
+            c.expira_em
+       FROM chamados_carga c
+       CROSS JOIN ponto
+       JOIN empresas e           ON e.id = c.empresa_id
+       LEFT JOIN certificacoes cert ON cert.id = c.certificacao_requerida_id
+      WHERE c.status = 'aberto'
+        AND c.expira_em > now()
+        AND ST_DWithin(c.origem, ponto.geo, $3::float8 * 1000)
+        AND (c.certificacao_requerida_id IS NULL OR EXISTS (
+              SELECT 1 FROM motorista_certificacoes mc
+               WHERE mc.motorista_id = $4
+                 AND mc.certificacao_id = c.certificacao_requerida_id
+                 AND mc.validado_por_admin = TRUE
+                 AND mc.validade >= CURRENT_DATE))
+      ${ORDEM_PROXIMAS}`,
+    [lng, lat, raio_km, motoristaId],
   );
   res.json({ cargas: rows });
 });
