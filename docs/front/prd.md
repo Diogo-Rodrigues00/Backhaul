@@ -220,6 +220,8 @@ Toda rota nova só é consumida em produção depois de estar em `main` e docume
 
 ## 12. Questões abertas
 
+> **Resolvidas em 2026-10-20:** Pedro aceitou a recomendação do PO em Q1–Q7 (registro em `decisoes.md`).
+
 | # | Questão | Recomendação do PO |
 |---|---|---|
 | Q1 | Quais cidades entram na lista fixa e quem fornece as coordenadas? É dado de negócio; não foi inventado aqui | Membros sem código montam a lista (fonte IBGE) cobrindo **todas** as cidades usadas no seed de demo e nas cargas próximas do roteiro |
