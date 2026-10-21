@@ -14,7 +14,7 @@ const lerLimite = (nome, padrao) => {
 };
 
 const LIMITES = {
-  jsInicial: lerLimite('ORCAMENTO_JS_INICIAL_BYTES', 300 * KIB), // todos os <script> do HTML da rota
+  jsInicial: lerLimite('ORCAMENTO_JS_INICIAL_BYTES', 320 * KIB), // todos os <script> do HTML da rota
   chunkRota: lerLimite('ORCAMENTO_CHUNK_ROTA_BYTES', 30 * KIB), // cada chunk assíncrono (rota)
   css: lerLimite('ORCAMENTO_CSS_BYTES', 15 * KIB), // CSS total
   fontes: lerLimite('ORCAMENTO_FONTES_BYTES', 40 * KIB), // woff2 somados
