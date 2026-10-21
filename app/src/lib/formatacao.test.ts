@@ -1,5 +1,6 @@
 import {
   formatarData,
+  formatarHoraCompleta,
   formatarDataHora,
   formatarDistancia,
   formatarMoeda,
@@ -116,5 +117,21 @@ describe('formatarDataHora', () => {
   it('devolve o traço para valor ausente', () => {
     expect(formatarDataHora(null)).toBe(SEM_VALOR);
     expect(formatarDataHora('')).toBe(SEM_VALOR);
+  });
+});
+
+describe('formatarHoraCompleta', () => {
+  it('mostra HH:MM:SS no horário de Brasília', () => {
+    expect(formatarHoraCompleta('2027-05-01T17:32:08.000Z')).toBe('14:32:08');
+  });
+
+  it('completa com zero e vira o dia pelo fuso', () => {
+    expect(formatarHoraCompleta(new Date('2027-05-01T03:04:05.000Z'))).toBe('00:04:05');
+    expect(formatarHoraCompleta('2027-05-01T02:00:00.000Z')).toBe('23:00:00');
+  });
+
+  it('devolve o traço para valor ausente ou inválido', () => {
+    expect(formatarHoraCompleta(null)).toBe(SEM_VALOR);
+    expect(formatarHoraCompleta('hoje')).toBe(SEM_VALOR);
   });
 });

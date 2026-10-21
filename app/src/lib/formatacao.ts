@@ -141,3 +141,13 @@ export function formatarDataHora(valor: DataEntrada): string {
 export function formatarValidade(valor: DataEntrada): string {
   return formatarData(valor);
 }
+
+// "14:32:08", no fuso de São Paulo (UTC-3 fixo). Usado em "Última atualização às …" (CT-09).
+export function formatarHoraCompleta(valor: DataEntrada): string {
+  const instante = paraInstante(valor);
+  if (!instante) return SEM_VALOR;
+  const local = new Date(instante.getTime() + DESLOCAMENTO_SAO_PAULO_MS);
+  return [local.getUTCHours(), local.getUTCMinutes(), local.getUTCSeconds()]
+    .map(doisDigitos)
+    .join(':');
+}
