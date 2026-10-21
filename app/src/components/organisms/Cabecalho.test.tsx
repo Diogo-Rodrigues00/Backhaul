@@ -135,7 +135,7 @@ describe('AlternarTema no cabeçalho (com o TemaProvider de verdade)', () => {
       act(async () => fireEvent.press(screen.getByRole('button', { name: /Alternar tema/ })));
 
     expect(
-      screen.getByRole('button', { name: 'Alternar tema. Atual: automático (segue o sistema)' }),
+      screen.getByRole('button', { name: 'Alternar tema. Atual: auto (segue o sistema)' }),
     ).toBeOnTheScreen();
     await alternar();
     expect(screen.getByRole('button', { name: 'Alternar tema. Atual: claro' })).toBeOnTheScreen();
@@ -144,7 +144,7 @@ describe('AlternarTema no cabeçalho (com o TemaProvider de verdade)', () => {
     expect(gravar).toHaveBeenLastCalledWith('backhaul.tema', 'dark');
     await alternar();
     expect(
-      screen.getByRole('button', { name: 'Alternar tema. Atual: automático (segue o sistema)' }),
+      screen.getByRole('button', { name: 'Alternar tema. Atual: auto (segue o sistema)' }),
     ).toBeOnTheScreen();
   });
 });

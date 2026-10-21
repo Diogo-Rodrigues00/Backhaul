@@ -11,16 +11,18 @@ export interface PropsAlternarTema {
   aoAlternar: () => void;
 }
 
-// Textos do protótipo: o nome acessível diz o estado atual; o rótulo visível diz o tema.
+// O nome acessível diz o estado atual (protótipo); o rótulo visível é uma palavra só.
 const ATUAL: Record<PreferenciaTema, string> = {
-  sistema: 'automático (segue o sistema)',
+  sistema: 'auto (segue o sistema)',
   claro: 'claro',
   escuro: 'escuro',
 };
+// O texto visível precisa estar dentro do nome acessível (WCAG 2.5.3, regra label-content-name-mismatch
+// do axe, que compara palavras inteiras): "Auto", "Claro" e "Escuro" aparecem no nome como palavras.
 const TEXTO: Record<PreferenciaTema, string> = {
-  sistema: 'Tema auto',
-  claro: 'Tema claro',
-  escuro: 'Tema escuro',
+  sistema: 'Auto',
+  claro: 'Claro',
+  escuro: 'Escuro',
 };
 const ICONE: Record<PreferenciaTema, NomeIcone> = {
   sistema: 'circle',

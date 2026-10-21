@@ -9,7 +9,7 @@ afterEach(() => jest.restoreAllMocks());
 
 describe('AlternarTema', () => {
   it.each<[PreferenciaTema, string]>([
-    ['sistema', 'Alternar tema. Atual: automático (segue o sistema)'],
+    ['sistema', 'Alternar tema. Atual: auto (segue o sistema)'],
     ['claro', 'Alternar tema. Atual: claro'],
     ['escuro', 'Alternar tema. Atual: escuro'],
   ])('com %s o nome acessível diz o tema atual', async (preferencia, nome) => {
@@ -36,11 +36,24 @@ describe('AlternarTema', () => {
     // O Icone do Jest é o do iPhone, que não entende `var(--…)`; só o aviso do SVG, não o teste.
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     await renderizar(<AlternarTema preferencia="escuro" aoAlternar={() => {}} />);
-    expect(screen.getByText('Tema escuro')).toBeOnTheScreen();
+    expect(screen.getByText('Escuro')).toBeOnTheScreen();
+  });
+
+  it.each<[PreferenciaTema, string]>([
+    ['sistema', 'Auto'],
+    ['claro', 'Claro'],
+    ['escuro', 'Escuro'],
+  ])('o texto visível de %s está dentro do nome acessível (WCAG 2.5.3)', async (pref, visivel) => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    await renderizar(<AlternarTema preferencia={pref} aoAlternar={() => {}} />);
+    const nome = String(screen.getByRole('button').props.accessibilityLabel);
+    expect(nome.toLowerCase()).toContain(visivel.toLowerCase());
+    expect(screen.getByText(visivel)).toBeOnTheScreen();
   });
 
   it('no iPhone estreito sobra só o ícone', async () => {
     await renderizar(<AlternarTema preferencia="escuro" aoAlternar={() => {}} />);
-    expect(screen.queryByText('Tema escuro')).toBeNull();
+    expect(screen.queryByText('Escuro')).toBeNull();
   });
 });
