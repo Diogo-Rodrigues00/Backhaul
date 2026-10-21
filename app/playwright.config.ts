@@ -1,21 +1,35 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// E2E web (ADR 0012): roda no `dist/` de produção. Antes: `npm run export:ci`.
-const porta = Number(process.env.E2E_PORTA ?? 4173);
+// E2E web e axe (ADR 0012) contra o dist/ de produção + mock da API, sem backend real.
+// Pré-requisito: `npm run export:ci` (com EXPO_PUBLIC_API_URL=http://localhost:4010).
+const emCI = Boolean(process.env.CI);
 
 export default defineConfig({
-  testDir: 'e2e',
+  testDir: './e2e',
   testMatch: '**/*.spec.ts',
   fullyParallel: true,
-  reporter: [['list']],
+  forbidOnly: emCI,
+  retries: 0,
+  reporter: emCI ? [['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
-    baseURL: `http://localhost:${porta}`,
+    baseURL: 'http://localhost:4173',
     locale: 'pt-BR',
+    trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: `node scripts/servir-dist.mjs ${porta}`,
-    port: porta,
-    reuseExistingServer: false,
+    command: 'node scripts/servidores-ci.mjs',
+    url: 'http://localhost:4173',
+    reuseExistingServer: !emCI,
+    timeout: 60_000,
   },
+  projects: [
+    {
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
+    },
+    {
+      name: 'estreito',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 640 } },
+    },
+  ],
 });

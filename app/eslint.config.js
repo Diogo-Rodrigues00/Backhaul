@@ -36,7 +36,15 @@ const proibidas = [
 
 module.exports = defineConfig([
   expoConfig,
-  globalIgnores(['dist/*', '.expo/*', 'coverage/*', 'node_modules/*']),
+  globalIgnores([
+    'dist/*',
+    '.expo/*',
+    'coverage/*',
+    'node_modules/*',
+    'playwright-report/*',
+    '.lighthouseci/*',
+    'test-results/*',
+  ]),
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',

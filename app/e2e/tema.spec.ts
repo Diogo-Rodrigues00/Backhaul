@@ -5,6 +5,13 @@ import { expect, test, type Page } from '@playwright/test';
 const ESCURO = 'rgb(14, 18, 22)';
 const CLARO = 'rgb(237, 239, 242)';
 
+// Estes testes montam o próprio contexto e mudam a largura quando precisam: rodam uma vez só,
+// no projeto `desktop` do CI (o `estreito` fica para o reflow e o axe em 320 px).
+// eslint-disable-next-line no-empty-pattern -- o Playwright exige desestruturar o 1º argumento
+test.beforeEach(({}, info) => {
+  test.skip(info.project.name !== 'desktop', 'cobertura única, no projeto desktop');
+});
+
 const fundo = (page: Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
 test.describe('tema', () => {
