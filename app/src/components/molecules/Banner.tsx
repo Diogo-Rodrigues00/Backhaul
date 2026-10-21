@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
 import { Icone } from '@/components/atoms/Icone';
@@ -18,6 +18,10 @@ export interface PropsBanner {
   children?: string;
   /** Botão ou link opcional, no fim do banner. */
   acao?: ReactNode;
+  /** Elemento raiz: o `ResumoErros` leva o foco para cá. */
+  ref?: Ref<View>;
+  /** `-1` deixa o banner receber foco por código (sem entrar na ordem do Tab). */
+  tabIndex?: 0 | -1;
 }
 
 const ICONE: Record<VarianteBanner, NomeIcone> = {
@@ -47,7 +51,7 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
  * Banner (DS 5.2 e 7): ícone + título + texto (+ ação), borda de 2 px; o sinal nunca é só a cor.
  * `erro` é `role="alert"` (anuncia na hora); `info`, `ok` e `aviso` são `role="status"` (educado).
  */
-export function Banner({ variante, titulo, children, acao }: PropsBanner) {
+export function Banner({ variante, titulo, children, acao, ref, tabIndex }: PropsBanner) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
 
@@ -60,6 +64,8 @@ export function Banner({ variante, titulo, children, acao }: PropsBanner) {
 
   return (
     <View
+      ref={ref}
+      tabIndex={tabIndex}
       role={variante === 'erro' ? 'alert' : 'status'}
       style={[estilos.banner, { backgroundColor: cores.fundo, borderColor: cores.borda }]}
     >

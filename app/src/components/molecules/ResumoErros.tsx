@@ -1,0 +1,120 @@
+import { useEffect, type Ref } from 'react';
+import { Platform, Pressable, View, type TextStyle, type ViewStyle } from 'react-native';
+
+import { Botao } from '@/components/atoms/Botao';
+import { Texto } from '@/components/atoms/Texto';
+import { anunciar } from '@/lib/a11y';
+import type { TemaVisual } from '@/state/tema/montarTema';
+import { useEstilos } from '@/state/tema/useEstilos';
+
+import { Banner } from './Banner';
+
+/** Um campo com erro: `campo` é o nome no formulário (o mesmo de `setFocus`). */
+export interface ItemResumo {
+  campo: string;
+  mensagem: string;
+}
+
+export interface PropsResumoErros {
+  /** Campos com erro: viram links que levam o foco ao campo. */
+  itens?: readonly ItemResumo[];
+  /** Erros sem campo (409, "erro geral" da API, 500): texto simples. */
+  mensagens?: readonly string[];
+  /** Leva o foco ao campo (normalmente `setFocus` do react-hook-form). */
+  aoFocarCampo: (campo: string) => void;
+  /** Mostra o botão "Tentar de novo" (falha de rede ou 500). */
+  aoTentarDeNovo?: () => void | Promise<unknown>;
+  /** Reenviando: o botão fica "Tentando…" e ignora toques. */
+  tentando?: boolean;
+  /** Elemento do resumo: recebe o foco depois de um envio com erro. */
+  ref?: Ref<View>;
+}
+
+function criarEstilos({ space }: TemaVisual) {
+  return {
+    acoes: { gap: space[3], alignItems: 'flex-start' } satisfies ViewStyle,
+    lista: { gap: space[1] } satisfies ViewStyle,
+    item: { minHeight: space[6], justifyContent: 'center' } satisfies ViewStyle,
+    link: { textDecorationLine: 'underline' } satisfies TextStyle,
+  } as const;
+}
+
+/** "Corrija 3 campos para continuar." (DS 7). */
+export function tituloDoResumo(quantidade: number): string {
+  return `Corrija ${quantidade} ${quantidade === 1 ? 'campo' : 'campos'} para continuar.`;
+}
+
+/**
+ * Resumo de erros do formulário (ErrorSummary, DS 5.2 e 7): um `Banner` de erro com `role="alert"`
+ * e `tabIndex={-1}`, no topo do formulário. Depois do envio com erro o foco vem para cá (passe o
+ * `ref` para `moverFoco`); cada campo com erro é um link que foca o campo. Não aparece (devolve
+ * nada) se não houver itens nem mensagens. No iPhone, que não lê o `alert` sozinho, o texto é
+ * anunciado.
+ */
+export function ResumoErros({
+  itens = [],
+  mensagens = [],
+  aoFocarCampo,
+  aoTentarDeNovo,
+  tentando = false,
+  ref,
+}: PropsResumoErros) {
+  const estilos = useEstilos(criarEstilos);
+  const titulo = itens.length > 0 ? tituloDoResumo(itens.length) : undefined;
+  const textoSoltoUnico = !titulo && mensagens.length === 1 ? mensagens[0] : undefined;
+  const lido = [titulo, ...itens.map((i) => i.mensagem), ...mensagens].filter(Boolean).join(' ');
+
+  useEffect(() => {
+    // Na web o foco no `role="alert"` já faz o leitor de tela ler; no iPhone é preciso anunciar.
+    if (Platform.OS !== 'web' && lido !== '') anunciar(lido);
+  }, [lido]);
+
+  if (itens.length === 0 && mensagens.length === 0) return null;
+
+  const corpo =
+    itens.length > 0 || (mensagens.length > 1 && !textoSoltoUnico) ? (
+      <View role="list" style={estilos.lista}>
+        {itens.map((item) => (
+          <View key={item.campo} role="listitem" style={estilos.item}>
+            <Pressable role="link" onPress={() => aoFocarCampo(item.campo)}>
+              <Texto cor="erro" peso="bold" style={estilos.link}>
+                {item.mensagem}
+              </Texto>
+            </Pressable>
+          </View>
+        ))}
+        {mensagens.map((mensagem) => (
+          <View key={mensagem} role="listitem" style={estilos.item}>
+            <Texto>{mensagem}</Texto>
+          </View>
+        ))}
+      </View>
+    ) : null;
+
+  return (
+    <Banner
+      ref={ref}
+      tabIndex={-1}
+      variante="erro"
+      titulo={titulo}
+      acao={
+        <View style={estilos.acoes}>
+          {corpo}
+          {aoTentarDeNovo ? (
+            <Botao
+              variante="secundario"
+              icone="refresh"
+              carregando={tentando}
+              rotuloCarregando="Tentando…"
+              aoPressionar={aoTentarDeNovo}
+            >
+              Tentar de novo
+            </Botao>
+          ) : null}
+        </View>
+      }
+    >
+      {textoSoltoUnico}
+    </Banner>
+  );
+}
