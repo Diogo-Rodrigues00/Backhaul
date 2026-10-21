@@ -32,5 +32,7 @@ export async function renderizarComRota(ui: ReactElement, opcoes: Opcoes = {}) {
   const arvore: Record<string, () => ReactElement> = { index: tela };
   for (const rota of rotas) arvore[rota] = tela;
 
-  return renderRouter({ _layout: Layout, ...arvore }, { initialUrl: url });
+  return renderRouter({ _layout: Layout, ...arvore } as Parameters<typeof renderRouter>[0], {
+    initialUrl: url,
+  });
 }

@@ -14,6 +14,14 @@ describe('rotas da base', () => {
     expect(screen.getAllByRole('heading')).toHaveLength(1);
     // View não é elemento de acessibilidade para o RNTL, então getByRole não enxerga landmarks.
     expect(screen.container.queryAll((el) => el.props.role === 'main')).toHaveLength(1);
+    expect(screen.container.queryAll((el) => el.props.role === 'banner')).toHaveLength(1);
+    // Tela pública: cabeçalho simples, sem navegação.
+    expect(screen.container.queryAll((el) => el.props.role === 'navigation')).toHaveLength(0);
+    expect(
+      screen.getByText(
+        'Plataforma que conecta caminhoneiros disponíveis a cargas urgentes próximas.',
+      ),
+    ).toBeOnTheScreen();
   });
 
   it('o layout monta uma única região viva (anunciar() chega a ela sem mover o foco)', async () => {
@@ -35,5 +43,8 @@ describe('rotas da base', () => {
     expect(titulo.props['aria-level']).toBe(1);
     const link = screen.getByRole('link', { name: 'Voltar para o início' });
     expect(link.props.href).toBe('/');
+    expect(screen.container.queryAll((el) => el.props.role === 'main')).toHaveLength(1);
+    expect(screen.container.queryAll((el) => el.props.role === 'banner')).toHaveLength(1);
+    expect(screen.getAllByRole('heading')).toHaveLength(1);
   });
 });

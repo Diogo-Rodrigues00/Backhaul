@@ -1,6 +1,6 @@
 import { Link as LinkDoRouter, type Href } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, type TextStyle, type ViewStyle } from 'react-native';
+import { Platform, Pressable, type TextStyle, type ViewStyle } from 'react-native';
 
 import { Icone } from '@/components/atoms/Icone';
 import type { NomeIcone } from '@/components/atoms/icones';
@@ -70,6 +70,12 @@ export function AbaNavegacao({ href, rotulo, icone, atual, variante }: PropsAbaN
   const [sobre, setSobre] = useState(false);
   const corIcone = atual && naBarra ? brand.amber : colors.text.onInverse;
 
+  const estiloDaAba: ViewStyle = {
+    ...(naBarra ? estilos.barra : estilos.cabecalho),
+    ...(atual && (naBarra ? { borderTopColor: brand.amber } : { borderBottomColor: brand.amber })),
+    ...(!atual && !naBarra && sobre ? { borderBottomColor: colors.text.onInverseMuted } : null),
+  };
+
   const conteudo = (
     <>
       {/* Cabeçalho: o ícone some até 1240 px (protótipo), sobra o rótulo. Barra: sempre. */}
@@ -101,13 +107,7 @@ export function AbaNavegacao({ href, rotulo, icone, atual, variante }: PropsAbaN
         onHoverIn={() => setSobre(true)}
         onHoverOut={() => setSobre(false)}
         // Achatado: o `asChild` do Link só aceita objeto (um array de estilos gera aviso).
-        style={StyleSheet.flatten([
-          naBarra ? estilos.barra : estilos.cabecalho,
-          atual && {
-            [naBarra ? 'borderTopColor' : 'borderBottomColor']: brand.amber,
-          },
-          !atual && !naBarra && sobre && { borderBottomColor: colors.text.onInverseMuted },
-        ])}
+        style={estiloDaAba}
       >
         {conteudo}
       </Pressable>

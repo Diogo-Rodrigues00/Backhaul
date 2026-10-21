@@ -36,9 +36,9 @@ function criarEstilos({ space }: TemaVisual) {
 
 // Grudada na base da janela enquanto a página rola. No iPhone ela fica fora do ScrollView.
 // O tipo de `position` do React Native não prevê `sticky`; o react-native-web aceita.
-const GRUDADA = (Platform.OS === 'web'
-  ? { position: 'sticky', bottom: 0 }
-  : {}) as unknown as ViewStyle;
+function estiloGrudado(): ViewStyle {
+  return (Platform.OS === 'web' ? { position: 'sticky', bottom: 0 } : {}) as unknown as ViewStyle;
+}
 
 /**
  * Barra de abas (TabBar): navegação inferior de 60 px até 960 px de largura (celular e tablet).
@@ -51,7 +51,7 @@ export function BarraAbas({ itens }: PropsBarraAbas) {
   const pathname = usePathname();
 
   return (
-    <Responsivo bp="so-barra" style={GRUDADA}>
+    <Responsivo bp="so-barra" style={estiloGrudado()}>
       <AreaSegura
         lado="base"
         dataSet={{ anel: 'inverso' }}
