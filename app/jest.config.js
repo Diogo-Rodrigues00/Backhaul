@@ -21,5 +21,7 @@ module.exports = {
     ...demaisPadroes,
   ],
   testPathIgnorePatterns: ['/node_modules/', '/e2e/', '/dist/'],
+  // ADR 0012: no mínimo 80% das linhas em src/lib e src/api.
+  coverageThreshold: { global: { lines: 80 } },
   collectCoverageFrom: ['src/lib/**/*.{ts,tsx}', 'src/api/**/*.{ts,tsx}', '!**/__tests__/**'],
 };
