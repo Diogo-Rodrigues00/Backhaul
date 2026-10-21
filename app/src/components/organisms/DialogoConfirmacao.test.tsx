@@ -1,5 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react-native';
-import { createRef, useState } from 'react';
+import { createRef } from 'react';
 import { Text } from 'react-native';
 
 import { useMovimentoReduzido } from '@/hooks/useMovimentoReduzido';
@@ -52,7 +52,6 @@ describe('DialogoConfirmacao: semântica', () => {
     await renderizar(<DialogoConfirmacao {...props()} />);
     const caixa = comPapel('alertdialog');
     expect(caixa.props.accessibilityViewIsModal).toBe(true);
-    expect(caixa.props['aria-modal']).toBe(true);
 
     const titulo = screen.getByRole('heading', { name: 'Aceitar proposta' });
     expect(titulo.props['aria-level']).toBe(2);
@@ -162,7 +161,8 @@ describe('DialogoConfirmacao: erro', () => {
   it('mostra o erro em role="alert" e continua aberto', async () => {
     await renderizar(<DialogoConfirmacao {...props({ erro: 'Não foi possível aceitar.' })} />);
     expect(comPapel('alert')).toHaveTextContent('Não foi possível aceitar.');
-    comPapel('alertdialog');
+    const dentro = comPapel('alertdialog').queryAll((el) => el.props.role === 'alert');
+    expect(dentro).toHaveLength(1);
   });
 
   it('sem erro, não há alerta', async () => {
@@ -189,29 +189,20 @@ describe('DialogoConfirmacao: foco', () => {
     await renderizar(<DialogoConfirmacao {...props()} />);
     await fireEvent(elemento('Modal'), 'show');
     expect(mover).toHaveBeenCalledTimes(1);
+    const ref = mover.mock.calls[0]?.[0] as { current: { props: { accessible?: boolean } } };
+    // O foco vai ao invólucro do título (acessível), não a um botão.
+    expect(ref.current.props.accessible).toBe(true);
   });
 
-  it('ao fechar, devolve o foco ao elemento de refRetorno', async () => {
-    jest.useFakeTimers();
-    try {
-      const refRetorno = createRef<unknown>();
-      (refRetorno as { current: unknown }).current = {};
-      function Cena() {
-        const [aberto, setAberto] = useState(true);
-        return (
-          <>
-            <Text onPress={() => setAberto(false)}>fechar já</Text>
-            <DialogoConfirmacao {...props({ aberto, refRetorno })} />
-          </>
-        );
-      }
-      await renderizar(<Cena />);
-      mover.mockClear();
-      await fireEvent.press(screen.getByText('fechar já'));
-      jest.runAllTimers();
-      expect(mover).toHaveBeenCalledWith(refRetorno);
-    } finally {
-      jest.useRealTimers();
-    }
+  it('depois do desmonte do Modal (onDismiss), devolve o foco ao refRetorno', async () => {
+    const refRetorno = createRef<unknown>();
+    (refRetorno as { current: unknown }).current = {};
+    await renderizar(<DialogoConfirmacao {...props({ refRetorno })} />);
+    mover.mockClear();
+    // Ainda aberto/saindo: nada de devolver o foco antes de o Modal sumir.
+    expect(mover).not.toHaveBeenCalled();
+    await fireEvent(elemento('Modal'), 'dismiss');
+    expect(mover).toHaveBeenCalledTimes(1);
+    expect(mover).toHaveBeenCalledWith(refRetorno);
   });
 });

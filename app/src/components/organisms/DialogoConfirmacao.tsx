@@ -134,27 +134,25 @@ export function DialogoConfirmacao({
   const estavaAberto = useRef(false);
   const origemWeb = useRef<HTMLElement | null>(null);
 
-  // Guarda quem tinha o foco ao abrir e o devolve ao fechar. Roda antes de o `Modal` existir no DOM,
-  // então `activeElement` ainda é o botão que abriu.
+  // Guarda quem tinha o foco ao abrir. Roda antes de o `Modal` existir no DOM, então `activeElement`
+  // ainda é o botão que abriu. A devolução do foco fica em `aoDesmontar` (abaixo).
   useEffect(() => {
     if (aberto && !estavaAberto.current) {
-      estavaAberto.current = true;
       origemWeb.current =
         Platform.OS === 'web' ? (document.activeElement as HTMLElement | null) : null;
-      return;
     }
-    if (!aberto && estavaAberto.current) {
-      estavaAberto.current = false;
-      const origem = origemWeb.current;
-      origemWeb.current = null;
-      // Depois do desmonte do Modal, que também mexe no foco.
-      const tempo = setTimeout(() => {
-        if (refRetorno?.current) moverFoco(refRetorno);
-        else if (origem?.isConnected) origem.focus();
-      }, 0);
-      return () => clearTimeout(tempo);
-    }
-  }, [aberto, refRetorno]);
+    estavaAberto.current = aberto;
+  }, [aberto]);
+
+  // Devolve o foco a quem abriu. Tem de ser no `onDismiss` do `Modal`, que roda depois do desmonte:
+  // com `fade`, o `Modal` do react-native-web ainda segura o foco durante a saída e, ao desmontar,
+  // devolve-o ao elemento que estava ativo antes dele, o que sobrescreveria um `refRetorno`.
+  const aoDesmontar = useCallback(() => {
+    const origem = origemWeb.current;
+    origemWeb.current = null;
+    if (refRetorno?.current) moverFoco(refRetorno);
+    else if (origem?.isConnected) origem.focus();
+  }, [refRetorno]);
 
   const aoMostrar = useCallback(() => {
     if (Platform.OS === 'web') focarBotaoWeb(refCancelar);
@@ -166,12 +164,27 @@ export function DialogoConfirmacao({
     if (!carregando) aoFechar();
   }, [carregando, aoFechar]);
 
-  // O `Modal` do react-native-web põe `role="dialog"` na própria caixa; sem nome, o axe reprova.
-  // Os dois ids apontam para o mesmo título e a mesma frase.
+  // Web: o `Modal` do react-native-web põe `role="dialog"` na própria caixa, por fora do conteúdo. Essa
+  // caixa é o diálogo (nome, descrição e papel `alertdialog`); o conteúdo fica sem papel, senão o
+  // leitor de tela anunciaria dois diálogos aninhados. O papel é reposto por um observador porque o
+  // react-native-web o reescreve quando o diálogo fica ativo.
+  const refModal = useCallback((no: unknown) => {
+    if (Platform.OS !== 'web' || !no) return;
+    const caixa = no as HTMLElement;
+    const ajustar = () => {
+      if (caixa.getAttribute('role') === 'dialog') caixa.setAttribute('role', 'alertdialog');
+    };
+    ajustar();
+    const observador = new MutationObserver(ajustar);
+    observador.observe(caixa, { attributes: true, attributeFilter: ['role'] });
+    return () => observador.disconnect();
+  }, []);
   const nomeDoModal = {
     'aria-labelledby': idTitulo,
     'aria-describedby': idDescricao,
+    ref: refModal,
   } as ViewProps;
+  const web = Platform.OS === 'web';
 
   return (
     <Modal
@@ -180,25 +193,26 @@ export function DialogoConfirmacao({
       animationType={reduzido ? 'none' : 'fade'}
       onRequestClose={pedirFechamento}
       onShow={aoMostrar}
+      onDismiss={aoDesmontar}
       {...nomeDoModal}
     >
       <View style={estilos.veu}>
         <View style={estilos.camadaVeu} />
         <View
-          role="alertdialog"
-          aria-modal
+          role={web ? undefined : 'alertdialog'}
           accessibilityViewIsModal
-          aria-labelledby={idTitulo}
-          aria-describedby={idDescricao}
+          aria-labelledby={web ? undefined : idTitulo}
+          aria-describedby={web ? undefined : idDescricao}
           style={estilos.caixa}
         >
           <ScrollView
             style={estilos.rolagem}
             contentContainerStyle={estilos.corpo}
-            // Web: conteúdo longo rola dentro do diálogo e o teclado precisa alcançar a rolagem.
-            tabIndex={Platform.OS === 'web' ? 0 : undefined}
+            // Web: conteúdo longo rola dentro do diálogo; o teclado precisa alcançar a rolagem (axe) e
+            // ela ganha nome para o leitor de tela saber onde o foco caiu.
+            {...(web ? { role: 'region', 'aria-labelledby': idTitulo, tabIndex: 0 } : null)}
           >
-            <View ref={refTitulo} accessible={Platform.OS !== 'web'}>
+            <View ref={refTitulo} accessible={!web}>
               <Titulo nivel={2} nativeID={idTitulo}>
                 {titulo}
               </Titulo>
