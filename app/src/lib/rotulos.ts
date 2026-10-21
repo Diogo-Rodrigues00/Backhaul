@@ -2,8 +2,8 @@
 // Valores de enum vêm da API em minúsculo, sem acento (CLAUDE.md da raiz).
 
 export type Urgencia = 'normal' | 'urgente' | 'critico';
-export type StatusCarga = 'aberto' | 'fechado' | 'cancelado' | 'expirado';
-export type StatusDisponibilidade = 'aberto' | 'fechado' | 'cancelado' | 'expirado';
+export type StatusCarga = 'aberto' | 'em_negociacao' | 'fechado' | 'cancelado' | 'expirado';
+export type StatusDisponibilidade = 'aberto' | 'em_negociacao' | 'fechado' | 'cancelado' | 'expirado';
 export type StatusProposta = 'pendente' | 'aceita' | 'recusada' | 'expirada';
 export type TipoProposta = 'aceite' | 'contraproposta';
 export type StatusEntrega = 'aceito' | 'em_transito' | 'entregue' | 'cancelado';
@@ -22,6 +22,7 @@ const ROTULOS_URGENCIA: Record<Urgencia, string> = {
 
 const ROTULOS_STATUS_CARGA: Record<StatusCarga, string> = {
   aberto: 'Aberta',
+  em_negociacao: 'Em negociação',
   fechado: 'Fechada',
   cancelado: 'Cancelada',
   expirado: 'Expirada',
@@ -29,6 +30,7 @@ const ROTULOS_STATUS_CARGA: Record<StatusCarga, string> = {
 
 const ROTULOS_STATUS_DISPONIBILIDADE: Record<StatusDisponibilidade, string> = {
   aberto: 'Aberta',
+  em_negociacao: 'Em negociação',
   fechado: 'Fechada',
   cancelado: 'Cancelada',
   expirado: 'Expirada',

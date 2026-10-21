@@ -43,10 +43,30 @@ describe('rótulos de status', () => {
     expect(rotuloStatusEntrega('cancelado')).toBe('Cancelado');
   });
 
-  it('devolve traço para valor fora do enum, sem vazar o valor cru', () => {
-    // Simula um valor novo que a API passe a devolver.
-    expect(rotuloStatusCarga('novo' as 'aberto')).toBe('—');
-    expect(rotuloUrgencia('extra' as 'normal')).toBe('—');
+  it('rotula em_negociacao em carga e disponibilidade', () => {
+    expect(rotuloStatusCarga('em_negociacao')).toBe('Em negociação');
+    expect(rotuloStatusDisponibilidade('em_negociacao')).toBe('Em negociação');
+  });
+});
+
+describe('valor fora do enum (API nova) mostra traço, sem vazar o valor cru', () => {
+  // Cada função recebe um valor que o contrato ainda não conhece.
+  const desconhecido = 'novo_valor' as never;
+
+  it.each([
+    ['rotuloUrgencia', () => rotuloUrgencia(desconhecido)],
+    ['rotuloStatusCarga', () => rotuloStatusCarga(desconhecido)],
+    ['rotuloStatusDisponibilidade', () => rotuloStatusDisponibilidade(desconhecido)],
+    ['rotuloStatusProposta', () => rotuloStatusProposta(desconhecido)],
+    ['rotuloTipoProposta', () => rotuloTipoProposta(desconhecido)],
+    ['rotuloStatusEntrega', () => rotuloStatusEntrega(desconhecido)],
+    ['rotuloPagamento', () => rotuloPagamento(desconhecido)],
+  ])('%s devolve o traço', (_nome, chamar) => {
+    expect(chamar()).toBe('—');
+  });
+
+  it('proximoPassoFrete devolve null para status desconhecido', () => {
+    expect(proximoPassoFrete(desconhecido)).toBeNull();
   });
 });
 
