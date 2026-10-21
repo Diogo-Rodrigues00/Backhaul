@@ -20,6 +20,8 @@ export interface PropsEtiqueta {
 }
 
 // Ícone padrão por variante (DS 5.1: "sempre ícone + texto"): sinal que não depende de cor.
+// O protótipo usa `flask` na etiqueta "Exige MOPP" (variante info): o designer deve confirmar se o
+// padrão da variante é `info`; quem precisa do `flask` passa `icone="flask"`.
 const ICONE_PADRAO: Record<VarianteEtiqueta, NomeIcone> = {
   neutro: 'clock',
   ok: 'check',

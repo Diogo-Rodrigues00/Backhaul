@@ -42,6 +42,11 @@ describe('HTML gerado na web', () => {
     expect(html(<Titulo nivel={3}>Rota</Titulo>)).toMatch(/^<h3[^>]*>Rota<\/h3>$/);
   });
 
+  it('só o h1 leva data-titulo="1" (o CSS global o reduz para 30/36 até 720 px)', () => {
+    expect(html(<Titulo nivel={1}>Entrar</Titulo>)).toContain('data-titulo="1"');
+    expect(html(<Titulo nivel={2}>Dados</Titulo>)).not.toContain('data-titulo');
+  });
+
   it('Titulo com tabIndex={-1} pode receber foco por código', () => {
     expect(
       html(
