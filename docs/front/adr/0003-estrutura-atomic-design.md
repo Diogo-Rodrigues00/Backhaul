@@ -44,3 +44,5 @@ Decisão fechada: atomic design (atoms, molecules, organisms, templates; telas n
 ## Consequências
 - Revisor reprova import que sobe de camada ou `src/api` dentro de componente.
 - Componentes são testáveis só com props (sem MSW); telas são testadas com MSW.
+
+**Adendo (card 008):** um atom pode importar outros atoms, `src/hooks` e `src/state/tema` (além de `src/theme` e `src/lib`); continua proibido importar `@/api`, molecules, organisms e templates.
