@@ -42,9 +42,9 @@ Lista completa em `cards/README.md`.
 
 | Estado | Cards |
 |---|---|
-| Em execução | 002 (#17), 003 (#18), 004 (#19), 005 (#20), 006 (#21) |
-| Aguardando | 007 (espera LISTA de cidades) · 008 (após 005 e 006) |
-| Mergeados | 001 (PR #51, issue #16 fechada) |
+| Em revisão/merge | 005 Tema (PR #57: CI verde, sem conflito; espera decisão do Pedro sobre o limite de JS) |
+| Aguardando | 008 Atoms (espera 005) · 007 Cidades (espera LISTA de cidades do grupo) · demais cards seguem as ondas do `cards/README.md` |
+| Mergeados | 001 (#51), 006 (#53), 004 (#59), 003 (#58), 002 (#54); issues #16–#19 e #21 fechadas |
 
 Issues: cards 001–035 = issues #16–#50 (label `front` + `mvp`/`se der`; ordem do `cards/README.md`). Ex.: 001 = #16, 002 = #17, 013 = #28, 024 = #42, 025 = #43.
 
@@ -55,6 +55,19 @@ Protótipo aprovado: https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP
 - 005/010: `ScrollViewStyleReset` põe `body{overflow:hidden}`: telas altas precisam de `ScrollView` (zoom 200%). Foco visível e alvo ≥ 24 px a cargo dos atoms (008).
 - RNTL 14: `renderRouter` é assíncrono; `getByRole` não acha landmarks em `View`.
 - `<title>` por rota via `<Head>` (não no `+html.tsx`), por causa do title vazio do SDK 57.
+
+## Decisão pendente do Pedro: limite de JS inicial
+Hoje (front): 297.078 bytes. Com o tema (005): 300.296 bytes (+3.218). O CI aceita até 307.200 (300 KiB). Os cards 013 e 014 (sessão + TanStack Query no layout raiz) somam ~13 KB e estouram 300 KiB.
+- (a) recomendado: 320 KiB (327.680 bytes) para a infraestrutura comum; telas nunca aumentam o JS inicial.
+- (b) 300 KiB com exceção só para o tema; 013/014 exigem reestruturar o carregamento.
+- (c) regra estrita: o tema volta para tirar os 3 KB.
+Ao decidir: ajustar `ORCAMENTO_JS_INICIAL_BYTES` (scripts/orcamento-bundle.mjs), ADR 0011 (adendo) e `decisoes.md`.
+
+## Ações do Pedro (produção)
+- `vercel deploy --prod --yes` na raiz, com `front` atualizado (hoje `backhaul-front.vercel.app` serve build de teste com mock).
+- Settings > Deployment Protection na Vercel: desligar "Vercel Authentication".
+- Pedir ao Diogo: domínio da Vercel no `CORS_ORIGIN`; app da Vercel autorizado no repositório (preview por PR).
+- Proteção da branch `front`: comando no PR #54. Cuidado: o CI só roda com mudança em `app/**`; PR só de docs fica sem checks.
 
 ## Bloqueios
 - Skill `react-native-skills` não existe com esse nome; usando `vercel-react-native-skills` (confirmado pelo Pedro).
