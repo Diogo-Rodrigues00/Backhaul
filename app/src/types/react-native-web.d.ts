@@ -8,6 +8,8 @@ declare module 'react-native' {
     dataSet?: Readonly<Record<string, string>>;
     /** Destino do `<a>` quando a View é um link (o expo-router preenche). */
     href?: string;
+    /** `-1` deixa o elemento receber foco por código (ex.: `<main>` do "Pular para o conteúdo"). */
+    tabIndex?: 0 | -1;
   }
 
   interface TextProps {
