@@ -19,7 +19,9 @@ export function useAnunciarNovidades<T>(
   useEffect(() => {
     const ultimo = anterior.current;
     anterior.current = { valor: dados };
-    if (ultimo === null || Object.is(ultimo.valor, dados)) return;
+    // Anterior undefined/null = query ainda carregando: a chegada dos dados não é novidade.
+    if (ultimo === null || ultimo.valor === undefined || ultimo.valor === null) return;
+    if (Object.is(ultimo.valor, dados)) return;
 
     const texto = descreverAtual.current(ultimo.valor, dados);
     if (texto) anunciar(texto);

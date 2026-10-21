@@ -38,6 +38,37 @@ describe('useAnunciarNovidades', () => {
     expect(anunciarMock).toHaveBeenCalledWith('1 nova proposta');
   });
 
+  it('não anuncia quando o valor anterior era undefined ou null (carregando)', async () => {
+    const { rerender } = await renderHook(
+      ({ dados }: { dados: Proposta | null | undefined }) =>
+        useAnunciarNovidades<Proposta | null | undefined>(dados, (anterior, atual) =>
+          anterior && atual ? descreverNovas(anterior, atual) : null,
+        ),
+      { initialProps: { dados: undefined } },
+    );
+
+    await rerender({ dados: null });
+    await rerender({ dados: [{ id: 'a' }, { id: 'b' }] });
+
+    expect(anunciarMock).not.toHaveBeenCalled();
+  });
+
+  it('anuncia a partir do segundo valor real (depois de carregar)', async () => {
+    const { rerender } = await renderHook(
+      ({ dados }: { dados: Proposta | null | undefined }) =>
+        useAnunciarNovidades<Proposta | null | undefined>(dados, (anterior, atual) =>
+          anterior && atual ? descreverNovas(anterior, atual) : null,
+        ),
+      { initialProps: { dados: undefined } },
+    );
+
+    await rerender({ dados: [{ id: 'a' }] });
+    await rerender({ dados: [{ id: 'a' }, { id: 'b' }] });
+
+    expect(anunciarMock).toHaveBeenCalledTimes(1);
+    expect(anunciarMock).toHaveBeenCalledWith('1 nova proposta');
+  });
+
   it('não anuncia quando a referência dos dados não muda', async () => {
     const dados: Proposta = [{ id: 'a' }];
     const { rerender } = await renderHook(
