@@ -8,10 +8,10 @@ export const CHAVE_TOKEN = 'backhaul.token';
 // Grava o token de mock no localStorage antes de qualquer script da página rodar.
 export async function entrarComoPerfil(page: Page, perfil: Perfil | null): Promise<void> {
   if (perfil === null) return;
-  await page.addInitScript(
-    ([chave, valor]) => window.localStorage.setItem(chave, valor),
-    [CHAVE_TOKEN, `mock-${perfil}`] as const,
-  );
+  await page.addInitScript(([chave, valor]) => window.localStorage.setItem(chave, valor), [
+    CHAVE_TOKEN,
+    `mock-${perfil}`,
+  ] as const);
 }
 
 export const test = base;
