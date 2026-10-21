@@ -16,6 +16,15 @@ describe('rotas da base', () => {
     expect(screen.container.queryAll((el) => el.props.role === 'main')).toHaveLength(1);
   });
 
+  it('o layout monta uma única região viva (anunciar() chega a ela sem mover o foco)', async () => {
+    await renderRouter({ _layout: LayoutRaiz, index: Inicio }, { initialUrl: '/' });
+
+    const regioes = screen.container.queryAll(
+      (el) => el.props.role === 'status' && el.props['aria-live'] === 'polite',
+    );
+    expect(regioes).toHaveLength(1);
+  });
+
   it('+not-found tem heading e link para /', async () => {
     await renderRouter(
       { _layout: LayoutRaiz, index: Inicio, '+not-found': NaoEncontrada },

@@ -103,8 +103,9 @@ export function gerarCssGlobal(): string {
     `html,body{background-color:var(--bg-page);color:var(--text-primary);font-family:${fonts.fallbackWeb}}`,
     'body{overflow:auto}',
     '#root{min-height:100%;height:auto}',
-    // Foco visível global (DS seção 8: 3 px, afastado 2 px). Componentes podem refinar (ex.: ringOnInverse).
-    ':focus-visible{outline:3px solid var(--focus-ring);outline-offset:2px}',
+    // Foco visível global (DS seção 5: 3 px, afastado 3 px; campos refinam para 2 px). Só aparece
+    // no teclado (:focus-visible), nunca no clique. Componentes refinam (ex.: ringOnInverse).
+    ':focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}',
     '[data-num]{font-variant-numeric:tabular-nums}',
     regrasDePontoDeQuebra(),
     `@media (max-width:${breakpoints.tabbar}px){html{scroll-padding-bottom:${ALTURA_BARRA_INFERIOR + FOLGA_FOCO}px}}`,
