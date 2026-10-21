@@ -8,7 +8,7 @@ import { colors } from '@/theme/tokens';
 const cssGlobal = gerarCssGlobal();
 
 // Roda antes da primeira pintura: aplica o tema salvo em <html data-theme> (sem valor = sistema).
-// Mantém a chave igual à de src/state/tema/armazenamentoTema.ts.
+// Mantém a chave igual à de CHAVES.tema em src/lib/armazenamentoComum.ts.
 const scriptDoTema =
   "try{var t=localStorage.getItem('backhaul.tema');" +
   "if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}";

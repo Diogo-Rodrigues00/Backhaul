@@ -6,6 +6,7 @@ import { BarraDeStatus } from '@/state/tema/BarraDeStatus';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { TemaProvider } from '@/state/tema/TemaProvider';
 import { useEstilos } from '@/state/tema/useEstilos';
+import { useTema } from '@/state/tema/useTema';
 import { useFontesCarregadas } from '@/theme/fontes';
 
 // Providers de sessão e dados entram nos cards seguintes.
@@ -24,9 +25,10 @@ function criarEstilos({ colors }: TemaVisual) {
 
 function Estrutura() {
   const estilos = useEstilos(criarEstilos);
-  // iPhone: espera a Barlow antes de mostrar o conteúdo (evita trocar de fonte à vista).
-  // Web: sempre pronto; a fonte vem do CSS global.
+  // iPhone: espera a Barlow e a preferência de tema salva antes de mostrar o conteúdo (sem piscar
+  // fonte ou tema errados). Web: sempre pronto; fonte e tema vêm do CSS e do script do +html.tsx.
   const fontesProntas = useFontesCarregadas();
+  const { pronto } = useTema();
 
   return (
     <View style={estilos.raiz}>
@@ -39,7 +41,7 @@ function Estrutura() {
         />
       </Head>
       <BarraDeStatus />
-      {fontesProntas ? <Slot /> : null}
+      {fontesProntas && pronto ? <Slot /> : null}
     </View>
   );
 }
