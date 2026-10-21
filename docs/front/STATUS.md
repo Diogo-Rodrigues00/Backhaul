@@ -42,7 +42,7 @@ Lista completa em `cards/README.md`.
 
 | Estado | Cards |
 |---|---|
-| Em execução | 001 |
+| Em execução | 001: PR #51 aberto; revisor-qa APROVADO COM RESSALVAS; executor corrigindo prettier e @types/node; auditor a11y/perf rodando. Falta: decisão do Pedro sobre orçamento JS (290 KB vs 220 KB do ADR 0011; recomendado aceitar ~300 KB), merge e fechar #16 na mão |
 | Prontos para começar (após 001) | 002, 003, 004, 006 · 005 e 008 dependem só da cadeia · 007 espera LISTA |
 | Mergeados | — |
 
