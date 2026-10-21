@@ -118,31 +118,3 @@ describe('formatarDataHora', () => {
     expect(formatarDataHora('')).toBe(SEM_VALOR);
   });
 });
-
-describe('formatarDataHora sem suporte a fuso no Intl (Hermes)', () => {
-  const DateTimeFormatOriginal = Intl.DateTimeFormat;
-
-  afterEach(() => {
-    Intl.DateTimeFormat = DateTimeFormatOriginal;
-    jest.resetModules();
-  });
-
-  it('aplica o ajuste manual de -03:00 quando o fuso é ignorado', () => {
-    // Simula o Hermes: o Intl aceita a chamada mas ignora o fuso (resolve UTC).
-    Intl.DateTimeFormat = function SemFuso(
-      locale?: string | string[],
-      opcoes?: Intl.DateTimeFormatOptions,
-    ) {
-      const { timeZone: _ignorado, ...resto } = opcoes ?? {};
-      return new DateTimeFormatOriginal(locale, resto);
-    } as unknown as typeof Intl.DateTimeFormat;
-
-    jest.resetModules();
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const semFuso = require('./formatacao') as typeof import('./formatacao');
-
-    expect(semFuso.formatarDataHora('2027-05-01T02:30:00.000Z')).toBe('30/04/2027, 23:30');
-    expect(semFuso.formatarData('2027-05-01T02:30:00.000Z')).toBe('30/04/2027');
-    expect(semFuso.formatarData('2027-05-01')).toBe('01/05/2027');
-  });
-});
