@@ -1,12 +1,11 @@
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
-import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 
-import { TemaProvider } from '@/state/tema/TemaProvider';
+import { BarraDeStatus } from '@/state/tema/BarraDeStatus';
 import type { TemaVisual } from '@/state/tema/montarTema';
+import { TemaProvider } from '@/state/tema/TemaProvider';
 import { useEstilos } from '@/state/tema/useEstilos';
-import { useTema } from '@/state/tema/useTema';
 import { useFontesCarregadas } from '@/theme/fontes';
 
 // Providers de sessão e dados entram nos cards seguintes.
@@ -25,7 +24,6 @@ function criarEstilos({ colors }: TemaVisual) {
 
 function Estrutura() {
   const estilos = useEstilos(criarEstilos);
-  const { esquema } = useTema();
   // iPhone: espera a Barlow antes de mostrar o conteúdo (evita trocar de fonte à vista).
   // Web: sempre pronto; a fonte vem do CSS global.
   const fontesProntas = useFontesCarregadas();
@@ -40,8 +38,7 @@ function Estrutura() {
           content="Plataforma que conecta caminhoneiros disponíveis a cargas urgentes próximas."
         />
       </Head>
-      {/* A barra de status segue o tema escolhido no app, não só o do aparelho. */}
-      <StatusBar style={esquema === 'dark' ? 'light' : 'dark'} />
+      <BarraDeStatus />
       {fontesProntas ? <Slot /> : null}
     </View>
   );
