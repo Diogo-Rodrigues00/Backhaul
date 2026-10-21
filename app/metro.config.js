@@ -4,8 +4,8 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-// MSW 3: o export "./browser" é `"node": null`, e o Metro resolve também o bundle de
-// renderização estática (Node). Apontamos para o arquivo direto; o worker só roda no navegador
+// MSW 2.x: o export "./browser" é `"node": null` (e `"react-native": null`), e o Metro resolve
+// também o bundle de renderização estática (Node). Apontamos para o arquivo direto; o worker só roda no navegador
 // e só é importado no preview (EXPO_PUBLIC_API_MOCK=msw, ver src/lib/mocks.web.ts).
 const resolverOriginal = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {

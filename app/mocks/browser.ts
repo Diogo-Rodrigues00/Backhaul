@@ -18,7 +18,7 @@ export async function iniciarMocks(): Promise<void> {
   });
 
   const worker = setupWorker(...handlers);
-  await worker.start({ onUnhandledFrame: 'bypass' });
+  await worker.start({ onUnhandledRequest: 'bypass' });
 
   // Verificação visível no preview: aparece na aba Rede como interceptada. Sai quando o
   // cliente de API (card 004) fizer a primeira chamada real a /saude.
