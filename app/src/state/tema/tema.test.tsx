@@ -2,18 +2,18 @@ import { act, renderHook } from '@testing-library/react-native';
 import { type PropsWithChildren } from 'react';
 import { Platform, useColorScheme } from 'react-native';
 
+import { apagar, CHAVES, gravar, ler } from '@/lib/armazenamento';
 import { colors, space } from '@/theme/tokens';
 
-import { apagar, CHAVE_TEMA, gravar, ler } from './armazenamentoTema';
 import type { TemaVisual } from './montarTema';
 import { TemaProvider } from './TemaProvider';
 import { useEstilos } from './useEstilos';
 import { useTema } from './useTema';
 
-jest.mock('./armazenamentoTema', () => {
+jest.mock('@/lib/armazenamento', () => {
   const memoria = new Map<string, string>();
   return {
-    CHAVE_TEMA: 'backhaul.tema',
+    CHAVES: { tema: 'backhaul.tema' },
     ler: jest.fn(async (chave: string) => memoria.get(chave) ?? null),
     gravar: jest.fn(async (chave: string, valor: string) => void memoria.set(chave, valor)),
     apagar: jest.fn(async (chave: string) => void memoria.delete(chave)),
@@ -43,7 +43,7 @@ const html = { dataset: {} as Record<string, string | undefined> };
 beforeEach(async () => {
   jest.replaceProperty(Platform, 'OS', 'ios');
   sistema.mockReturnValue('light');
-  await apagar(CHAVE_TEMA);
+  await apagar(CHAVES.tema);
   jest.clearAllMocks();
   html.dataset = {};
   Object.defineProperty(globalThis, 'document', {
@@ -94,23 +94,48 @@ describe('useTema (iPhone)', () => {
   it('grava light/dark e apaga a chave em "Sistema"', async () => {
     const { result } = await montar(() => useTema());
     await act(async () => result.current.alternar());
-    expect(gravar).toHaveBeenLastCalledWith(CHAVE_TEMA, 'light');
+    expect(gravar).toHaveBeenLastCalledWith(CHAVES.tema, 'light');
     await act(async () => result.current.alternar());
-    expect(gravar).toHaveBeenLastCalledWith(CHAVE_TEMA, 'dark');
+    expect(gravar).toHaveBeenLastCalledWith(CHAVES.tema, 'dark');
     await act(async () => result.current.alternar());
-    expect(apagar).toHaveBeenLastCalledWith(CHAVE_TEMA);
+    expect(apagar).toHaveBeenLastCalledWith(CHAVES.tema);
   });
 
   it('restaura a escolha salva ao reabrir', async () => {
-    await gravar(CHAVE_TEMA, 'dark');
+    await gravar(CHAVES.tema, 'dark');
     const { result } = await montar(() => useTema());
-    expect(ler).toHaveBeenCalledWith(CHAVE_TEMA);
+    expect(ler).toHaveBeenCalledWith(CHAVES.tema);
     expect(result.current.preferencia).toBe('escuro');
     expect(result.current.esquema).toBe('dark');
   });
 
+  it('pronto só depois de ler a preferência salva (o layout segura o Slot até lá)', async () => {
+    let liberar: (valor: string | null) => void = () => {};
+    jest.mocked(ler).mockImplementationOnce(() => new Promise((resolve) => (liberar = resolve)));
+    const { result } = await renderHook(() => useTema(), { wrapper: Envolver });
+    expect(result.current.pronto).toBe(false);
+
+    await act(async () => liberar('dark'));
+    expect(result.current.pronto).toBe(true);
+    expect(result.current.preferencia).toBe('escuro');
+  });
+
+  it('corrida: se o usuário alterna antes da leitura terminar, a leitura não sobrescreve', async () => {
+    let liberar: (valor: string | null) => void = () => {};
+    jest.mocked(ler).mockImplementationOnce(() => new Promise((resolve) => (liberar = resolve)));
+    const { result } = await renderHook(() => useTema(), { wrapper: Envolver });
+
+    await act(async () => result.current.alternar()); // sistema -> claro, antes de ler
+    await act(async () => liberar('dark')); // chega tarde: valor antigo
+
+    expect(result.current.preferencia).toBe('claro');
+    expect(result.current.esquema).toBe('light');
+    expect(result.current.pronto).toBe(true);
+    expect(gravar).toHaveBeenLastCalledWith(CHAVES.tema, 'light');
+  });
+
   it('valor salvo inválido vira Sistema', async () => {
-    await gravar(CHAVE_TEMA, 'roxo');
+    await gravar(CHAVES.tema, 'roxo');
     const { result } = await montar(() => useTema());
     expect(result.current.preferencia).toBe('sistema');
   });
@@ -151,8 +176,23 @@ describe('useTema (web)', () => {
     expect(document.documentElement.dataset.theme).toBeUndefined();
   });
 
+  it('corrida na web: leitura tardia não desfaz o data-theme da escolha do usuário', async () => {
+    let liberar: (valor: string | null) => void = () => {};
+    jest.mocked(ler).mockImplementationOnce(() => new Promise((resolve) => (liberar = resolve)));
+    const { result } = await renderHook(() => useTema(), { wrapper: Envolver });
+    await act(async () => result.current.alternar()); // claro
+    await act(async () => liberar('dark'));
+    expect(document.documentElement.dataset.theme).toBe('light');
+  });
+
+  it('pronto é sempre true na web (o HTML estático renderiza o conteúdo)', async () => {
+    jest.mocked(ler).mockImplementationOnce(() => new Promise(() => {}));
+    const { result } = await renderHook(() => useTema(), { wrapper: Envolver });
+    expect(result.current.pronto).toBe(true);
+  });
+
   it('aplica a escolha salva em <html data-theme> ao montar', async () => {
-    await gravar(CHAVE_TEMA, 'light');
+    await gravar(CHAVES.tema, 'light');
     await montar(() => useTema());
     expect(document.documentElement.dataset.theme).toBe('light');
   });
