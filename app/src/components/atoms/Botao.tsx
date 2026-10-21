@@ -15,7 +15,7 @@ import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
 import type { Papeis } from '@/theme/variaveis';
 
-import { GiroCarregando } from './Carregando';
+import { GiroCarregando } from './GiroCarregando';
 import { Icone } from './Icone';
 import type { NomeIcone } from './icones';
 import { Texto } from './Texto';
