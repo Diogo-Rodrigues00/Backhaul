@@ -65,6 +65,20 @@ describe('TemplateFormulario', () => {
     expect(textos).toEqual(['Voltar', 'Cadastro de motorista']);
   });
 
+  it('<title> é "{título} · Backhaul" e a meta description é a descrição', async () => {
+    await renderizarComRota(tela(), { rotas: ['outra'] });
+    const filhos = ([] as { type: string; props: Record<string, unknown> }[]).concat(
+      mockHead.filhos as never,
+    );
+    expect(filhos.find((el) => el.type === 'title')?.props.children).toBe(
+      'Cadastro de motorista · Backhaul',
+    );
+    expect(filhos.find((el) => el.type === 'meta')?.props).toMatchObject({
+      name: 'description',
+      content: 'Seus dados e os do veículo. Leva cerca de um minuto.',
+    });
+  });
+
   it('sem "voltar" não há link', async () => {
     await renderizarComRota(tela({ voltar: undefined }), { rotas: ['outra'] });
     expect(screen.queryByRole('link', { name: 'Voltar' })).not.toBeOnTheScreen();
@@ -72,7 +86,7 @@ describe('TemplateFormulario', () => {
 
   it('a página é estreita: até 760 px', async () => {
     await renderizarComRota(tela(), { rotas: ['outra'] });
-    const miolo = screen.getByRole('heading').parent?.parent?.parent;
+    const miolo = screen.getByRole('heading').parent?.parent;
     expect(StyleSheet.flatten(miolo?.props.style).maxWidth).toBe(760);
   });
 });

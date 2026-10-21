@@ -89,10 +89,14 @@ export function CampoSelecao({
   return (
     <CampoRotulado rotulo={rotulo} opcional={opcional} ajuda={ajuda} erro={erro} id={id}>
       {(a11y) => {
+        // O <select> da web não conhece accessibilityLabel/Hint (o React reclamaria do atributo): lá
+        // valem os aria-*. No iPhone o seletor nativo só lê accessibilityLabel/Hint.
+        const { accessibilityLabel, accessibilityHint, ...ariaWeb } = a11y;
+        const propsA11y = web ? ariaWeb : { accessibilityLabel, accessibilityHint };
         const seletor = (
           <Picker
             ref={ref as never}
-            {...a11y}
+            {...propsA11y}
             enabled={!desabilitado}
             selectedValue={valor}
             onValueChange={(novo) => aoMudar(String(novo))}

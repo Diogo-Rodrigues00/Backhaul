@@ -25,15 +25,10 @@ export interface PropsTemplateTela {
   acoes?: ReactNode;
   /** Itens da barra inferior. Presente = usuário logado; ausente = telas públicas, sem barra. */
   abas?: readonly ItemNavegacao[];
-  /** Acima do título, dentro do `<main>` (ex.: o link "Voltar" dos formulários). */
-  antesDoTitulo?: ReactNode;
-  /** Página estreita (até 760 px), para formulários (FormPageTemplate). Padrão: 1120 px. */
-  estreita?: boolean;
   children?: ReactNode;
 }
 
 const LARGURA_MAXIMA = 1120;
-const LARGURA_ESTREITA = 760;
 
 function criarEstilos({ colors, space }: TemaVisual) {
   return {
@@ -49,7 +44,6 @@ function criarEstilos({ colors, space }: TemaVisual) {
       paddingHorizontal: space[6],
       gap: space[6],
     } satisfies ViewStyle,
-    estreita: { maxWidth: LARGURA_ESTREITA } satisfies ViewStyle,
     cabecalhoDaPagina: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -75,8 +69,6 @@ export function TemplateTela({
   cabecalho,
   acoes,
   abas,
-  antesDoTitulo,
-  estreita = false,
   children,
 }: PropsTemplateTela) {
   const estilos = useEstilos(criarEstilos);
@@ -92,8 +84,7 @@ export function TemplateTela({
       <CorpoDaTela barra={abas ? <BarraAbas itens={abas} /> : null}>
         {cabecalho}
         <View role="main" nativeID={ID_CONTEUDO} tabIndex={-1} style={estilos.principal}>
-          <View style={[estilos.miolo, estreita && estilos.estreita]}>
-            {antesDoTitulo}
+          <View style={estilos.miolo}>
             <View style={estilos.cabecalhoDaPagina}>
               <View style={estilos.titulos}>
                 <Titulo nivel={1} ref={refTitulo} tabIndex={-1}>

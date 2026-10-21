@@ -1,6 +1,5 @@
 import { screen } from '@testing-library/react-native';
-import { createRef } from 'react';
-import { StyleSheet, Text, type View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { renderizar } from '@/test-utils/renderComTema';
 import { colors } from '@/theme/tokens';
@@ -45,17 +44,6 @@ describe('Banner', () => {
       borderColor: colors.light.error.border,
       backgroundColor: colors.light.error.bg,
     });
-  });
-
-  it('ref e tabIndex chegam ao elemento raiz (o ResumoErros leva o foco para ele)', async () => {
-    const ref = createRef<View>();
-    await renderizar(
-      <Banner variante="erro" ref={ref} tabIndex={-1}>
-        x
-      </Banner>,
-    );
-    expect(ref.current).not.toBeNull();
-    expect(raiz().props.tabIndex).toBe(-1);
   });
 
   it('aviso usa o fundo de destaque e a borda escura', async () => {

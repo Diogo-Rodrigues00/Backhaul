@@ -4,7 +4,8 @@ import { Platform, Pressable, View, type TextStyle, type ViewStyle } from 'react
 import { Icone } from '@/components/atoms/Icone';
 import { SeloUrgencia } from '@/components/atoms/SeloUrgencia';
 import { Texto } from '@/components/atoms/Texto';
-import { moverFoco, propsDeCampo } from '@/lib/a11y';
+import { moverFoco } from '@/lib/a11y';
+import { propsDeCampo } from '@/lib/a11yCampo';
 import type { Urgencia } from '@/lib/rotulos';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';

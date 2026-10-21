@@ -14,7 +14,7 @@ import {
 
 import { Icone } from '@/components/atoms/Icone';
 import { Texto } from '@/components/atoms/Texto';
-import { propsDeCampo, type PropsCampo } from '@/lib/a11y';
+import { propsDeCampo, type PropsCampo } from '@/lib/a11yCampo';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';

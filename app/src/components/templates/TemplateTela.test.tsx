@@ -1,6 +1,6 @@
 import { act, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import { StyleSheet, Text } from 'react-native';
+import { Text } from 'react-native';
 
 import { Cabecalho } from '@/components/organisms/Cabecalho';
 import { moverFoco } from '@/lib/a11y';
@@ -86,24 +86,6 @@ describe('TemplateTela: estrutura', () => {
   it('mostra as ações à direita do título', async () => {
     await renderizarComRota(tela('Minhas cargas', { acoes: <Text>Publicar carga</Text> }));
     expect(screen.getByText('Publicar carga')).toBeOnTheScreen();
-  });
-
-  it('antesDoTitulo aparece antes do h1, dentro do main', async () => {
-    await renderizarComRota(tela('Minhas cargas', { antesDoTitulo: <Text>Voltar</Text> }));
-    const textos = screen.getAllByText(/Voltar|Minhas cargas/).map((t) => t.props.children);
-    expect(textos).toEqual(['Voltar', 'Minhas cargas']);
-  });
-
-  it('a página tem até 1120 px; com estreita, até 760 px', async () => {
-    // O miolo é o primeiro filho do <main>; o `h1` está dentro dele.
-    const larguraMaxima = () => {
-      const miolo = screen.getByRole('heading').parent?.parent?.parent;
-      return StyleSheet.flatten(miolo?.props.style).maxWidth;
-    };
-    await renderizarComRota(tela());
-    expect(larguraMaxima()).toBe(1120);
-    await renderizarComRota(tela('Minhas cargas', { estreita: true }));
-    expect(larguraMaxima()).toBe(760);
   });
 
   it('telas públicas (sem abas) não têm barra inferior nem navegação', async () => {
