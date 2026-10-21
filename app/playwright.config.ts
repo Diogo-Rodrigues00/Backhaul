@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // E2E web (ADR 0012): roda no `dist/` de produção. Antes: `npm run export:ci`.
-const porta = 4173;
+const porta = Number(process.env.E2E_PORTA ?? 4173);
 
 export default defineConfig({
   testDir: 'e2e',
@@ -16,6 +16,6 @@ export default defineConfig({
   webServer: {
     command: `node scripts/servir-dist.mjs ${porta}`,
     port: porta,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
   },
 });
