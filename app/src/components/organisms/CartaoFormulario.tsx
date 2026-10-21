@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Platform, View, type ViewStyle } from 'react-native';
 
+import { useEnvioUnico } from '@/components/molecules/formulario';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
@@ -15,10 +16,10 @@ export interface PropsCartaoFormulario {
   /** Botões do rodapé, alinhados à direita (o principal por último). */
   acoes: ReactNode;
   /**
-   * Chamado quando o navegador tenta enviar o formulário (Enter num campo, na web). O envio padrão
-   * do navegador, que recarregaria a página, é sempre cancelado.
+   * Chamado quando o navegador tenta enviar o formulário (Enter num campo de texto, na web), no máximo
+   * um por vez. O envio padrão do navegador, que recarregaria a página, é sempre cancelado.
    */
-  aoEnviar?: () => void;
+  aoEnviar?: () => void | Promise<unknown>;
 }
 
 export interface PropsCelulaFormulario {
@@ -82,22 +83,33 @@ export function CartaoFormulario({
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
   const raiz = useRef<View>(null);
-  const aoEnviarAtual = useRef(aoEnviar);
-  useEffect(() => {
-    aoEnviarAtual.current = aoEnviar;
-  }, [aoEnviar]);
+  // Um envio de cada vez: Enter repetido enquanto o anterior não terminou não envia de novo.
+  const enviarUnico = useEnvioUnico(() => aoEnviar?.());
 
-  // `<form>` com um campo só envia sozinho no Enter e recarregaria a página: cancela e repassa.
+  // Na web o botão é um Pressable (sem type=submit), então o <form> só envia sozinho com um campo; e
+  // aí recarregaria a página. Aqui o Enter num campo de texto envia (com qualquer número de campos) e
+  // o envio padrão do navegador é sempre cancelado.
   useEffect(() => {
     const no = raiz.current as unknown as HTMLFormElement | null;
     if (Platform.OS !== 'web' || !no?.addEventListener) return;
     const aoSubmeter = (evento: Event) => {
       evento.preventDefault();
-      aoEnviarAtual.current?.();
+      void enviarUnico();
+    };
+    const aoTeclar = (evento: KeyboardEvent) => {
+      const alvo = evento.target as HTMLElement | null;
+      if (evento.key !== 'Enter' || evento.isComposing || evento.defaultPrevented) return;
+      if (alvo?.tagName !== 'INPUT') return;
+      evento.preventDefault();
+      void enviarUnico();
     };
     no.addEventListener('submit', aoSubmeter);
-    return () => no.removeEventListener('submit', aoSubmeter);
-  }, []);
+    no.addEventListener('keydown', aoTeclar);
+    return () => {
+      no.removeEventListener('submit', aoSubmeter);
+      no.removeEventListener('keydown', aoTeclar);
+    };
+  }, [enviarUnico]);
 
   return (
     <View
