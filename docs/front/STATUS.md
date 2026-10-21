@@ -42,9 +42,9 @@ Lista completa em `cards/README.md`.
 
 | Estado | Cards |
 |---|---|
-| Em execução | 001: PR #51 aberto; revisor-qa APROVADO COM RESSALVAS; executor corrigindo prettier e @types/node; auditor a11y/perf rodando. Falta: decisão do Pedro sobre orçamento JS (290 KB vs 220 KB do ADR 0011; recomendado aceitar ~300 KB), merge e fechar #16 na mão |
-| Prontos para começar (após 001) | 002, 003, 004, 006 · 005 e 008 dependem só da cadeia · 007 espera LISTA |
-| Mergeados | — |
+| Em execução | 002 (#17), 003 (#18), 004 (#19), 005 (#20), 006 (#21) |
+| Aguardando | 007 (espera LISTA de cidades) · 008 (após 005 e 006) |
+| Mergeados | 001 (PR #51, issue #16 fechada) |
 
 Issues: cards 001–035 = issues #16–#50 (label `front` + `mvp`/`se der`; ordem do `cards/README.md`). Ex.: 001 = #16, 002 = #17, 013 = #28, 024 = #42, 025 = #43.
 
