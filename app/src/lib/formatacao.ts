@@ -106,7 +106,7 @@ export function formatarMoeda(valor: NumeroEntrada): string {
   const numero = paraNumero(valor);
   if (numero === null) return SEM_VALOR;
   // O Intl põe um espaço não separável depois de "R$"; o texto de D-PO-12 usa espaço comum.
-  return formatadorMoeda.format(numero).replace(/ /g, ' ');
+  return formatadorMoeda.format(numero).replace(/\u00a0/g, ' ');
 }
 
 export function formatarDistancia(km: NumeroEntrada): string {
