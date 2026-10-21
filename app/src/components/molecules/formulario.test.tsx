@@ -124,9 +124,17 @@ describe('itensDeErros', () => {
         senha: { type: 'validate', message: 'Use pelo menos 8 caracteres.' },
       } as never),
     ).toEqual([
-      { campo: 'email', mensagem: 'Informe um e-mail válido.' },
-      { campo: 'senha', mensagem: 'Use pelo menos 8 caracteres.' },
+      { campo: 'email', mensagem: 'Informe um e-mail válido.', rotulo: undefined },
+      { campo: 'senha', mensagem: 'Use pelo menos 8 caracteres.', rotulo: undefined },
     ]);
+  });
+
+  it('inclui o rótulo de cada campo quando a tela informa', () => {
+    expect(
+      itensDeErros({ cpf: { type: 'validate', message: 'Informe 11 dígitos.' } } as never, {
+        cpf: 'CPF',
+      }),
+    ).toEqual([{ campo: 'cpf', mensagem: 'Informe 11 dígitos.', rotulo: 'CPF' }]);
   });
 });
 
@@ -153,6 +161,7 @@ function FormularioDeTeste({
     setFocus,
     aoTentarDeNovo: () => submeter(),
     tentando: formState.isSubmitting,
+    rotulos: { email: 'E-mail', senha: 'Senha', cpf: 'CPF' },
   });
 
   const submeter = useEnvioUnico(async () => {
@@ -281,7 +290,8 @@ describe('formulário com react-hook-form', () => {
     // Cada campo com o seu erro, ligado por aria-describedby, e o mesmo texto no link do resumo.
     expect(screen.getByLabelText('E-mail').props['aria-invalid']).toBe(true);
     expect(screen.getByLabelText('Senha').props['aria-invalid']).toBe(true);
-    expect(screen.getAllByText('Preencha este campo.')).toHaveLength(6);
+    expect(screen.getAllByText('Preencha este campo.')).toHaveLength(3);
+    expect(screen.getByRole('link', { name: 'E-mail: Preencha este campo.' })).toBeOnTheScreen();
     // O foco vai ao resumo (o Banner de erro), não ao primeiro campo.
     await waitFor(() => expect(moverFocoMock).toHaveBeenCalledTimes(1));
     expect(moverFocoMock.mock.calls[0]?.[0].current).not.toBeNull();
@@ -308,9 +318,8 @@ describe('formulário com react-hook-form', () => {
     elementos.cpf!.focus = focarCpf;
     await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
 
-    const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(3);
-    await fireEvent.press(links[2]!);
+    expect(screen.getAllByRole('link')).toHaveLength(3);
+    await fireEvent.press(screen.getByRole('link', { name: 'CPF: Preencha este campo.' }));
 
     // O setFocus do react-hook-form foca num setTimeout.
     await waitFor(() => expect(focarCpf).toHaveBeenCalledTimes(1));

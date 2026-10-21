@@ -56,6 +56,20 @@ describe('ResumoErros', () => {
     expect(screen.getByRole('link', { name: 'Informe 11 dígitos.' })).toBeOnTheScreen();
   });
 
+  it('com rótulo, o link diz o campo: "E-mail: Preencha este campo."', async () => {
+    await renderizar(
+      <ResumoErros
+        itens={[
+          { campo: 'email', rotulo: 'E-mail', mensagem: 'Preencha este campo.' },
+          { campo: 'cpf', rotulo: 'CPF', mensagem: 'Preencha este campo.' },
+        ]}
+        aoFocarCampo={() => {}}
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'E-mail: Preencha este campo.' })).toBeOnTheScreen();
+    expect(screen.getByRole('link', { name: 'CPF: Preencha este campo.' })).toBeOnTheScreen();
+  });
+
   it('com um campo só, o título fica no singular', async () => {
     expect(tituloDoResumo(1)).toBe('Corrija 1 campo para continuar.');
     expect(tituloDoResumo(2)).toBe('Corrija 2 campos para continuar.');

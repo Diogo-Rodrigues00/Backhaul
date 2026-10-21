@@ -40,6 +40,7 @@ function criarEstilos({ colors, space }: TemaVisual) {
       paddingHorizontal: space[6],
       gap: space[6],
     } satisfies ViewStyle,
+    voltar: { alignSelf: 'flex-start' } satisfies ViewStyle,
     titulos: { gap: space[1] } satisfies ViewStyle,
   } as const;
 }
@@ -72,13 +73,15 @@ export function TemplateFormulario({
         <View role="main" nativeID={ID_CONTEUDO} tabIndex={-1} style={estilos.principal}>
           <View style={estilos.miolo}>
             {voltar ? (
-              <Link
-                href={voltar.href}
-                variante="botao"
-                aparencia={{ variante: 'texto', icone: 'arrow-left' }}
-              >
-                {voltar.rotulo}
-              </Link>
+              <View style={estilos.voltar}>
+                <Link
+                  href={voltar.href}
+                  variante="botao"
+                  aparencia={{ variante: 'texto', icone: 'arrow-left' }}
+                >
+                  {voltar.rotulo}
+                </Link>
+              </View>
             ) : null}
             <View style={estilos.titulos}>
               <Titulo nivel={1} ref={refTitulo} tabIndex={-1}>

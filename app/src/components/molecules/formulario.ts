@@ -66,10 +66,15 @@ export function aplicarErroApi<Form extends FieldValues, CampoApi extends string
 }
 
 /** Erros do react-hook-form (`formState.errors`) como itens do resumo, na ordem dos campos. */
-export function itensDeErros(erros: FieldErrors): ItemResumo[] {
+export function itensDeErros(
+  erros: FieldErrors,
+  rotulos: Readonly<Record<string, string>> = {},
+): ItemResumo[] {
   return Object.entries(erros).flatMap(([campo, erro]) => {
     const mensagem = erro?.message;
-    return typeof mensagem === 'string' && mensagem !== '' ? [{ campo, mensagem }] : [];
+    return typeof mensagem === 'string' && mensagem !== ''
+      ? [{ campo, mensagem, rotulo: rotulos[campo] }]
+      : [];
   });
 }
 
@@ -80,6 +85,8 @@ export interface OpcoesResumo<Form extends FieldValues> {
   aoTentarDeNovo?: () => void | Promise<unknown>;
   /** Reenviando agora (`formState.isSubmitting`). */
   tentando?: boolean;
+  /** Rótulo de cada campo (`{ email: "E-mail" }`): vai no link do resumo, para os links não serem todos iguais. */
+  rotulos?: Readonly<Record<string, string>>;
 }
 
 export interface ControleResumo<Form extends FieldValues> {
@@ -104,6 +111,7 @@ export function useResumoErros<Form extends FieldValues>({
   setFocus,
   aoTentarDeNovo,
   tentando = false,
+  rotulos,
 }: OpcoesResumo<Form>): ControleResumo<Form> {
   const ref = useRef<View>(null);
   const [itens, setItens] = useState<ItemResumo[]>([]);
@@ -123,11 +131,11 @@ export function useResumoErros<Form extends FieldValues>({
   const definirResumo = useCallback((novas: string[]) => setMensagens(novas), []);
   const aoInvalidar = useCallback(
     (erros: FieldErrors<Form>) => {
-      setItens(itensDeErros(erros));
+      setItens(itensDeErros(erros, rotulos));
       setMensagens([]);
       focarResumo();
     },
-    [focarResumo],
+    [focarResumo, rotulos],
   );
 
   return {

@@ -13,6 +13,8 @@ import { useTema } from '@/state/tema/useTema';
 export interface ItemResumo {
   campo: string;
   mensagem: string;
+  /** Nome do campo ao leitor ("E-mail"): o link fica "E-mail: Preencha este campo.", distinguível dos demais. */
+  rotulo?: string;
 }
 
 export interface PropsResumoErros {
@@ -75,7 +77,13 @@ export function ResumoErros({
   const { colors } = useTema();
   const titulo = itens.length > 0 ? tituloDoResumo(itens.length) : undefined;
   const textoSoltoUnico = !titulo && mensagens.length === 1 ? mensagens[0] : undefined;
-  const lido = [titulo, ...itens.map((i) => i.mensagem), ...mensagens].filter(Boolean).join(' ');
+  const lido = [
+    titulo,
+    ...itens.map((i) => (i.rotulo ? `${i.rotulo}: ${i.mensagem}` : i.mensagem)),
+    ...mensagens,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   useEffect(() => {
     // Na web o foco no `role="alert"` já faz o leitor de tela ler; no iPhone é preciso anunciar.
@@ -91,7 +99,7 @@ export function ResumoErros({
           <View key={item.campo} role="listitem" style={estilos.item}>
             <Pressable role="link" onPress={() => aoFocarCampo(item.campo)}>
               <Texto cor="erro" peso="bold" style={estilos.link}>
-                {item.mensagem}
+                {item.rotulo ? `${item.rotulo}: ${item.mensagem}` : item.mensagem}
               </Texto>
             </Pressable>
           </View>
