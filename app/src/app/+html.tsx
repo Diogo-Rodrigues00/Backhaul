@@ -1,6 +1,20 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
 
+import { gerarCssGlobal } from '@/theme/css';
+import { colors } from '@/theme/tokens';
+
+// Gerado uma vez no build: variáveis dos dois temas, @font-face, pontos de quebra (ADR 0008).
+const cssGlobal = gerarCssGlobal();
+
+// Roda antes da primeira pintura: aplica o tema salvo em <html data-theme> (sem valor = sistema).
+// Mantém a chave igual à de CHAVES.tema em src/lib/armazenamentoComum.ts.
+const scriptDoTema =
+  "try{var t=localStorage.getItem('backhaul.tema');" +
+  "if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}";
+
+const FONTES_PRELOAD = ['/fontes/barlow-latin-500.woff2', '/fontes/barlow-latin-700.woff2'];
+
 // Raiz do HTML estático (só web, roda em Node no build): sem window/document aqui.
 export default function Raiz({ children }: PropsWithChildren) {
   return (
@@ -11,8 +25,16 @@ export default function Raiz({ children }: PropsWithChildren) {
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         {/* <title> e meta description entram pelo <Head> do _layout (SDK 57): um <title> aqui duplicaria a tag. */}
         {/* PWA (ADR 0014). theme-color: bg.inverse do design system (claro e escuro). */}
-        <meta name="theme-color" content="#14181D" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#0A0D10" media="(prefers-color-scheme: dark)" />
+        <meta
+          name="theme-color"
+          content={colors.light.bg.inverse}
+          media="(prefers-color-scheme: light)"
+        />
+        <meta
+          name="theme-color"
+          content={colors.dark.bg.inverse}
+          media="(prefers-color-scheme: dark)"
+        />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="apple-touch-icon" href="/icones/apple-touch-icon-180.png" />
@@ -20,7 +42,20 @@ export default function Raiz({ children }: PropsWithChildren) {
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Backhaul" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <script dangerouslySetInnerHTML={{ __html: scriptDoTema }} />
+        {FONTES_PRELOAD.map((href) => (
+          <link
+            key={href}
+            rel="preload"
+            href={href}
+            as="font"
+            type="font/woff2"
+            crossOrigin="anonymous"
+          />
+        ))}
         <ScrollViewStyleReset />
+        {/* Depois do ScrollViewStyleReset: o body volta a rolar (telas altas, zoom 200%). */}
+        <style id="tema-global" dangerouslySetInnerHTML={{ __html: cssGlobal }} />
       </head>
       <body>{children}</body>
     </html>

@@ -13,6 +13,7 @@ export default defineConfig({
   reporter: emCI ? [['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL: 'http://localhost:4173',
+    locale: 'pt-BR',
     trace: 'retain-on-failure',
   },
   webServer: {
