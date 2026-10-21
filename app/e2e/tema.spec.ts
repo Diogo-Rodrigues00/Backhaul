@@ -158,6 +158,9 @@ test.describe('responsivo sem JavaScript e rolagem', () => {
   test('tela alta rola em 320 px de largura e 100 px de altura (zoom 200%)', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 100 });
     await page.goto('/');
+    // Espera a hidratação: antes dela o conteúdo pode ainda não estar medido (CI é mais lento).
+    await expect(page.getByRole('heading', { name: 'Backhaul', level: 1 })).toBeVisible();
+    await page.waitForLoadState('networkidle');
     const antes = await page.evaluate(() => ({
       alto: document.scrollingElement!.scrollHeight,
       janela: window.innerHeight,
