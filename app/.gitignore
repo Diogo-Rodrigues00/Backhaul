@@ -48,6 +48,3 @@ yarn-error.*
 
 # build alternativo de teste
 dist-*/
-
-.vercel
-.env*
