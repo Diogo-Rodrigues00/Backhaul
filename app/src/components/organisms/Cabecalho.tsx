@@ -40,6 +40,10 @@ export type PropsCabecalho =
     };
 
 const LARGURA_MAXIMA = 1120;
+// Logado, a linha do cabeçalho tem logo + até 4 destinos com ícone + nome + tema + Sair: em 1120 px
+// o nome do usuário passava por cima do último destino do motorista (achado do card 013).
+const LARGURA_MAXIMA_LOGADO = 1280;
+const LARGURA_NOME = 160;
 const ALTURA_MINIMA = 68;
 
 function criarEstilos({ space }: TemaVisual) {
@@ -55,9 +59,22 @@ function criarEstilos({ space }: TemaVisual) {
       paddingVertical: space[2],
       paddingHorizontal: space[4],
     } satisfies ViewStyle,
-    navegacao: { flex: 1 } satisfies ViewStyle,
-    lista: { flexDirection: 'row', alignItems: 'center', gap: space[1] } satisfies ViewStyle,
-    usuario: { alignItems: 'flex-end', marginLeft: 'auto' } satisfies ViewStyle,
+    dentroLogado: { maxWidth: LARGURA_MAXIMA_LOGADO } satisfies ViewStyle,
+    // `minWidth: 0` + quebra: se faltar espaço, os destinos vão para a linha de baixo em vez de
+    // passarem por cima do nome.
+    navegacao: { flex: 1, minWidth: 0 } satisfies ViewStyle,
+    lista: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: space[1],
+    } satisfies ViewStyle,
+    usuario: {
+      alignItems: 'flex-end',
+      marginLeft: 'auto',
+      maxWidth: LARGURA_NOME,
+      flexShrink: 0,
+    } satisfies ViewStyle,
     direita: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -90,7 +107,7 @@ export function Cabecalho(props: PropsCabecalho) {
       style={{ backgroundColor: colors.bg.inverse }}
     >
       <PularParaConteudo />
-      <View style={estilos.dentro}>
+      <View style={[estilos.dentro, props.variante === 'completo' && estilos.dentroLogado]}>
         <Logo sobreInverso />
         {props.variante === 'completo' ? (
           <>
@@ -115,7 +132,7 @@ export function Cabecalho(props: PropsCabecalho) {
             <Responsivo bp="sem-largo" style={estilos.usuario}>
               {/* Nome vazio = sessão ainda sendo restaurada (HTML estático): só o perfil aparece. */}
               {props.usuario.nome !== '' ? (
-                <Texto nivel="sm" peso="bold" cor="sobreInverso">
+                <Texto nivel="sm" peso="bold" cor="sobreInverso" numberOfLines={1}>
                   {props.usuario.nome}
                 </Texto>
               ) : null}

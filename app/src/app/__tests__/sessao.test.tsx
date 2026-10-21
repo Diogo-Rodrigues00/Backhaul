@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { router, Slot, useGlobalSearchParams, usePathname } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import { http, HttpResponse } from 'msw';
-import { useState, type ComponentType } from 'react';
+import { useState, type ReactElement } from 'react';
 import { Platform, Text } from 'react-native';
 
 import { useMinhasCargas } from '@/api/cargas';
@@ -94,7 +94,7 @@ function MinhasCargasComDados() {
 }
 
 interface Opcoes {
-  telaDaEmpresa?: ComponentType;
+  telaDaEmpresa?: () => ReactElement;
 }
 
 async function abrir(url: string, { telaDaEmpresa = MinhasCargas }: Opcoes = {}) {
