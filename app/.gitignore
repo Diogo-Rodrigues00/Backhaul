@@ -42,3 +42,12 @@ yarn-error.*
 
 # macOS
 .DS_Store
+
+# Vercel (vínculo local com o projeto)
+.vercel/
+
+# build alternativo de teste
+dist-*/
+
+.vercel
+.env*
