@@ -89,6 +89,10 @@ describe('gerarCssGlobal', () => {
     expect(css).toContain('@media (prefers-reduced-motion:reduce)');
   });
 
+  it('foco visível global usa o token focus.ring', () => {
+    expect(css).toContain(':focus-visible{outline:3px solid var(--focus-ring);outline-offset:2px}');
+  });
+
   it('pinta fundo e texto desde o HTML estático e deixa o body rolar', () => {
     expect(css).toContain('html,body{background-color:var(--bg-page);color:var(--text-primary)');
     expect(css).toContain('body{overflow:auto}');

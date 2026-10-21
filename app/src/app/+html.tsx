@@ -23,7 +23,8 @@ export default function Raiz({ children }: PropsWithChildren) {
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        {/* Cor da barra do navegador = cor do cabeçalho de cada tema (bg.inverse). */}
+        {/* <title> e meta description entram pelo <Head> do _layout (SDK 57): um <title> aqui duplicaria a tag. */}
+        {/* PWA (ADR 0014). theme-color: bg.inverse do design system (claro e escuro). */}
         <meta
           name="theme-color"
           content={colors.light.bg.inverse}
@@ -34,7 +35,13 @@ export default function Raiz({ children }: PropsWithChildren) {
           content={colors.dark.bg.inverse}
           media="(prefers-color-scheme: dark)"
         />
-        {/* <title> e meta description entram pelo <Head> do _layout (SDK 57): um <title> aqui duplicaria a tag. */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="/icones/apple-touch-icon-180.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="Backhaul" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <script dangerouslySetInnerHTML={{ __html: scriptDoTema }} />
         {FONTES_PRELOAD.map((href) => (
           <link

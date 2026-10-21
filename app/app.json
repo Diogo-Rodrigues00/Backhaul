@@ -28,6 +28,7 @@
       [
         "expo-router",
         {
+          "sitemap": false,
           "asyncRoutes": {
             "web": "production",
             "default": false
