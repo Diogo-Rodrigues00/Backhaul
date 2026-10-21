@@ -2,7 +2,7 @@ import { act, screen } from '@testing-library/react-native';
 import { AccessibilityInfo, Platform } from 'react-native';
 
 import { anunciar } from '@/lib/a11y';
-import { ouvirAnuncios } from '@/lib/a11yComum';
+import { ouvirAnuncios } from '@/lib/anuncios';
 
 import { RegiaoViva } from './RegiaoViva';
 import { renderizar } from '@/test-utils/renderComTema';

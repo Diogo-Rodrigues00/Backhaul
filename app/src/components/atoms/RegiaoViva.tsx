@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Platform, Text, View, type ViewProps } from 'react-native';
 
-// Direto do módulo comum: é o mesmo emissor que `anunciar` (web e iPhone) usa, e o `_layout` não
-// precisa levar o resto de `a11y` no JS inicial.
-import { ouvirAnuncios } from '@/lib/a11yComum';
+// Direto do emissor: é o mesmo que `anunciar` (web e iPhone) usa, e o `_layout` não precisa levar o
+// resto de `a11y` no JS inicial (ADR 0011).
+import { ouvirAnuncios } from '@/lib/anuncios';
 
 import { estiloOculto } from './oculto';
 
