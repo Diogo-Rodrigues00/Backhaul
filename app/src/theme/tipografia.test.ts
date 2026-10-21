@@ -30,6 +30,18 @@ describe('fonte()', () => {
     expect(fonte('lg')).toEqual({ fontFamily: 'Barlow_700Bold', fontSize: 19, lineHeight: 24 });
   });
 
+  it('peso troca só o peso do nível, nas duas plataformas', () => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+    expect(fonte('base', 'bold')).toMatchObject({ fontWeight: '700', fontSize: '1.0625rem' });
+    expect(fonte('xl', 'regular')).toMatchObject({ fontWeight: '500' });
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    expect(fonte('base', 'bold')).toEqual({
+      fontFamily: 'Barlow_700Bold',
+      fontSize: 17,
+      lineHeight: 26,
+    });
+  });
+
   it('cobre todos os níveis do DS', () => {
     jest.replaceProperty(Platform, 'OS', 'ios');
     for (const nivel of Object.keys(type) as (keyof typeof type)[]) {

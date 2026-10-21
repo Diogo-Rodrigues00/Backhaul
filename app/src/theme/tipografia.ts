@@ -3,6 +3,7 @@ import { Platform, type TextStyle } from 'react-native';
 import { fonts, type } from './tokens';
 
 export type NivelFonte = keyof typeof type;
+export type PesoFonte = (typeof type)[NivelFonte]['weight'];
 
 /** Dynamic Type no iPhone cresce até 2x (DS 3.3). Passe ao `Text` do atom `Texto`. */
 export const maxFontSizeMultiplier = 2;
@@ -18,12 +19,14 @@ function rem(px: number): string {
 }
 
 /**
- * Estilo de texto pronto de um nível do DS, por plataforma.
+ * Estilo de texto pronto de um nível do DS, por plataforma. `peso` troca o peso do nível
+ * (ex.: rótulo de botão em 'bold' no tamanho 'base').
  * Web: família com fallback, peso numérico e tamanhos em `rem`.
  * iPhone: família da Barlow carregada pelo `useFonts` e tamanhos em pontos.
  */
-export function fonte(nivel: NivelFonte): TextStyle {
-  const { size, line, weight } = type[nivel];
+export function fonte(nivel: NivelFonte, peso?: PesoFonte): TextStyle {
+  const { size, line, weight: pesoDoNivel } = type[nivel];
+  const weight = peso ?? pesoDoNivel;
   if (Platform.OS === 'web') {
     // O react-native-web repassa strings como "1.0625rem" ao CSS; o tipo do RN só prevê número.
     return {

@@ -90,7 +90,7 @@ describe('gerarCssGlobal', () => {
   });
 
   it('foco visível global usa o token focus.ring', () => {
-    expect(css).toContain(':focus-visible{outline:3px solid var(--focus-ring);outline-offset:2px}');
+    expect(css).toContain(':focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}');
   });
 
   it('pinta fundo e texto desde o HTML estático e deixa o body rolar', () => {
