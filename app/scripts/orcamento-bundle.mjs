@@ -1,23 +1,24 @@
 // Orçamento de bundle (ADR 0011). Roda sobre dist/ depois de `npm run export:ci`.
 // Falha (exit 1) se algum limite estourar ou se código de mock chegar à produção.
-// Os limites podem ser sobrescritos por variável de ambiente (em KB gzip), só para testar o portão:
-//   ORCAMENTO_JS_INICIAL_KB=100 npm run orcamento
+// Limites em bytes (1 KiB = 1024 B, gzip nível 9). Podem ser sobrescritos por variável de
+// ambiente, em BYTES, só para testar o portão:
+//   ORCAMENTO_JS_INICIAL_BYTES=102400 npm run orcamento
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
-const KB = 1024;
+const KIB = 1024;
 const lerLimite = (nome, padrao) => {
   const valor = Number(process.env[nome]);
-  return (Number.isFinite(valor) && valor > 0 ? valor : padrao) * KB;
+  return Number.isFinite(valor) && valor > 0 ? valor : padrao;
 };
 
 const LIMITES = {
-  jsInicial: lerLimite('ORCAMENTO_JS_INICIAL_KB', 300), // todos os <script> do HTML da rota
-  chunkRota: lerLimite('ORCAMENTO_CHUNK_ROTA_KB', 30), // cada chunk assíncrono (rota)
-  css: lerLimite('ORCAMENTO_CSS_KB', 15), // CSS total
-  fontes: lerLimite('ORCAMENTO_FONTES_KB', 40), // woff2 somados
-  html: lerLimite('ORCAMENTO_HTML_KB', 40), // HTML de cada rota
+  jsInicial: lerLimite('ORCAMENTO_JS_INICIAL_BYTES', 300 * KIB), // todos os <script> do HTML da rota
+  chunkRota: lerLimite('ORCAMENTO_CHUNK_ROTA_BYTES', 30 * KIB), // cada chunk assíncrono (rota)
+  css: lerLimite('ORCAMENTO_CSS_BYTES', 15 * KIB), // CSS total
+  fontes: lerLimite('ORCAMENTO_FONTES_BYTES', 40 * KIB), // woff2 somados
+  html: lerLimite('ORCAMENTO_HTML_BYTES', 40 * KIB), // HTML de cada rota
 };
 const MAX_ARQUIVOS_FONTE = 2;
 const PROIBIDOS_NO_JS = ['mockServiceWorker', 'setupWorker'];
@@ -33,7 +34,7 @@ function listar(pasta) {
 
 const gzip = (caminho) => gzipSync(readFileSync(caminho), { level: 9 }).length;
 const nomeRel = (caminho) => relative(raiz, caminho).replaceAll('\\', '/');
-const kb = (bytes) => `${(bytes / KB).toFixed(1)} KB`;
+const kib = (bytes) => `${(bytes / KIB).toFixed(1)} KiB`;
 
 let arquivos;
 try {
@@ -46,7 +47,7 @@ try {
 const falhas = [];
 const checar = (descricao, medido, limite) => {
   const ok = medido <= limite;
-  console.log(`${ok ? 'ok   ' : 'FALHA'} ${descricao}: ${kb(medido)} (limite ${kb(limite)})`);
+  console.log(`${ok ? 'ok   ' : 'FALHA'} ${descricao}: ${kib(medido)} (limite ${kib(limite)})`);
   if (!ok) falhas.push(descricao);
 };
 
@@ -66,7 +67,8 @@ for (const html of htmls) {
 
 // Chunk próprio de cada rota (asyncRoutes): todo .js que não é o núcleo (entry-*, __common-*,
 // __expo-metro-runtime-*). O núcleo já entra no limite do JS inicial.
-const js = arquivos.filter((a) => a.endsWith('.js'));
+// Só arquivos de _expo/: sw.js e mockServiceWorker.js (public/) não são chunks do app.
+const js = arquivos.filter((a) => a.endsWith('.js') && nomeRel(a).startsWith('_expo/'));
 for (const chunk of js.filter((a) => !/^(entry-|__)/.test(basename(a)))) {
   checar(`Chunk de rota ${nomeRel(chunk)}`, gzip(chunk), LIMITES.chunkRota);
 }
@@ -89,9 +91,9 @@ if (fontes.length > MAX_ARQUIVOS_FONTE) {
   falhas.push('Quantidade de fontes');
 }
 
-// MSW nunca no bundle de produção (ADR 0011, item 8). Só chunks do app (_expo/): o sw.js do PWA
-// cita "mockServiceWorker" de propósito, para não cacheá-lo.
-for (const arquivo of js.filter((a) => nomeRel(a).startsWith('_expo/'))) {
+// MSW nunca no bundle de produção (ADR 0011, item 8). O sw.js do PWA cita "mockServiceWorker"
+// de propósito (para não cacheá-lo) e por isso fica fora da lista `js`.
+for (const arquivo of js) {
   const conteudo = readFileSync(arquivo, 'utf8');
   for (const termo of PROIBIDOS_NO_JS) {
     if (conteudo.includes(termo)) {

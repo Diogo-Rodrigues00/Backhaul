@@ -16,7 +16,9 @@ const linhas = ['## Lighthouse CI (mediana de 3 execuções)', ''];
 for (const alvo of process.argv.slice(2)) {
   const manifesto = join('.lighthouseci', alvo, 'manifest.json');
   if (!existsSync(manifesto)) continue;
-  const execucoes = JSON.parse(readFileSync(manifesto, 'utf8')).filter((e) => e.isRepresentativeRun);
+  const execucoes = JSON.parse(readFileSync(manifesto, 'utf8')).filter(
+    (e) => e.isRepresentativeRun,
+  );
 
   linhas.push(`### ${alvo}`, '', `| Rota | ${categorias.map(([, nome]) => nome).join(' | ')} |`);
   linhas.push(`|---|${categorias.map(() => '---').join('|')}|`);

@@ -11,6 +11,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { request } from 'node:http';
+import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
 
 const PORTA_MOCK = 4010;
@@ -18,6 +19,14 @@ const PORTA_SITE = 4173;
 
 if (!existsSync('dist')) {
   console.error('dist/ não existe. Rode `npm run export:ci` antes.');
+  process.exit(1);
+}
+
+// Toda rota de e2e/rotas.ts (menos a 404) precisa ter o .html no export.
+try {
+  createRequire(import.meta.url)('./lhci-rotas.cjs').verificarDist();
+} catch (erro) {
+  console.error(erro instanceof Error ? erro.message : erro);
   process.exit(1);
 }
 

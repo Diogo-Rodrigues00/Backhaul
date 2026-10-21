@@ -8,7 +8,11 @@ const passos = [
   ['format', ['run', 'format:check']],
   ['testes', ['test', '--', '--ci', '--coverage']],
   ['proibidos', ['run', 'verificar:proibidos']],
-  ['export', ['run', 'export:ci', '--', '--clear'], { EXPO_PUBLIC_API_URL: 'http://localhost:4010' }],
+  [
+    'export',
+    ['run', 'export:ci', '--', '--clear'],
+    { EXPO_PUBLIC_API_URL: 'http://localhost:4010' },
+  ],
   ['orçamento', ['run', 'orcamento']],
   ['e2e + axe', ['run', 'e2e']],
   ['lighthouse mobile', ['run', 'lhci:mobile']],

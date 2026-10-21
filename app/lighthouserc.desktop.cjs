@@ -19,10 +19,10 @@ module.exports = {
     },
     assert: {
       assertions: {
-        'categories:performance': ['error', { minScore: 1 }],
-        'categories:accessibility': ['error', { minScore: 1 }],
-        'categories:best-practices': ['error', { minScore: 1 }],
-        'categories:seo': ['error', { minScore: 1 }],
+        'categories:performance': ['error', { minScore: 1, aggregationMethod: 'median' }],
+        'categories:accessibility': ['error', { minScore: 1, aggregationMethod: 'median' }],
+        'categories:best-practices': ['error', { minScore: 1, aggregationMethod: 'median' }],
+        'categories:seo': ['error', { minScore: 1, aggregationMethod: 'median' }],
       },
     },
     upload: {

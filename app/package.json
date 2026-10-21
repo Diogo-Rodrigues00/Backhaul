@@ -19,7 +19,7 @@
     "lhci:desktop": "lhci autorun --config=./lighthouserc.desktop.cjs",
     "verificar:proibidos": "node scripts/verificar-proibidos.mjs",
     "verificar": "node scripts/verificar.mjs",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"mocks/**/*.ts\" \"e2e/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"mocks/**/*.ts\" \"e2e/**/*.ts\" \"scripts/**/*.{mjs,cjs}\" playwright.config.ts lighthouserc.*.cjs",
     "build:vercel": "expo export -p web && node scripts/pos-build-web.mjs",
     "gerar:icones": "node scripts/gerar-icones.mjs"
   },

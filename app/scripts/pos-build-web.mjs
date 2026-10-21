@@ -8,7 +8,9 @@ import { resolve } from 'node:path';
 const dist = resolve(import.meta.dirname, '../dist');
 const naoEncontrada = resolve(dist, '+not-found.html');
 if (!existsSync(naoEncontrada)) {
-  console.error('dist/+not-found.html não existe: o export falhou ou a rota +not-found foi removida.');
+  console.error(
+    'dist/+not-found.html não existe: o export falhou ou a rota +not-found foi removida.',
+  );
   process.exit(1);
 }
 copyFileSync(naoEncontrada, resolve(dist, '404.html'));
