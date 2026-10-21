@@ -72,7 +72,9 @@ const comissaoFixa = [
   /\*\s*5\s*\/\s*100\b/,
   /percentual_comissao\s*=(?!=)/,
 ];
-const src = visiveis.filter((c) => c.startsWith('src/') && ehTexto(c));
+// Testes ficam de fora: eles usam valores literais (ex.: formatarPercentual(5) -> '5%') de propósito.
+const ehTeste = (c) => /\.(test|spec)\.[jt]sx?$/.test(c) || c.includes('/__tests__/');
+const src = visiveis.filter((c) => c.startsWith('src/') && ehTexto(c) && !ehTeste(c));
 for (const padrao of comissaoFixa) {
   procurar('Comissão fixa no código (exiba o que a API devolve)', src, padrao);
 }
