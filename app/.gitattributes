@@ -1,0 +1,9 @@
+# Força LF nos arquivos do app (Prettier usa endOfLine "lf"; no Windows o core.autocrlf=true
+# converteria o checkout para CRLF e o format:check falharia localmente).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
