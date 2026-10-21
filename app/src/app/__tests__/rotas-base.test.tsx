@@ -16,7 +16,10 @@ describe('rotas da base', () => {
   });
 
   it('+not-found tem heading e link para /', async () => {
-    await renderRouter({ index: Inicio, '+not-found': NaoEncontrada }, { initialUrl: '/nao-existe' });
+    await renderRouter(
+      { index: Inicio, '+not-found': NaoEncontrada },
+      { initialUrl: '/nao-existe' },
+    );
 
     const titulo = screen.getByRole('heading', { name: 'Página não encontrada' });
     expect(titulo.props['aria-level']).toBe(1);

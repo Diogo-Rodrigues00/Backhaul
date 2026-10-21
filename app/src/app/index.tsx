@@ -7,9 +7,7 @@ export default function Inicio() {
       <Text role="heading" aria-level={1}>
         Backhaul
       </Text>
-      <Text>
-        Plataforma que conecta caminhoneiros disponíveis a cargas urgentes próximas.
-      </Text>
+      <Text>Plataforma que conecta caminhoneiros disponíveis a cargas urgentes próximas.</Text>
     </View>
   );
 }

@@ -12,7 +12,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "export:ci": "expo export -p web"
+    "export:ci": "expo export -p web",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"mocks/**/*.ts\" \"e2e/**/*.ts\""
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.17",
