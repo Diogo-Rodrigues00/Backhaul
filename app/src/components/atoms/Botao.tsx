@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, type Ref } from 'react';
 import {
   Platform,
   Pressable,
@@ -53,6 +53,8 @@ export interface PropsBotao extends Omit<
   aoPressionar?: (evento: GestureResponderEvent) => void | Promise<unknown>;
   /** Mesmo que `aoPressionar`; existe para o `Link` com `asChild` do expo-router. */
   onPress?: PressableProps['onPress'];
+  /** Elemento do botão (foco devolvido por diálogos, `Link asChild`). Convive com o ref interno. */
+  ref?: Ref<View>;
 }
 
 export type EstadoVisual = 'padrao' | 'hover' | 'pressionado' | 'desabilitado';
@@ -173,6 +175,7 @@ export function Botao({
   desabilitado = false,
   aoPressionar,
   onPress,
+  ref,
   ...resto
 }: PropsBotao) {
   const estilos = useEstilos(criarEstilos);
@@ -180,7 +183,16 @@ export function Botao({
   const reduzido = useMovimentoReduzido();
   // Trava local: o pai só marca `carregando` no render seguinte, e o segundo toque pode chegar antes.
   const emVoo = useRef(false);
-  const elemento = useRef<View>(null);
+  const elemento = useRef<View | null>(null);
+  // O ref externo e o interno (efeito do aria-disabled) apontam para o mesmo elemento.
+  const definirElemento = useCallback(
+    (no: View | null) => {
+      elemento.current = no;
+      if (typeof ref === 'function') ref(no);
+      else if (ref) ref.current = no;
+    },
+    [ref],
+  );
 
   const inativo = desabilitado || carregando;
   const acao = aoPressionar ?? onPress;
@@ -219,7 +231,7 @@ export function Botao({
       aria-disabled={inativo || undefined}
       disabled={desabilitado || undefined}
       {...resto}
-      ref={elemento}
+      ref={definirElemento}
       onPress={aoToque}
       style={({ pressed, hovered }) => {
         const estado = estadoVisual(inativo, pressed, hovered);
