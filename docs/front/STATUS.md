@@ -35,24 +35,35 @@ _Atualizado em 2026-10-20._
 - [x] Design system + protótipos (designer, adiantado)
 - [x] Aprovação do Pedro: lista de cards
 - [x] Aprovação do Pedro: protótipos (Artifact)
-- [ ] Issues criadas no GitHub
+- [x] Issues criadas no GitHub (#16–#50)
 
 ## Cards por estado
 Lista completa em `cards/README.md`.
 
 | Estado | Cards |
 |---|---|
-| Em execução | 001 |
-| Prontos para começar (após 001) | 002, 003, 004, 006 · 005 e 008 dependem só da cadeia · 007 espera LISTA |
-| Mergeados | — |
+| Em execução | 002 (#17), 003 (#18), 004 (#19), 005 (#20), 006 (#21) |
+| Aguardando | 007 (espera LISTA de cidades) · 008 (após 005 e 006) |
+| Mergeados | 001 (PR #51, issue #16 fechada) |
+
+Issues: cards 001–035 = issues #16–#50 (label `front` + `mvp`/`se der`; ordem do `cards/README.md`). Ex.: 001 = #16, 002 = #17, 013 = #28, 024 = #42, 025 = #43.
 
 Protótipo aprovado: https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP
+
+## Notas para os próximos cards (auditoria do 001)
+- 002/003: `serve dist` não entrega `+not-found.html` e Lighthouse aborta com 404 real; CI precisa de servidor/rewrite que sirva a página do app; decidir se `/_sitemap` vai para produção; `public/.gitkeep` vira `/.gitkeep`.
+- 005/010: `ScrollViewStyleReset` põe `body{overflow:hidden}`: telas altas precisam de `ScrollView` (zoom 200%). Foco visível e alvo ≥ 24 px a cargo dos atoms (008).
+- RNTL 14: `renderRouter` é assíncrono; `getByRole` não acha landmarks em `View`.
+- `<title>` por rota via `<Head>` (não no `+html.tsx`), por causa do title vazio do SDK 57.
 
 ## Bloqueios
 - Skill `react-native-skills` não existe com esse nome; usando `vercel-react-native-skills` (confirmado pelo Pedro).
 - Grill da Fase 1 usa `anthropic-skills:grill-me` (escolha do Pedro). Agentes novos só carregam em sessão nova: iniciar com `claude --agent orquestrador`.
 
 ## Depende do Pedro
+- Instalar Expo Go agora, desligar atualização automática de apps até 12/11, logar na mesma conta Expo no iPhone e no CLI.
+- Para usar GitHub Projects: `gh auth refresh -s read:project,project` (o token atual não tem o escopo).
+- Lista de cidades com lat/lng (membros do grupo) até 21/10: bloqueia o card 007.
 - Instalar Expo Go no iPhone.
 - Avisar o Diogo: PR da base (`feat/app-base`) vai para `front` e sai depois do grill do PRD.
 - Pedir ao Diogo (ver item abaixo): rotas faltantes (fora do contrato) e inclusão no `CORS_ORIGIN` de `http://localhost:8081` e do domínio da Vercel.
