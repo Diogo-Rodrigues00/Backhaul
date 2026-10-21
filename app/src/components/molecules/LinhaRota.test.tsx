@@ -5,7 +5,7 @@ import { renderizar } from '@/test-utils/renderComTema';
 
 import { LinhaRota } from './LinhaRota';
 
-// A largura da janela decide, no iPhone, se o traço aparece (a web usa o CSS do dataSet).
+// A largura da janela decide, no iPhone, quais peças aparecem (a web usa o CSS do dataSet).
 let mockLargura = 750;
 jest.mock('@/theme/responsivo', () => {
   const real = jest.requireActual('@/theme/responsivo');
@@ -14,6 +14,15 @@ jest.mock('@/theme/responsivo', () => {
 
 function estiloDe(el: { props: { style?: unknown } }) {
   return StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
+}
+
+// Traço e quebra são os únicos elementos com `dataSet` de breakpoint dentro da rota.
+function peca(bp: 'sem-compacto' | 'so-compacto') {
+  return screen.container.queryAll((el) => el.props.dataSet?.bp === bp)[0];
+}
+
+function ocultoNoIphone(bp: 'sem-compacto' | 'so-compacto') {
+  return estiloDe(peca(bp) as never).display === 'none';
 }
 
 const origem = 'Uberlândia - MG';
@@ -39,18 +48,30 @@ describe('LinhaRota', () => {
     ).toBeOnTheScreen();
   });
 
-  it('acima de 420 px o traço aparece', async () => {
+  it('acima de 420 px: o traço aparece e a quebra não existe na linha', async () => {
     mockLargura = 750;
     await renderizar(<LinhaRota origem={origem} destino={destino} />);
-    const traco = screen.container.queryAll((el) => el.props.dataSet?.bp === 'sem-compacto')[0];
-    expect(traco).toBeDefined();
-    expect(estiloDe(traco as never).display).toBeUndefined();
+    expect(ocultoNoIphone('sem-compacto')).toBe(false);
+    expect(ocultoNoIphone('so-compacto')).toBe(true);
   });
 
-  it('em até 420 px o traço some (os pontos empilham)', async () => {
-    mockLargura = 360;
-    await renderizar(<LinhaRota origem={origem} destino={destino} />);
-    const traco = screen.container.queryAll((el) => el.props.dataSet?.bp === 'sem-compacto')[0];
-    expect(estiloDe(traco as never).display).toBe('none');
-  });
+  it.each([421, 430, 440, 480])(
+    'em %i px (faixa dos celulares grandes) o traço continua na linha e a quebra fica oculta',
+    async (largura) => {
+      mockLargura = largura;
+      await renderizar(<LinhaRota origem={origem} destino={destino} />);
+      expect(ocultoNoIphone('sem-compacto')).toBe(false);
+      expect(ocultoNoIphone('so-compacto')).toBe(true);
+    },
+  );
+
+  it.each([420, 390, 360, 320])(
+    'até %i px o traço some e a quebra força o destino para a linha de baixo',
+    async (largura) => {
+      mockLargura = largura;
+      await renderizar(<LinhaRota origem={origem} destino={destino} />);
+      expect(ocultoNoIphone('sem-compacto')).toBe(true);
+      expect(ocultoNoIphone('so-compacto')).toBe(false);
+    },
+  );
 });

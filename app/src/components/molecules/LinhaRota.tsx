@@ -15,9 +15,10 @@ export interface PropsLinhaRota {
   destino: string;
 }
 
-// Cada ponto tem uma largura mínima: dois pontos não cabem lado a lado em telas de até 420 px,
-// então empilham sem depender de JavaScript na web (o traço some pela mesma regra de breakpoint).
-const LARGURA_MINIMA_PONTO = 200;
+// Até 420 px: o traço some e um separador de largura total (`quebra`) empurra o destino para a
+// linha de baixo. Os dois usam o mesmo ponto de quebra (`compacto`), então o critério é um só.
+// Acima de 420 px os pontos encolhem até o mínimo e o traço fica entre eles, na mesma linha.
+const LARGURA_MINIMA_PONTO = 120;
 const LARGURA_MINIMA_TRACO = 36;
 const LARGURA_MAXIMA_TRACO = 120;
 
@@ -45,21 +46,26 @@ function criarEstilos({ colors, space: espaco }: TemaVisual) {
       borderStyle: 'dashed',
       borderColor: colors.text.muted,
     } satisfies ViewStyle,
-    tracoOculto: { display: 'none' } satisfies ViewStyle,
+    quebra: { width: '100%', height: 0 } satisfies ViewStyle,
+    oculto: { display: 'none' } satisfies ViewStyle,
   } as const;
 }
 
-/** Coleta e entrega lado a lado; em até 420 px o traço some e os pontos empilham. */
+/** Coleta e entrega lado a lado; em até 420 px o traço some e o destino vai para a linha de baixo. */
 export function LinhaRota({ origem, destino }: PropsLinhaRota) {
   const estilos = useEstilos(criarEstilos);
   const largura = useLargura();
-  // Web: a regra do `dataSet` esconde o traço sem JavaScript. iPhone: decide pela largura da janela.
-  const tracoOcultoNoIphone = Platform.OS !== 'web' && !correspondeBp('sem-compacto', largura);
+  const iphone = Platform.OS !== 'web';
+  // Web: a regra do `dataSet` decide sem JavaScript. iPhone: a mesma regra, pela largura da janela.
+  const tracoOculto = iphone && !correspondeBp('sem-compacto', largura);
+  const quebraOculta = iphone && !correspondeBp('so-compacto', largura);
 
   return (
     <View
-      accessible={Platform.OS !== 'web'}
-      accessibilityLabel={`Coleta em ${origem}, entrega em ${destino}`}
+      // O nome do grupo só vai ao iPhone. Na web o texto visível já é lido na ordem certa e
+      // `aria-label` num `<div>` sem papel é proibido pelo axe (aria-prohibited-attr).
+      accessible={iphone}
+      accessibilityLabel={iphone ? `Coleta em ${origem}, entrega em ${destino}` : undefined}
       style={estilos.rota}
     >
       <View style={estilos.ponto}>
@@ -71,7 +77,12 @@ export function LinhaRota({ origem, destino }: PropsLinhaRota) {
       <View
         aria-hidden
         dataSet={dataBp('sem-compacto')}
-        style={[estilos.traco, tracoOcultoNoIphone && estilos.tracoOculto]}
+        style={[estilos.traco, tracoOculto && estilos.oculto]}
+      />
+      <View
+        aria-hidden
+        dataSet={dataBp('so-compacto')}
+        style={[estilos.quebra, quebraOculta && estilos.oculto]}
       />
       <View style={estilos.ponto}>
         <Texto nivel="sm" cor="secundario">
