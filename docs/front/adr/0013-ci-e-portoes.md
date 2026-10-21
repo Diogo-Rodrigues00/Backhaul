@@ -29,3 +29,11 @@ Workflow único `.github/workflows/front.yml` (raiz do repositório), `defaults.
 ## Consequências
 - Todo card que cria rota atualiza `e2e/rotas.ts` e, se precisar, os handlers de mock.
 - Um card de tela pode ficar vermelho por Lighthouse de outra rota; a correção é do card que causou (o revisor aponta).
+
+## Adendo — 2026-10-21 (card 002)
+- **Lighthouse mobile:** por decisão do Pedro (adendo do ADR 0011), a categoria Performance mobile é `warn` em `lighthouserc.mobile.cjs`: a nota aparece no log e no resumo do job (`scripts/lhci-resumo.mjs`) e não reprova o PR. Acessibilidade, Boas práticas e SEO = 100 (`error`) em mobile e desktop; Performance desktop = 100 (`error`).
+- **Servidor de CI e rotas inexistentes:** o `serve dist` responde 404 para caminho que não existe e o Lighthouse aborta a auditoria com 404 real. `scripts/servidores-ci.mjs` usa `scripts/serve-ci.json`, que reescreve só caminhos sem extensão (`!**/*.*`) para `/+not-found.html` com status 200. Vale apenas no CI; na Vercel a rota inexistente continua 404 (ADR 0014). Arquivos que não existem (`robots.txt`, `.js`) seguem 404.
+- **`/_sitemap`:** o Expo Router a exporta (`dist/_sitemap.html`), mas ela não está em `e2e/rotas.ts` e portanto não é auditada. O orçamento a mede, pois lê todo `.html` de `dist/`. Remover da produção fica para o card 003 (Vercel).
+- **Cobertura:** `coverageThreshold` (80% em `src/lib` e `src/api`) entra com o primeiro código nessas pastas (card 006); com as pastas vazias o Jest reprova por falta de dados.
+- **Executar TypeScript no CI:** `mocks/servidor-http.ts` roda direto no Node 22 (`--experimental-strip-types`), sem `tsx`; por isso imports internos do mock levam a extensão `.ts` (`allowImportingTsExtensions`).
+- **Paths filter e proteção de branch:** como o workflow só dispara com mudança em `app/**`, um PR só de docs para `front` não gera os checks `qualidade` e `web`; com proteção exigindo-os, esse PR fica bloqueado (o Pedro faz o merge como admin ou remove a exigência).
