@@ -1,12 +1,15 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
-import { useEffect } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
+import { criarQueryClient } from '@/api/consulta';
 import { RegiaoViva } from '@/components/atoms/RegiaoViva';
 import { useMocksProntos } from '@/lib/mocks';
 import { registrarServiceWorker } from '@/lib/pwa';
 
+import { SessaoProvider } from '@/state/sessao/SessaoProvider';
 import { BarraDeStatus } from '@/state/tema/BarraDeStatus';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { TemaProvider } from '@/state/tema/TemaProvider';
@@ -14,7 +17,7 @@ import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
 import { useFontesCarregadas } from '@/theme/fontes';
 
-// Providers de sessão e dados entram nos cards seguintes.
+// Ordem dos providers (ADR 0004 e 0006): Tema → Query → Sessão. O portão do servidor entra no card 014.
 // Slot, nunca Stack/Tabs: menos JS na web (ADR 0002).
 export default function LayoutRaiz() {
   // Produção: registra o service worker depois do `load` (no-op no nativo, no preview e em dev).
@@ -26,6 +29,16 @@ export default function LayoutRaiz() {
     <TemaProvider>
       <Estrutura />
     </TemaProvider>
+  );
+}
+
+/** Cliente de dados e sessão. Só montam quando tudo está pronto (o MSW do preview precisa estar de pé). */
+function Provedores({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(criarQueryClient);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SessaoProvider>{children}</SessaoProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -55,7 +68,11 @@ function Estrutura() {
       <BarraDeStatus />
       {/* Uma só região viva no app inteiro: `anunciar()` escreve aqui, sem mover o foco (ADR 0009). */}
       <RegiaoViva />
-      {fontesProntas && pronto && mocksProntos ? <Slot /> : null}
+      {fontesProntas && pronto && mocksProntos ? (
+        <Provedores>
+          <Slot />
+        </Provedores>
+      ) : null}
     </View>
   );
 }
