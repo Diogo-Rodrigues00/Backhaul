@@ -40,13 +40,11 @@ const plural = (quantidade: number): string => (quantidade === 1 ? 'caractere' :
 
 export function minimo(tamanho: number): Validador {
   return (valor) =>
-    comoTexto(valor).length >= tamanho ||
-    `Use pelo menos ${tamanho} ${plural(tamanho)}.`;
+    comoTexto(valor).length >= tamanho || `Use pelo menos ${tamanho} ${plural(tamanho)}.`;
 }
 
 export function maximo(tamanho: number): Validador {
-  return (valor) =>
-    comoTexto(valor).length <= tamanho || `Use no máximo ${tamanho} caracteres.`;
+  return (valor) => comoTexto(valor).length <= tamanho || `Use no máximo ${tamanho} caracteres.`;
 }
 
 // Conta só os dígitos; aceita pontuação (D-PO-14).

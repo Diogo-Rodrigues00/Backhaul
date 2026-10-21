@@ -3,8 +3,9 @@
 // Existe para o TypeScript resolver `@/lib/armazenamento`; Metro e Jest escolhem o arquivo da
 // plataforma, então este não roda em teste: excluído da cobertura de propósito.
 /* istanbul ignore file */
-export * from './armazenamentoComum';
 import { type Chave, memoriaReserva } from './armazenamentoComum';
+
+export * from './armazenamentoComum';
 
 export async function ler(chave: Chave): Promise<string | null> {
   return memoriaReserva.get(chave) ?? null;

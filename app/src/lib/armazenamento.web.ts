@@ -1,6 +1,7 @@
 // Web (ADR 0006): localStorage. Sem localStorage (pré-render em Node, modo privado) cai na memória.
-export * from './armazenamentoComum';
 import { type Chave, memoriaReserva } from './armazenamentoComum';
+
+export * from './armazenamentoComum';
 
 function depositoLocal(): Storage | null {
   try {

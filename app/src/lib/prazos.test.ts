@@ -28,12 +28,9 @@ describe('calcularExpiraEm', () => {
     expect(calcularExpiraEm(0.5, agora)).toBe('2026-10-20T12:30:00.000Z');
   });
 
-  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
-    'recusa prazo inválido (%p)',
-    (horas) => {
-      expect(() => calcularExpiraEm(horas, agora)).toThrow(RangeError);
-    },
-  );
+  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])('recusa prazo inválido (%p)', (horas) => {
+    expect(() => calcularExpiraEm(horas, agora)).toThrow(RangeError);
+  });
 
   it('usa o relógio atual quando "agora" não é informado', () => {
     const antes = Date.now();

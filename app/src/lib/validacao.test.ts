@@ -84,12 +84,9 @@ describe('numeroPositivo', () => {
     expect(numeroPositivo('3.5')).toBe(true);
   });
 
-  it.each([0, '0', -1, '-2', '', 'abc', null, undefined])(
-    'recusa %p com mensagem',
-    (valor) => {
-      expect(numeroPositivo(valor)).toBe('Informe um número maior que zero.');
-    },
-  );
+  it.each([0, '0', -1, '-2', '', 'abc', null, undefined])('recusa %p com mensagem', (valor) => {
+    expect(numeroPositivo(valor)).toBe('Informe um número maior que zero.');
+  });
 });
 
 describe('numeroAte', () => {

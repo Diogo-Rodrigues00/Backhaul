@@ -1,8 +1,9 @@
 // iPhone (ADR 0006): expo-secure-store (Keychain). Se o Keychain falhar, cai na memória.
 import * as SecureStore from 'expo-secure-store';
 
-export * from './armazenamentoComum';
 import { type Chave, memoriaReserva } from './armazenamentoComum';
+
+export * from './armazenamentoComum';
 
 export async function ler(chave: Chave): Promise<string | null> {
   try {
