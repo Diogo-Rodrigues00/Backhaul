@@ -6,6 +6,9 @@
 export type Numerico = number | string;
 
 const NUMERO_DECIMAL = /^-?\d+(\.\d+)?$/;
+// Com vírgula decimal, o ponto só vale como milhar certo, antes da vírgula ("1.234,56"); "1,234.56"
+// e "1.2,3" não são pt-BR e não podem virar número por engano.
+export const DECIMAL_PT_BR = /^-?(\d+|\d{1,3}(\.\d{3})+),\d+$/;
 
 /**
  * Converte number ou texto numérico em number. Aceita ponto ("3500.00", como a API) e vírgula
@@ -20,6 +23,9 @@ export function paraNumero(valor: Numerico | null | undefined): number | null {
     return null;
   }
   const texto = valor.trim();
+  if (texto.includes(',') && !DECIMAL_PT_BR.test(texto)) {
+    return null;
+  }
   const normalizado = texto.includes(',') ? texto.replace(/\./g, '').replace(',', '.') : texto;
   return NUMERO_DECIMAL.test(normalizado) ? Number(normalizado) : null;
 }

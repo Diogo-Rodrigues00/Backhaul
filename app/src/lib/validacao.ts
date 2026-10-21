@@ -1,7 +1,7 @@
 // Validadores puros para `rules.validate` do react-hook-form (ADR 0007).
 // Cada um devolve `true` ou a mensagem em pt-BR. Espelham só as regras do backend (D-PO-14).
 // Vazio não passa: combine `obrigatorio` com os demais quando o campo for obrigatório.
-import { paraNumero } from './numeros';
+import { DECIMAL_PT_BR, paraNumero } from './numeros';
 
 // Tamanhos máximos dos VARCHAR do schema (D-PO-14, relatório 5.5).
 export const MAX = {
@@ -82,6 +82,9 @@ export function numeroAte(limite: number): Validador {
  * se escreve no Brasil) ou 1,234 (decimal, como `paraNumero` lê). Use nos campos de valor e de
  * peso, junto de `numeroPositivo`. "1.234,56" (com vírgula) e "1234" passam.
  */
-export const numeroSemAmbiguidade: Validador = (valor) =>
-  !MILHAR_AMBIGUO.test(comoTexto(valor).trim()) ||
-  'Use vírgula para decimais e sem ponto de milhar (ex.: 1234 ou 1234,5).';
+export const numeroSemAmbiguidade: Validador = (valor) => {
+  const texto = comoTexto(valor).trim();
+  // Com vírgula, o ponto só é aceito como milhar certo antes dela ("1.234,56"); "1,234.56" e "1.2,3" não.
+  const aceito = texto.includes(',') ? DECIMAL_PT_BR.test(texto) : !MILHAR_AMBIGUO.test(texto);
+  return aceito || 'Use vírgula para decimais e sem ponto de milhar (ex.: 1234 ou 1234,5).';
+};

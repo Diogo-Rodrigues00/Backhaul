@@ -103,14 +103,21 @@ describe('numeroAte', () => {
 });
 
 describe('numeroSemAmbiguidade', () => {
-  it.each(['1.234', '12.500', '0.125', ' 3.500 ', '1.234.567'])(
-    'recusa "%s": pode ser milhar ou decimal',
-    (valor) => {
-      expect(numeroSemAmbiguidade(valor)).toBe(
-        'Use vírgula para decimais e sem ponto de milhar (ex.: 1234 ou 1234,5).',
-      );
-    },
-  );
+  it.each([
+    '1.234',
+    '12.500',
+    '0.125',
+    ' 3.500 ',
+    '1.234.567',
+    '1,234.56',
+    '1.2,3',
+    '12.34,5',
+    '1,2,3',
+  ])('recusa "%s": pode ser milhar ou decimal', (valor) => {
+    expect(numeroSemAmbiguidade(valor)).toBe(
+      'Use vírgula para decimais e sem ponto de milhar (ex.: 1234 ou 1234,5).',
+    );
+  });
 
   it.each(['1234', '1234,5', '1.234,56', '3,5', '3.5', '3.50', '12.5', '8000', '', 8000, null])(
     'aceita %p',
