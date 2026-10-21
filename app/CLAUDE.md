@@ -55,6 +55,12 @@ npm run lint                      # expo lint (inclui libs proibidas do ADR 0001
 npm run typecheck                 # tsc --noEmit
 npm test                          # Jest + RNTL
 npm run export:ci                 # expo export -p web → dist/
+npm run verificar:proibidos       # URL da API, .env, comissão fixa e e-mails de demo (DEMO_EMAILS)
+npm run orcamento                 # orçamento de bundle sobre dist/ (ADR 0011)
+npm run e2e                       # Playwright + axe contra dist/ e o mock da API (precisa do export)
+npm run lhci:mobile               # Lighthouse CI mobile (Performance só avisa)
+npm run lhci:desktop              # Lighthouse CI desktop (tudo 100)
+npm run verificar                 # todos os portões, na ordem do CI
 ```
 
 No iPhone: instale o **Expo Go** (App Store), entre na mesma conta Expo e escaneie o QR code do `npx expo start`. O Expo Go da loja roda só SDK 57 (ADR 0001); desative a atualização automática de apps até 12/11.

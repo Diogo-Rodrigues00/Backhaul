@@ -3,7 +3,8 @@
 
 export type Urgencia = 'normal' | 'urgente' | 'critico';
 export type StatusCarga = 'aberto' | 'em_negociacao' | 'fechado' | 'cancelado' | 'expirado';
-export type StatusDisponibilidade = 'aberto' | 'em_negociacao' | 'fechado' | 'cancelado' | 'expirado';
+export type StatusDisponibilidade =
+  'aberto' | 'em_negociacao' | 'fechado' | 'cancelado' | 'expirado';
 export type StatusProposta = 'pendente' | 'aceita' | 'recusada' | 'expirada';
 export type TipoProposta = 'aceite' | 'contraproposta';
 export type StatusEntrega = 'aceito' | 'em_transito' | 'entregue' | 'cancelado';
