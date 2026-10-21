@@ -24,7 +24,7 @@ if (!existsSync('dist')) {
 const filhos = [
   spawn(
     process.execPath,
-    ['--experimental-strip-types', '--no-warnings', 'mocks/servidor-http.ts'],
+    [join('node_modules', 'tsx', 'dist', 'cli.mjs'), 'mocks/servidor-http.ts'],
     { stdio: 'inherit', env: { ...process.env, MOCK_PORT: String(PORTA_MOCK) } },
   ),
   spawn(
