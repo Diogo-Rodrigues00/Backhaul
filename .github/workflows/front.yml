@@ -1,0 +1,87 @@
+# CI do front (ADR 0013). PR para `front` só entra com `qualidade` e `web` verdes.
+# Determinístico: nada de API real; o app aponta para o mock em localhost:4010.
+name: front
+
+on:
+  pull_request:
+    branches: [front]
+    paths: ['app/**', '.github/workflows/front.yml']
+  push:
+    branches: [front]
+    paths: ['app/**', '.github/workflows/front.yml']
+
+concurrency:
+  group: front-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: app
+
+env:
+  # O Lighthouse CI usa o Chrome já instalado no runner; o Playwright baixa o próprio Chromium.
+  PUPPETEER_SKIP_DOWNLOAD: '1'
+
+jobs:
+  qualidade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run format:check
+      - run: npm test -- --ci --coverage
+      - name: Verificar proibidos
+        run: npm run verificar:proibidos
+        env:
+          # Secret opcional (lista de e-mails de demo separada por vírgula). Vazio = verificação pulada.
+          DEMO_EMAILS: ${{ secrets.DEMO_EMAILS }}
+
+  web:
+    needs: qualidade
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - name: Exportar web
+        run: npm run export:ci
+        env:
+          EXPO_PUBLIC_API_URL: http://localhost:4010
+      - run: npm run orcamento
+      - run: npx playwright install --with-deps chromium
+      - name: E2E e axe
+        run: npm run e2e
+      - name: Lighthouse mobile
+        run: npm run lhci:mobile
+      - name: Lighthouse desktop
+        run: npm run lhci:desktop
+      - name: Resumo das notas do Lighthouse
+        if: ${{ !cancelled() }}
+        run: node scripts/lhci-resumo.mjs mobile desktop
+      - name: Relatórios
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: relatorios-web
+          path: |
+            app/playwright-report
+            app/test-results
+            app/.lighthouseci
+          if-no-files-found: ignore
+          retention-days: 7
