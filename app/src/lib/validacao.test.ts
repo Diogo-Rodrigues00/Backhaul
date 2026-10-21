@@ -6,6 +6,7 @@ import {
   minimo,
   numeroAte,
   numeroPositivo,
+  numeroSemAmbiguidade,
   obrigatorio,
 } from './validacao';
 
@@ -98,6 +99,31 @@ describe('numeroAte', () => {
 
   it.each(['0', '501', '-1', 'x', ''])('recusa "%s"', (valor) => {
     expect(numeroAte(500)(valor)).toBe('Informe um número maior que zero e até 500.');
+  });
+});
+
+describe('numeroSemAmbiguidade', () => {
+  it.each(['1.234', '12.500', '0.125', ' 3.500 ', '1.234.567'])(
+    'recusa "%s": pode ser milhar ou decimal',
+    (valor) => {
+      expect(numeroSemAmbiguidade(valor)).toBe(
+        'Use vírgula para decimais e sem ponto de milhar (ex.: 1234 ou 1234,5).',
+      );
+    },
+  );
+
+  it.each(['1234', '1234,5', '1.234,56', '3,5', '3.5', '3.50', '12.5', '8000', '', 8000, null])(
+    'aceita %p',
+    (valor) => {
+      expect(numeroSemAmbiguidade(valor)).toBe(true);
+    },
+  );
+});
+
+describe('numeroPositivo e numeroAte leem como o envio (paraNumero)', () => {
+  it('aceitam o milhar com vírgula decimal', () => {
+    expect(numeroPositivo('1.234,56')).toBe(true);
+    expect(numeroAte(500)('1.234,56')).toBe('Informe um número maior que zero e até 500.');
   });
 });
 

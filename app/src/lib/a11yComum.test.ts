@@ -72,6 +72,29 @@ describe('propsDeCampo (ADR 0009)', () => {
     expect(props.erro).toEqual({ nativeID: 'cpf-erro' });
   });
 
+  it('liga a ajuda ao campo; com erro, o erro vem primeiro', () => {
+    const semErro = propsDeCampo({
+      id: 'senha',
+      rotulo: 'Senha',
+      ajuda: 'Mínimo de 8 caracteres.',
+    });
+    expect(semErro.ajuda).toEqual({ nativeID: 'senha-ajuda' });
+    expect(semErro.campo['aria-describedby']).toBe('senha-ajuda');
+    expect(semErro.campo.accessibilityHint).toBe('Mínimo de 8 caracteres.');
+    expect(semErro.campo['aria-invalid']).toBe(false);
+
+    const comErro = propsDeCampo({
+      id: 'senha',
+      rotulo: 'Senha',
+      ajuda: 'Mínimo de 8 caracteres.',
+      erro: 'Use pelo menos 8 caracteres.',
+    });
+    expect(comErro.campo['aria-describedby']).toBe('senha-erro senha-ajuda');
+    expect(comErro.campo.accessibilityHint).toBe(
+      'Use pelo menos 8 caracteres. Mínimo de 8 caracteres.',
+    );
+  });
+
   it('trata erro vazio ou null como ausência de erro', () => {
     expect(propsDeCampo({ id: 'a', rotulo: 'A', erro: '' }).erro).toBeNull();
     expect(propsDeCampo({ id: 'a', rotulo: 'A', erro: null }).campo['aria-invalid']).toBe(false);
