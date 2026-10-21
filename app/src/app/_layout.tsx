@@ -3,6 +3,7 @@ import Head from 'expo-router/head';
 import { useEffect } from 'react';
 import { View } from 'react-native';
 
+import { RegiaoViva } from '@/components/atoms/RegiaoViva';
 import { useMocksProntos } from '@/lib/mocks';
 import { registrarServiceWorker } from '@/lib/pwa';
 
@@ -52,6 +53,8 @@ function Estrutura() {
         />
       </Head>
       <BarraDeStatus />
+      {/* Uma só região viva no app inteiro: `anunciar()` escreve aqui, sem mover o foco (ADR 0009). */}
+      <RegiaoViva />
       {fontesProntas && pronto && mocksProntos ? <Slot /> : null}
     </View>
   );
