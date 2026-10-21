@@ -16,8 +16,8 @@ export interface PropsAndamentoFrete {
   statusEntrega: StatusEntrega;
 }
 
-type EtapaFrete = Exclude<StatusEntrega, 'cancelado'>;
-type EstadoEtapa = 'concluida' | 'atual' | 'pendente';
+export type EtapaFrete = Exclude<StatusEntrega, 'cancelado'>;
+export type EstadoEtapa = 'concluida' | 'atual' | 'pendente';
 
 const ETAPAS: readonly EtapaFrete[] = ['aceito', 'em_transito', 'entregue'];
 
@@ -27,16 +27,25 @@ const SUFIXO_OCULTO: Record<EstadoEtapa, string> = {
   pendente: ' (pendente)',
 };
 
-const ICONE: Record<EstadoEtapa, NomeIcone> = {
-  concluida: 'check',
-  atual: 'truck',
-  pendente: 'circle',
+// Ícone por etapa (protótipo e DS 5.2). Concluída vira `check` em qualquer etapa.
+const ICONE_DA_ETAPA: Record<EtapaFrete, NomeIcone> = {
+  aceito: 'check',
+  em_transito: 'truck',
+  entregue: 'package',
 };
+
+/** Ícone de uma etapa no estado dado: concluída é sempre `check`; senão, o da própria etapa. */
+export function iconeDaEtapa(etapa: EtapaFrete, estado: EstadoEtapa): NomeIcone {
+  return estado === 'concluida' ? 'check' : ICONE_DA_ETAPA[etapa];
+}
 
 // Medida do protótipo (.stepper__dot) que a escala do DS não cobre: bolinha de 40 px.
 const TAMANHO_BOLINHA = 40;
 
 function criarEstilos({ border: borda, space: espaco }: TemaVisual) {
+  // Anel da etapa atual: 4 px de `bg.highlight` em volta da bolinha (protótipo, box-shadow 4 px).
+  // O anel é o próprio padding do invólucro, com token de espaço, então vale para todas as etapas.
+  const anel = espaco[1];
   return {
     lista: { flexDirection: 'row' } satisfies ViewStyle,
     etapa: {
@@ -48,13 +57,17 @@ function criarEstilos({ border: borda, space: espaco }: TemaVisual) {
     // Metade do conector fica sobre a etapa anterior e metade sobre esta; a bolinha cobre o centro.
     conector: {
       position: 'absolute',
-      top: TAMANHO_BOLINHA / 2 - borda.widthStrong / 2,
+      top: anel + TAMANHO_BOLINHA / 2 - borda.widthStrong / 2,
       left: '-50%',
       width: '100%',
       borderTopWidth: borda.widthStrong,
     } satisfies ViewStyle,
-    bolinha: {
+    involucro: {
       zIndex: 1,
+      padding: anel,
+      borderRadius: (TAMANHO_BOLINHA + anel * 2) / 2,
+    } satisfies ViewStyle,
+    bolinha: {
       width: TAMANHO_BOLINHA,
       height: TAMANHO_BOLINHA,
       borderRadius: TAMANHO_BOLINHA / 2,
@@ -126,11 +139,18 @@ export function AndamentoFrete({ statusEntrega }: PropsAndamentoFrete) {
             ) : null}
             <View
               style={[
-                estilos.bolinha,
-                { backgroundColor: visual.fundo, borderColor: visual.borda },
+                estilos.involucro,
+                { backgroundColor: estado === 'atual' ? colors.bg.highlight : 'transparent' },
               ]}
             >
-              <Icone nome={ICONE[estado]} cor={visual.icone} />
+              <View
+                style={[
+                  estilos.bolinha,
+                  { backgroundColor: visual.fundo, borderColor: visual.borda },
+                ]}
+              >
+                <Icone nome={iconeDaEtapa(etapa, estado)} cor={visual.icone} />
+              </View>
             </View>
             <Texto nivel="sm" peso="bold" cor={visual.texto} style={estilos.textoEtapa}>
               {rotuloStatusEntrega(etapa)}

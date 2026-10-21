@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react-native';
 
 import { renderizar } from '@/test-utils/renderComTema';
 
-import { AndamentoFrete } from './AndamentoFrete';
+import { AndamentoFrete, iconeDaEtapa } from './AndamentoFrete';
 
 // Texto oculto de cada etapa, na ordem Aceito → Em trânsito → Entregue.
 function sufixosOcultos(): string[] {
@@ -46,5 +46,27 @@ describe('AndamentoFrete', () => {
     await renderizar(<AndamentoFrete statusEntrega="em_transito" />);
     expect(screen.getByLabelText('Andamento do frete')).toBeOnTheScreen();
     expect(screen.getAllByRole('listitem')).toHaveLength(3);
+  });
+
+  it('status de fora do contrato (vindo da API) não quebra: todas pendentes', async () => {
+    // Um valor novo ou de outra entidade (ex.: `em_negociacao`) não tem etapa: sai como pendente.
+    await renderizar(<AndamentoFrete statusEntrega={'em_negociacao' as never} />);
+    expect(sufixosOcultos()).toEqual(['(pendente)', '(pendente)', '(pendente)']);
+    expect(etapaAtual()).toBe(-1);
+  });
+});
+
+describe('iconeDaEtapa (ícone por etapa, protótipo e DS 5.2)', () => {
+  it('concluída é sempre check, qualquer que seja a etapa', () => {
+    expect(iconeDaEtapa('aceito', 'concluida')).toBe('check');
+    expect(iconeDaEtapa('em_transito', 'concluida')).toBe('check');
+    expect(iconeDaEtapa('entregue', 'concluida')).toBe('check');
+  });
+
+  it('Em trânsito é truck e Entregue é package, na atual e na pendente', () => {
+    expect(iconeDaEtapa('em_transito', 'atual')).toBe('truck');
+    expect(iconeDaEtapa('em_transito', 'pendente')).toBe('truck');
+    expect(iconeDaEtapa('entregue', 'atual')).toBe('package');
+    expect(iconeDaEtapa('entregue', 'pendente')).toBe('package');
   });
 });
