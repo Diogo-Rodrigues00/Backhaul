@@ -89,8 +89,9 @@ if (fontes.length > MAX_ARQUIVOS_FONTE) {
   falhas.push('Quantidade de fontes');
 }
 
-// MSW nunca no bundle de produção (ADR 0011, item 8).
-for (const arquivo of js) {
+// MSW nunca no bundle de produção (ADR 0011, item 8). Só chunks do app (_expo/): o sw.js do PWA
+// cita "mockServiceWorker" de propósito, para não cacheá-lo.
+for (const arquivo of js.filter((a) => nomeRel(a).startsWith('_expo/'))) {
   const conteudo = readFileSync(arquivo, 'utf8');
   for (const termo of PROIBIDOS_NO_JS) {
     if (conteudo.includes(termo)) {
