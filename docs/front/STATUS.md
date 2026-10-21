@@ -50,6 +50,12 @@ Issues: cards 001–035 = issues #16–#50 (label `front` + `mvp`/`se der`; orde
 
 Protótipo aprovado: https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP
 
+## Notas para os próximos cards (auditoria do 001)
+- 002/003: `serve dist` não entrega `+not-found.html` e Lighthouse aborta com 404 real; CI precisa de servidor/rewrite que sirva a página do app; decidir se `/_sitemap` vai para produção; `public/.gitkeep` vira `/.gitkeep`.
+- 005/010: `ScrollViewStyleReset` põe `body{overflow:hidden}`: telas altas precisam de `ScrollView` (zoom 200%). Foco visível e alvo ≥ 24 px a cargo dos atoms (008).
+- RNTL 14: `renderRouter` é assíncrono; `getByRole` não acha landmarks em `View`.
+- `<title>` por rota via `<Head>` (não no `+html.tsx`), por causa do title vazio do SDK 57.
+
 ## Bloqueios
 - Skill `react-native-skills` não existe com esse nome; usando `vercel-react-native-skills` (confirmado pelo Pedro).
 - Grill da Fase 1 usa `anthropic-skills:grill-me` (escolha do Pedro). Agentes novos só carregam em sessão nova: iniciar com `claude --agent orquestrador`.
