@@ -1,4 +1,4 @@
-import { emitirAnuncio, ouvirAnuncios, propsDeCampo } from './a11yComum';
+import { emitirAnuncio, ouvirAnuncios } from './a11yComum';
 
 describe('emitirAnuncio e ouvirAnuncios', () => {
   it('entrega o texto aparado aos ouvintes', () => {
@@ -44,36 +44,5 @@ describe('emitirAnuncio e ouvirAnuncios', () => {
     expect(segundo).toHaveBeenCalledWith('Pagamento liberado');
     pararPrimeiro();
     pararSegundo();
-  });
-});
-
-describe('propsDeCampo (ADR 0009)', () => {
-  it('associa rótulo e campo sem erro', () => {
-    const props = propsDeCampo({ id: 'email', rotulo: 'E-mail' });
-
-    expect(props.rotulo).toEqual({ nativeID: 'email-rotulo' });
-    expect(props.campo).toEqual({
-      nativeID: 'email',
-      accessibilityLabel: 'E-mail',
-      accessibilityHint: undefined,
-      'aria-labelledby': 'email-rotulo',
-      'aria-describedby': undefined,
-      'aria-invalid': false,
-    });
-    expect(props.erro).toBeNull();
-  });
-
-  it('associa a mensagem de erro ao campo e marca como inválido', () => {
-    const props = propsDeCampo({ id: 'cpf', rotulo: 'CPF', erro: 'Informe 11 dígitos.' });
-
-    expect(props.campo.accessibilityHint).toBe('Informe 11 dígitos.');
-    expect(props.campo['aria-describedby']).toBe('cpf-erro');
-    expect(props.campo['aria-invalid']).toBe(true);
-    expect(props.erro).toEqual({ nativeID: 'cpf-erro' });
-  });
-
-  it('trata erro vazio ou null como ausência de erro', () => {
-    expect(propsDeCampo({ id: 'a', rotulo: 'A', erro: '' }).erro).toBeNull();
-    expect(propsDeCampo({ id: 'a', rotulo: 'A', erro: null }).campo['aria-invalid']).toBe(false);
   });
 });

@@ -26,6 +26,10 @@ describe('paraNumero', () => {
     expect(paraNumero('1e3')).toBeNull();
     expect(paraNumero('0x10')).toBeNull();
     expect(paraNumero('1,2,3')).toBeNull();
+    // Estilo EUA ou ponto fora de lugar com vírgula: não adivinha.
+    expect(paraNumero('1,234.56')).toBeNull();
+    expect(paraNumero('1.2,3')).toBeNull();
+    expect(paraNumero('12.34,5')).toBeNull();
     expect(paraNumero(Number.NaN)).toBeNull();
     expect(paraNumero(Infinity)).toBeNull();
     expect(paraNumero(null)).toBeNull();
