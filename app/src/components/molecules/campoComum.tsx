@@ -116,7 +116,11 @@ export function CampoRotulado({
   return (
     <View style={estilos.campo}>
       <View style={estilos.rotuloEAjuda}>
-        <Texto {...propsA11y.rotulo} peso="bold">
+        <Texto
+          {...propsA11y.rotulo}
+          peso="bold"
+          onPress={Platform.OS === 'web' ? () => focarControle(id) : undefined}
+        >
           {rotulo}
           {opcional ? (
             <Texto peso="regular" cor="secundario">
@@ -136,6 +140,11 @@ export function CampoRotulado({
       ) : null}
     </View>
   );
+}
+
+/** Na web, clicar no rótulo leva o foco ao campo (como um <label for>); no iPhone o rótulo não é um alvo. */
+function focarControle(id: string): void {
+  document.getElementById(id)?.focus();
 }
 
 /** Estilo da caixa de entrada por estado: padrão, foco, erro e desabilitado (DS 5.1). */

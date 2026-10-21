@@ -115,6 +115,29 @@ describe('CampoTexto na web', () => {
   });
 });
 
+describe('rótulo na web', () => {
+  it('clicar no rótulo foca o campo (CampoTexto e CampoSelecao)', async () => {
+    await montar(
+      <>
+        <CampoTexto rotulo="E-mail" id="email" />
+        <CampoSelecao
+          rotulo="Certificação"
+          id="cert"
+          opcoes={[{ valor: 'mopp', rotulo: 'MOPP' }]}
+          valor="mopp"
+          aoMudar={() => {}}
+        />
+      </>,
+    );
+    const rotulos = Array.from(contêiner.querySelectorAll<HTMLElement>('[id$="-rotulo"]'));
+    expect(rotulos).toHaveLength(2);
+    await act(async () => rotulos[0]!.click());
+    expect(document.activeElement?.id).toBe('email');
+    await act(async () => rotulos[1]!.click());
+    expect(document.activeElement?.id).toBe('cert');
+  });
+});
+
 describe('CampoSenha na web', () => {
   it('type password alterna para text; o botão tem aria-pressed e nome', async () => {
     await montar(<CampoSenha rotulo="Senha" tipo="nova-senha" />);
