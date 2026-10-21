@@ -99,6 +99,13 @@ describe('gerarCssGlobal', () => {
     expect(css).toContain(':focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}');
   });
 
+  it('foco no cabeçalho e na barra inferior usa focus.ringOnInverse', () => {
+    expect(css).toContain(
+      '[data-anel="inverso"] :focus-visible,[data-anel="inverso"]:focus-visible{outline-color:var(--focus-ring-on-inverse)}',
+    );
+    expect(css).toContain('--focus-ring-on-inverse:#FFD54A');
+  });
+
   it('pinta fundo e texto desde o HTML estático e deixa o body rolar', () => {
     expect(css).toContain('html,body{background-color:var(--bg-page);color:var(--text-primary)');
     expect(css).toContain('body{overflow:auto}');
