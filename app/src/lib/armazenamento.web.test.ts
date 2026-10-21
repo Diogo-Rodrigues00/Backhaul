@@ -1,4 +1,5 @@
-import { apagar, CHAVES, gravar, ler, memoriaReserva } from './armazenamento.web';
+import { memoriaReserva } from './armazenamentoComum';
+import { apagar, CHAVES, gravar, ler } from './armazenamento.web';
 
 function criarLocalStorageFalso(): Storage {
   const dados = new Map<string, string>();

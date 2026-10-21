@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 
-import { apagar, CHAVES, gravar, ler, memoriaReserva } from './armazenamento.native';
+import { memoriaReserva } from './armazenamentoComum';
+import { apagar, CHAVES, gravar, ler } from './armazenamento.native';
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(),

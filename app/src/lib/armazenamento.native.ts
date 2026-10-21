@@ -3,7 +3,8 @@ import * as SecureStore from 'expo-secure-store';
 
 import { type Chave, memoriaReserva } from './armazenamentoComum';
 
-export * from './armazenamentoComum';
+export { CHAVES } from './armazenamentoComum';
+export type { Chave } from './armazenamentoComum';
 
 export async function ler(chave: Chave): Promise<string | null> {
   try {
