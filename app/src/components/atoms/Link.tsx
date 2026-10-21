@@ -21,11 +21,11 @@ export interface PropsLink {
   aparencia?: Pick<PropsBotao, 'variante' | 'tamanho' | 'bloco' | 'icone'>;
 }
 
-function criarEstilos({ colors, radius, space }: TemaVisual) {
+function criarEstilos({ colors, radius, space, touch }: TemaVisual) {
   return {
     alvo: {
       // Alvo mínimo de 24 px (WCAG 2.2) mesmo com uma linha de texto curta.
-      minHeight: space[6],
+      minHeight: touch.absoluteMin,
       justifyContent: 'center',
       alignSelf: 'flex-start',
       borderRadius: radius.sm,

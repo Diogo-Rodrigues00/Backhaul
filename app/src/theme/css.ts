@@ -1,4 +1,4 @@
-import { breakpoints, colors, fonts, shadow } from './tokens';
+import { breakpoints, colors, fonts, shadow, type } from './tokens';
 import { achatar } from './variaveis';
 
 // Roda só no build estático (+html.tsx, em Node): não entra no bundle do navegador.
@@ -70,6 +70,18 @@ function fonteFace(peso: 500 | 700): string {
   );
 }
 
+/**
+ * Título de tela (h1): 38/44 acima de 720 px e 30/36 até 720 px (DS 3.3). O `Titulo` de nível 1
+ * leva `data-titulo="1"`; o !important vence o estilo em linha do react-native-web.
+ */
+function regraDoTituloDeTela(): string {
+  const { size, line } = type['2xl'];
+  return (
+    `@media (max-width:${breakpoints.phone}px){[data-titulo="1"]{` +
+    `font-size:${size / 16}rem!important;line-height:${line / 16}rem!important}}`
+  );
+}
+
 /** `so-celular` some acima de 720 px; `sem-celular` some até 720 px. Sem JavaScript. */
 function regrasDePontoDeQuebra(): string {
   return (Object.keys(breakpoints) as (keyof typeof breakpoints)[])
@@ -112,6 +124,7 @@ export function gerarCssGlobal(): string {
     '#conteudo:focus{outline:none}',
     '[data-num]{font-variant-numeric:tabular-nums}',
     regrasDePontoDeQuebra(),
+    regraDoTituloDeTela(),
     `@media (max-width:${breakpoints.tabbar}px){html{scroll-padding-bottom:${ALTURA_BARRA_INFERIOR + FOLGA_FOCO}px}}`,
     '@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}',
   ].join('\n');

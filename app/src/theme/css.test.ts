@@ -13,6 +13,12 @@ function corpo(seletor: string): string {
 }
 
 describe('gerarCssGlobal', () => {
+  it('h1 de tela cai para 30/36 até 720 px (data-titulo="1")', () => {
+    expect(css).toContain(
+      `@media (max-width:${breakpoints.phone}px){[data-titulo="1"]{font-size:1.875rem!important;line-height:2.25rem!important}}`,
+    );
+  });
+
   it('declara todas as variáveis do tema claro em :root', () => {
     const regra = corpo(':root{');
     for (const [nome, valor] of achatar(colors.light)) {
