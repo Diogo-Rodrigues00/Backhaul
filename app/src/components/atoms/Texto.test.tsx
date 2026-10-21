@@ -5,6 +5,8 @@ import { renderizar } from '@/test-utils/renderComTema';
 import { colors } from '@/theme/tokens';
 import { coresWeb } from '@/theme/variaveis';
 
+import { useLargura } from '@/theme/responsivo';
+
 import { corDoTexto } from './corTexto';
 import { Texto } from './Texto';
 import { TextoOculto } from './TextoOculto';
@@ -14,7 +16,16 @@ function estiloDe(el: { props: { style?: unknown } }) {
   return StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
 }
 
-afterEach(() => jest.restoreAllMocks());
+jest.mock('@/theme/responsivo', () => ({
+  ...jest.requireActual('@/theme/responsivo'),
+  useLargura: jest.fn(() => 750),
+}));
+const mockLargura = useLargura as jest.MockedFunction<typeof useLargura>;
+
+afterEach(() => {
+  jest.restoreAllMocks();
+  mockLargura.mockReturnValue(750);
+});
 
 describe('Texto', () => {
   it('usa o nível base (17/26, Barlow 500) e o texto principal por padrão', async () => {
@@ -99,6 +110,54 @@ describe('Titulo', () => {
       expect(estiloDe(titulo)).toMatchObject({ fontSize: tamanho, fontFamily: 'Barlow_700Bold' });
     },
   );
+
+  describe('h1 responsivo (DS 3.3: 38/44 acima de 720 px, 30/36 até 720 px)', () => {
+    function larguraDaJanela(width: number) {
+      mockLargura.mockReturnValue(width);
+    }
+
+    it('iPhone: até 720 px o h1 usa 30/36', async () => {
+      larguraDaJanela(390);
+      await renderizar(<Titulo nivel={1}>Entrar</Titulo>);
+      expect(estiloDe(screen.getByRole('heading'))).toMatchObject({ fontSize: 30, lineHeight: 36 });
+    });
+
+    it('iPhone: no limite de 720 px ainda é 30/36 e acima volta para 38/44', async () => {
+      larguraDaJanela(720);
+      await renderizar(<Titulo nivel={1}>Entrar</Titulo>);
+      expect(estiloDe(screen.getByRole('heading')).fontSize).toBe(30);
+      await screen.unmount();
+      larguraDaJanela(721);
+      await renderizar(<Titulo nivel={1}>Entrar</Titulo>);
+      expect(estiloDe(screen.getByRole('heading'))).toMatchObject({ fontSize: 38, lineHeight: 44 });
+    });
+
+    it('h2 e h3 não mudam com a largura', async () => {
+      larguraDaJanela(390);
+      await renderizar(
+        <>
+          <Titulo nivel={2}>Dois</Titulo>
+          <Titulo nivel={3}>Três</Titulo>
+        </>,
+      );
+      expect(estiloDe(screen.getByText('Dois')).fontSize).toBe(24);
+      expect(estiloDe(screen.getByText('Três')).fontSize).toBe(19);
+    });
+
+    it('web: só o h1 leva data-titulo (o CSS global troca o tamanho) e o tamanho do JS não muda', async () => {
+      jest.replaceProperty(Platform, 'OS', 'web');
+      larguraDaJanela(390);
+      await renderizar(
+        <>
+          <Titulo nivel={1}>Um</Titulo>
+          <Titulo nivel={2}>Dois</Titulo>
+        </>,
+      );
+      expect(screen.getByText('Um').props.dataSet).toEqual({ titulo: '1' });
+      expect(screen.getByText('Dois').props.dataSet).toBeUndefined();
+      expect(estiloDe(screen.getByText('Um')).fontSize).toBe('2.375rem');
+    });
+  });
 
   it('repassa ref e tabIndex={-1} (foco no h1 ao trocar de rota)', async () => {
     const ref = { current: null as unknown };
