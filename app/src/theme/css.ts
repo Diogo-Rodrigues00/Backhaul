@@ -106,6 +106,10 @@ export function gerarCssGlobal(): string {
     // Foco visível global (DS seção 5: 3 px, afastado 3 px; campos refinam para 2 px). Só aparece
     // no teclado (:focus-visible), nunca no clique. Componentes refinam (ex.: ringOnInverse).
     ':focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}',
+    // Cabeçalho e barra inferior são asfalto: o anel padrão (asfalto no claro) sumiria nelas.
+    '[data-anel="inverso"] :focus-visible,[data-anel="inverso"]:focus-visible{outline-color:var(--focus-ring-on-inverse)}',
+    // Alvo do "Pular para o conteúdo": recebe o foco por programa, sem ser um controle.
+    '#conteudo:focus{outline:none}',
     '[data-num]{font-variant-numeric:tabular-nums}',
     regrasDePontoDeQuebra(),
     `@media (max-width:${breakpoints.tabbar}px){html{scroll-padding-bottom:${ALTURA_BARRA_INFERIOR + FOLGA_FOCO}px}}`,
