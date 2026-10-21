@@ -1,5 +1,6 @@
 import { Link as LinkDoRouter, type Href } from 'expo-router';
-import { Platform, Pressable, type TextStyle, type ViewStyle } from 'react-native';
+import { useState } from 'react';
+import { Platform, Pressable, StyleSheet, type TextStyle, type ViewStyle } from 'react-native';
 
 import { Icone } from '@/components/atoms/Icone';
 import type { NomeIcone } from '@/components/atoms/icones';
@@ -65,6 +66,8 @@ export function AbaNavegacao({ href, rotulo, icone, atual, variante }: PropsAbaN
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
   const naBarra = variante === 'barra';
+  // Hover por estado (e não por `style` como função): o `asChild` do Link mescla `style` e só aceita objeto.
+  const [sobre, setSobre] = useState(false);
   const corIcone = atual && naBarra ? brand.amber : colors.text.onInverse;
 
   const conteudo = (
@@ -95,13 +98,16 @@ export function AbaNavegacao({ href, rotulo, icone, atual, variante }: PropsAbaN
         aria-current={atual ? 'page' : undefined}
         // `aria-selected` é inválido em link na web; no VoiceOver o "selecionado" vem do estado.
         {...(Platform.OS === 'web' ? null : { accessibilityState: { selected: atual } })}
-        style={({ hovered }) => [
+        onHoverIn={() => setSobre(true)}
+        onHoverOut={() => setSobre(false)}
+        // Achatado: o `asChild` do Link só aceita objeto (um array de estilos gera aviso).
+        style={StyleSheet.flatten([
           naBarra ? estilos.barra : estilos.cabecalho,
           atual && {
             [naBarra ? 'borderTopColor' : 'borderBottomColor']: brand.amber,
           },
-          !atual && !naBarra && hovered && { borderBottomColor: colors.text.onInverseMuted },
-        ]}
+          !atual && !naBarra && sobre && { borderBottomColor: colors.text.onInverseMuted },
+        ])}
       >
         {conteudo}
       </Pressable>

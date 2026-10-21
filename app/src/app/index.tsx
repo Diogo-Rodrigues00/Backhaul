@@ -7,6 +7,7 @@ export default function Inicio() {
   return (
     <TemplateTela
       titulo="Backhaul"
+      tituloDaPagina="Backhaul"
       descricao="Plataforma que conecta caminhoneiros disponíveis a cargas urgentes próximas."
       cabecalho={<Cabecalho variante="simples" />}
     />

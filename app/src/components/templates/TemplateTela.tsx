@@ -1,10 +1,11 @@
 import Head from 'expo-router/head';
 import { useRef, type ReactNode } from 'react';
-import { Platform, ScrollView, View, type Text as TextoRN, type ViewStyle } from 'react-native';
+import { View, type Text as TextoRN, type ViewStyle } from 'react-native';
 
 import { Texto } from '@/components/atoms/Texto';
 import { Titulo } from '@/components/atoms/Titulo';
 import type { ItemNavegacao } from '@/components/molecules/AbaNavegacao';
+import { CorpoDaTela } from '@/components/molecules/CorpoDaTela';
 import { ID_CONTEUDO } from '@/components/molecules/PularParaConteudo';
 import { BarraAbas } from '@/components/organisms/BarraAbas';
 import { useFocoNoTitulo } from '@/hooks/useFocoNoTitulo';
@@ -14,6 +15,8 @@ import { useEstilos } from '@/state/tema/useEstilos';
 export interface PropsTemplateTela {
   /** O `h1` e o `<title>` da rota ("Minhas cargas"). Único por rota. */
   titulo: string;
+  /** `<title>` completo, quando o `h1` repetido ficaria estranho ("Backhaul · Backhaul"). */
+  tituloDaPagina?: string;
   /** Uma frase sob o título e a `meta description`. Também no HTML estático (LCP, ADR 0011). */
   descricao: string;
   /** O `<Cabecalho>` da tela (simples ou completo). */
@@ -30,7 +33,6 @@ const LARGURA_MAXIMA = 1120;
 function criarEstilos({ colors, space }: TemaVisual) {
   return {
     raiz: { flex: 1, backgroundColor: colors.bg.page } satisfies ViewStyle,
-    rolagem: { flexGrow: 1 } satisfies ViewStyle,
     principal: { flex: 1, width: '100%' } satisfies ViewStyle,
     miolo: {
       width: '100%',
@@ -62,6 +64,7 @@ function criarEstilos({ colors, space }: TemaVisual) {
  */
 export function TemplateTela({
   titulo,
+  tituloDaPagina,
   descricao,
   cabecalho,
   acoes,
@@ -72,47 +75,29 @@ export function TemplateTela({
   const refTitulo = useRef<TextoRN>(null);
   useFocoNoTitulo(refTitulo);
 
-  const topo = (
-    <>
-      {cabecalho}
-      <View role="main" nativeID={ID_CONTEUDO} tabIndex={-1} style={estilos.principal}>
-        <View style={estilos.miolo}>
-          <View style={estilos.cabecalhoDaPagina}>
-            <View style={estilos.titulos}>
-              <Titulo nivel={1} ref={refTitulo} tabIndex={-1}>
-                {titulo}
-              </Titulo>
-              <Texto cor="secundario">{descricao}</Texto>
-            </View>
-            {acoes ? <View style={estilos.acoes}>{acoes}</View> : null}
-          </View>
-          {children}
-        </View>
-      </View>
-    </>
-  );
-  const barra = abas ? <BarraAbas itens={abas} /> : null;
-
   return (
     <View style={estilos.raiz}>
       <Head>
-        <title>{`${titulo} · Backhaul`}</title>
+        <title>{tituloDaPagina ?? `${titulo} · Backhaul`}</title>
         <meta name="description" content={descricao} />
       </Head>
-      {Platform.OS === 'web' ? (
-        <>
-          {topo}
-          {barra}
-        </>
-      ) : (
-        <>
-          {/* iPhone: só o conteúdo rola; a barra de abas fica fixa embaixo. */}
-          <ScrollView contentContainerStyle={estilos.rolagem} keyboardShouldPersistTaps="handled">
-            {topo}
-          </ScrollView>
-          {barra}
-        </>
-      )}
+      <CorpoDaTela barra={abas ? <BarraAbas itens={abas} /> : null}>
+        {cabecalho}
+        <View role="main" nativeID={ID_CONTEUDO} tabIndex={-1} style={estilos.principal}>
+          <View style={estilos.miolo}>
+            <View style={estilos.cabecalhoDaPagina}>
+              <View style={estilos.titulos}>
+                <Titulo nivel={1} ref={refTitulo} tabIndex={-1}>
+                  {titulo}
+                </Titulo>
+                <Texto cor="secundario">{descricao}</Texto>
+              </View>
+              {acoes ? <View style={estilos.acoes}>{acoes}</View> : null}
+            </View>
+            {children}
+          </View>
+        </View>
+      </CorpoDaTela>
     </View>
   );
 }
