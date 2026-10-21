@@ -22,7 +22,7 @@ Portão: Lighthouse **100** em Performance, Acessibilidade, Boas práticas e SEO
 ### Orçamento (verificado por `scripts/orcamento-bundle.mjs` no CI, falha o PR se estourar)
 | Item | Limite (gzip) |
 |---|---|
-| JS inicial de qualquer rota (todos os `<script>` do HTML da rota) | **≤ 300 KB** (era 220 KB; revisado em 2026-10-20, ver adendo) |
+| JS inicial de qualquer rota (todos os `<script>` do HTML da rota) | **≤ 320 KiB = 327.680 bytes** (era 220 KB; revisado em 2026-10-20, ver adendos) |
 | Chunk próprio de cada rota | ≤ 30 KB |
 | CSS total | ≤ 15 KB |
 | Fontes | 2 arquivos `woff2` (Barlow 500/700), ≤ 40 KB juntos |
@@ -47,3 +47,9 @@ O card da base mede o JS inicial vazio (expo-router + react-native-web, uma rota
 A base do card 001 mediu **289,7 KB gzip** de JS inicial, quase todo do núcleo (react-dom 175 KB, react-native-web 276 KB e expo-router 409 KB, brutos). Os chunks por rota têm menos de 1 KB. Reduzir exigiria trocar ou podar o roteador, sem garantia e com risco ao prazo.
 
 Decisão: o orçamento de JS inicial passa a **≤ 300 KB gzip**, com uma regra extra: **nenhum card pode aumentar o JS inicial** em relação à base (≈ 290 KB). Código de tela fica no chunk da rota (≤ 30 KB). Performance mobile < 100 é aceita com a nota registrada no PR. Acessibilidade, Boas práticas e SEO continuam 100.
+
+## Adendo 2 — 2026-10-20 (aprovado pelo Pedro): 320 KiB para a infraestrutura comum
+O tema (card 005) levou o JS inicial de 297.078 para 300.296 bytes, e os cards 013 e 014 (sessão e TanStack Query no layout raiz) somam ~13 KB. Decisão: o orçamento de JS inicial passa a **320 KiB (327.680 bytes), medido sempre em bytes** (`ORCAMENTO_JS_INICIAL_BYTES`).
+- A infraestrutura que toda tela usa (tema, sessão, cliente de dados) pode crescer até esse teto.
+- **Cards de tela não podem aumentar o JS inicial**: o código da tela fica no chunk da rota (≤ 30 KB).
+- Performance mobile < 100 continua aceita com a nota registrada; Acessibilidade, Boas práticas e SEO seguem 100.
