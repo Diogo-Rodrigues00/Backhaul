@@ -39,3 +39,4 @@ Decisões fechadas antes do grill (kickoff, 2026-10-20). Novas decisões entram 
 | 2026-10-20 | Tela "Conectando ao servidor" só aparece se `/saude` passar de 0,5 s | Pedro |
 | 2026-10-20 | Barlow hospedada no próprio site com `font-display: optional` | Pedro (proposta do tech-lead) |
 | 2026-10-20 | Design system e protótipo aprovados: Crítico em vermelho (separado do âmbar do Urgente); corpo 17 px; nome em caixa alta; carga MOPP da demo é "Crítico"; admin e "Minhas disponibilidades" sem protótipo próprio | Pedro |
+| 2026-10-20 | Orçamento de JS inicial revisado para ≤ 300 KB gzip (adendo ao ADR 0011); nenhum card aumenta o JS inicial da base (~290 KB) | Pedro |
