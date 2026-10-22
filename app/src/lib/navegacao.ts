@@ -23,3 +23,22 @@ export function ehPaginaAtual(pathname: string, href: HrefSimples): boolean {
   if (destino === '/') return atual === '/';
   return atual === destino || atual.startsWith(`${destino}/`);
 }
+
+/**
+ * Índice do item que marca a página aberta, ou -1. Quando mais de um destino contém a página
+ * ("/empresa/cargas/nova" está dentro de "/empresa/cargas" e é "Publicar carga"), vence o mais
+ * específico: o de caminho mais longo. Assim só um item da navegação leva `aria-current`.
+ */
+export function indiceDaPaginaAtual(pathname: string, hrefs: readonly HrefSimples[]): number {
+  let melhor = -1;
+  let tamanhoMelhor = -1;
+  hrefs.forEach((href, indice) => {
+    if (!ehPaginaAtual(pathname, href)) return;
+    const tamanho = semBarraFinal(caminhoDoHref(href)).length;
+    if (tamanho > tamanhoMelhor) {
+      melhor = indice;
+      tamanhoMelhor = tamanho;
+    }
+  });
+  return melhor;
+}

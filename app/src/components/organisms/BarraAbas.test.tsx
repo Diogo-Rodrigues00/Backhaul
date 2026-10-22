@@ -33,6 +33,21 @@ describe('BarraAbas', () => {
     expect(screen.getByRole('link', { name: 'Início' }).props['aria-current']).toBeUndefined();
   });
 
+  it('com destinos aninhados marca só o mais específico', async () => {
+    const aninhados = [
+      { href: '/empresa/cargas', rotulo: 'Minhas cargas', icone: 'package' },
+      { href: '/empresa/cargas/nova', rotulo: 'Publicar carga', icone: 'plus' },
+    ] as const;
+    await renderizarComRota(<BarraAbas itens={aninhados} />, {
+      url: '/empresa/cargas/nova',
+      rotas: ['empresa/cargas/nova'],
+    });
+    expect(screen.getByRole('link', { name: 'Publicar carga' }).props['aria-current']).toBe('page');
+    expect(
+      screen.getByRole('link', { name: 'Minhas cargas' }).props['aria-current'],
+    ).toBeUndefined();
+  });
+
   it('tem 60 px de altura', async () => {
     await renderizarComRota(<BarraAbas itens={itens} />);
     const lista = screen.container.queryAll((el) => el.props.role === 'list')[0];

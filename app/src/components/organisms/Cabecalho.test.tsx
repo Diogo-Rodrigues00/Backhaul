@@ -72,6 +72,45 @@ describe('Cabecalho completo (web)', () => {
     expect(screen.getByText('Empresa')).toBeOnTheScreen();
   });
 
+  it('sem itens (administrador) não monta navegação vazia', async () => {
+    await renderizarComRota(
+      <Cabecalho variante="completo" itens={[]} usuario={usuario} aoSair={() => {}} />,
+    );
+    expect(landmarks('navigation')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Sair' })).toBeOnTheScreen();
+  });
+
+  it('sem nome (sessão ainda sendo restaurada) mostra só o perfil', async () => {
+    await renderizarComRota(
+      <Cabecalho
+        variante="completo"
+        itens={itens}
+        usuario={{ nome: '', perfil: 'Empresa' }}
+        aoSair={() => {}}
+      />,
+    );
+    expect(screen.getByText('Empresa')).toBeOnTheScreen();
+    expect(screen.queryByText('Transportes Silva')).toBeNull();
+  });
+
+  it('com destinos aninhados marca só o mais específico', async () => {
+    const aninhados = [
+      { href: '/empresa/cargas', rotulo: 'Minhas cargas', icone: 'package' },
+      { href: '/empresa/cargas/nova', rotulo: 'Publicar carga', icone: 'plus' },
+    ] as const;
+    await renderizarComRota(
+      <Cabecalho variante="completo" itens={aninhados} usuario={usuario} aoSair={() => {}} />,
+      { url: '/empresa/cargas/nova', rotas: ['empresa/cargas/nova'] },
+    );
+    const [nav] = landmarks('navigation');
+    expect(within(nav!).getByRole('link', { name: 'Publicar carga' }).props['aria-current']).toBe(
+      'page',
+    );
+    expect(
+      within(nav!).getByRole('link', { name: 'Minhas cargas' }).props['aria-current'],
+    ).toBeUndefined();
+  });
+
   it('"Pular para o conteúdo" é o primeiro link e o primeiro foco', async () => {
     await renderizarComRota(completo());
     const links = screen.getAllByRole('link');

@@ -4,7 +4,7 @@ import { Platform, View, type ViewStyle } from 'react-native';
 import { AbaNavegacao, type ItemNavegacao } from '@/components/molecules/AbaNavegacao';
 import { AreaSegura } from '@/components/molecules/AreaSegura';
 import { Responsivo } from '@/components/molecules/Responsivo';
-import { ehPaginaAtual, type HrefSimples } from '@/lib/navegacao';
+import { indiceDaPaginaAtual, type HrefSimples } from '@/lib/navegacao';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
@@ -49,6 +49,10 @@ export function BarraAbas({ itens }: PropsBarraAbas) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
   const pathname = usePathname();
+  const indiceAtual = indiceDaPaginaAtual(
+    pathname,
+    itens.map((item) => item.href as HrefSimples),
+  );
 
   return (
     <Responsivo bp="so-barra" style={estiloGrudado()}>
@@ -59,13 +63,9 @@ export function BarraAbas({ itens }: PropsBarraAbas) {
       >
         <View role="navigation" aria-label="Principal">
           <View role="list" style={estilos.lista}>
-            {itens.map((item) => (
+            {itens.map((item, indice) => (
               <View key={item.rotulo} role="listitem" style={estilos.item}>
-                <AbaNavegacao
-                  {...item}
-                  variante="barra"
-                  atual={ehPaginaAtual(pathname, item.href as HrefSimples)}
-                />
+                <AbaNavegacao {...item} variante="barra" atual={indice === indiceAtual} />
               </View>
             ))}
           </View>

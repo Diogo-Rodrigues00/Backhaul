@@ -1,18 +1,18 @@
 // Sobe, para E2E (Playwright) e Lighthouse CI, os dois servidores do ADR 0013:
 //   - mock da API em http://localhost:4010 (mocks/servidor-http.ts)
-//   - site estático de dist/ em http://localhost:4173 (serve, com cleanUrls)
+//   - site estático de dist/ em http://localhost:4173 (scripts/servidor-site.mjs, com cleanUrls)
 // Imprime `pronto` quando os dois respondem; encerra os dois quando for terminado.
 //
 // Por que não um `serve dist` puro: o serve responde 404 para rota inexistente e o
 // Lighthouse aborta a auditoria de documento com status >= 400. Aqui (e só aqui,
-// nunca na Vercel) o serve usa scripts/serve-ci.json, que devolve a página do app
-// (+not-found.html) com status 200 para caminhos sem extensão que não existem em dist/.
-// Arquivos inexistentes (robots.txt, .js...) continuam 404 de verdade.
+// nunca na Vercel) o servidor devolve a página do app (+not-found.html) com status 200 para
+// caminhos sem extensão que não existem em dist/. Rotas reais (x.html, x/index.html) são servidas
+// como estão. Arquivos inexistentes (robots.txt, .js...) continuam 404 de verdade.
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { request } from 'node:http';
 import { createRequire } from 'node:module';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 
 const PORTA_MOCK = 4010;
 const PORTA_SITE = 4173;
@@ -36,19 +36,10 @@ const filhos = [
     [join('node_modules', 'tsx', 'dist', 'cli.mjs'), 'mocks/servidor-http.ts'],
     { stdio: 'inherit', env: { ...process.env, MOCK_PORT: String(PORTA_MOCK) } },
   ),
-  spawn(
-    process.execPath,
-    [
-      join('node_modules', 'serve', 'build', 'main.js'),
-      'dist',
-      '-l',
-      String(PORTA_SITE),
-      '--no-clipboard',
-      '--config',
-      resolve('scripts', 'serve-ci.json'),
-    ],
-    { stdio: 'inherit' },
-  ),
+  spawn(process.execPath, [join('scripts', 'servidor-site.mjs')], {
+    stdio: 'inherit',
+    env: { ...process.env, SITE_PORT: String(PORTA_SITE) },
+  }),
 ];
 
 let encerrando = false;

@@ -10,7 +10,7 @@ import { AreaSegura } from '@/components/molecules/AreaSegura';
 import { BotaoCabecalho } from '@/components/molecules/BotaoCabecalho';
 import { PularParaConteudo } from '@/components/molecules/PularParaConteudo';
 import { Responsivo } from '@/components/molecules/Responsivo';
-import { ehPaginaAtual, type HrefSimples } from '@/lib/navegacao';
+import { indiceDaPaginaAtual, type HrefSimples } from '@/lib/navegacao';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
@@ -29,12 +29,21 @@ export type PropsCabecalho =
   | {
       /** Telas logadas: logo, navegação, quem está logado, tema e Sair. */
       variante: 'completo';
+      /**
+       * Destinos da área. Acima de 960 px a navegação está aqui; até 960 px só na `BarraAbas`, então a
+       * tela precisa passar os MESMOS itens em `abas` do `TemplateTela` (use `useCasca()`). Lista vazia
+       * (administrador) = sem navegação.
+       */
       itens: readonly ItemNavegacao[];
       usuario: UsuarioCabecalho;
       aoSair: () => void;
     };
 
 const LARGURA_MAXIMA = 1120;
+// Logado, a linha do cabeçalho tem logo + até 4 destinos com ícone + nome + tema + Sair: em 1120 px
+// o nome do usuário passava por cima do último destino do motorista (achado do card 013).
+const LARGURA_MAXIMA_LOGADO = 1280;
+const LARGURA_NOME = 160;
 const ALTURA_MINIMA = 68;
 
 function criarEstilos({ space }: TemaVisual) {
@@ -50,9 +59,22 @@ function criarEstilos({ space }: TemaVisual) {
       paddingVertical: space[2],
       paddingHorizontal: space[4],
     } satisfies ViewStyle,
-    navegacao: { flex: 1 } satisfies ViewStyle,
-    lista: { flexDirection: 'row', alignItems: 'center', gap: space[1] } satisfies ViewStyle,
-    usuario: { alignItems: 'flex-end', marginLeft: 'auto' } satisfies ViewStyle,
+    dentroLogado: { maxWidth: LARGURA_MAXIMA_LOGADO } satisfies ViewStyle,
+    // `minWidth: 0` + quebra: se faltar espaço, os destinos vão para a linha de baixo em vez de
+    // passarem por cima do nome.
+    navegacao: { flex: 1, minWidth: 0 } satisfies ViewStyle,
+    lista: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: space[1],
+    } satisfies ViewStyle,
+    usuario: {
+      alignItems: 'flex-end',
+      marginLeft: 'auto',
+      maxWidth: LARGURA_NOME,
+      flexShrink: 0,
+    } satisfies ViewStyle,
     direita: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -71,6 +93,11 @@ export function Cabecalho(props: PropsCabecalho) {
   const estilos = useEstilos(criarEstilos);
   const { colors, preferencia, alternar } = useTema();
   const pathname = usePathname();
+  const itens = props.variante === 'completo' ? props.itens : [];
+  const indiceAtual = indiceDaPaginaAtual(
+    pathname,
+    itens.map((item) => item.href as HrefSimples),
+  );
 
   return (
     <AreaSegura
@@ -80,29 +107,35 @@ export function Cabecalho(props: PropsCabecalho) {
       style={{ backgroundColor: colors.bg.inverse }}
     >
       <PularParaConteudo />
-      <View style={estilos.dentro}>
+      <View style={[estilos.dentro, props.variante === 'completo' && estilos.dentroLogado]}>
         <Logo sobreInverso />
         {props.variante === 'completo' ? (
           <>
-            <Responsivo bp="sem-barra" style={estilos.navegacao}>
-              <View role="navigation" aria-label="Principal">
-                <View role="list" style={estilos.lista}>
-                  {props.itens.map((item) => (
-                    <View key={item.rotulo} role="listitem">
-                      <AbaNavegacao
-                        {...item}
-                        variante="cabecalho"
-                        atual={ehPaginaAtual(pathname, item.href as HrefSimples)}
-                      />
-                    </View>
-                  ))}
+            {/* Sem itens (área do administrador) não há navegação: nada de landmark vazio. */}
+            {itens.length > 0 ? (
+              <Responsivo bp="sem-barra" style={estilos.navegacao}>
+                <View role="navigation" aria-label="Principal">
+                  <View role="list" style={estilos.lista}>
+                    {itens.map((item, indice) => (
+                      <View key={item.rotulo} role="listitem">
+                        <AbaNavegacao
+                          {...item}
+                          variante="cabecalho"
+                          atual={indice === indiceAtual}
+                        />
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              </View>
-            </Responsivo>
+              </Responsivo>
+            ) : null}
             <Responsivo bp="sem-largo" style={estilos.usuario}>
-              <Texto nivel="sm" peso="bold" cor="sobreInverso">
-                {props.usuario.nome}
-              </Texto>
+              {/* Nome vazio = sessão ainda sendo restaurada (HTML estático): só o perfil aparece. */}
+              {props.usuario.nome !== '' ? (
+                <Texto nivel="sm" peso="bold" cor="sobreInverso" numberOfLines={1}>
+                  {props.usuario.nome}
+                </Texto>
+              ) : null}
               <Texto nivel="caption" cor="sobreInversoDiscreto">
                 {props.usuario.perfil}
               </Texto>

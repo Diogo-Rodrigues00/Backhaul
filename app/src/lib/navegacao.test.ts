@@ -1,4 +1,22 @@
-import { caminhoDoHref, ehPaginaAtual } from './navegacao';
+import { caminhoDoHref, ehPaginaAtual, indiceDaPaginaAtual } from './navegacao';
+
+describe('indiceDaPaginaAtual', () => {
+  const hrefs = ['/empresa/cargas', '/empresa/cargas/nova', '/empresa/fretes'];
+
+  it('marca o item mais específico quando dois contêm a página', () => {
+    expect(indiceDaPaginaAtual('/empresa/cargas/nova', hrefs)).toBe(1);
+    expect(indiceDaPaginaAtual('/empresa/cargas', hrefs)).toBe(0);
+    expect(indiceDaPaginaAtual('/empresa/cargas/detalhe', hrefs)).toBe(0);
+  });
+
+  it('devolve -1 fora da navegação', () => {
+    expect(indiceDaPaginaAtual('/admin', hrefs)).toBe(-1);
+  });
+
+  it('aceita hrefs no formato { pathname }', () => {
+    expect(indiceDaPaginaAtual('/empresa/fretes', [{ pathname: '/empresa/fretes' }])).toBe(0);
+  });
+});
 
 describe('caminhoDoHref', () => {
   it('tira query e âncora', () => {

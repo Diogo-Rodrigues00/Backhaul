@@ -25,14 +25,22 @@ function lerRotas() {
   return rotas;
 }
 
-// Arquivo que o export gera para a rota: "/" -> index.html, "/a/b" -> a/b.html.
-function htmlDaRota(caminho) {
-  return join(RAIZ_APP, 'dist', caminho === '/' ? 'index.html' : `${caminho.slice(1)}.html`);
+// Arquivo que o export gera para a rota: "/" -> index.html, "/a/b" -> a/b.html. Rota de pasta com
+// `index.tsx` (ex.: /admin, /empresa/cargas) sai como a/b/index.html.
+function htmlsDaRota(caminho) {
+  if (caminho === '/') return [join(RAIZ_APP, 'dist', 'index.html')];
+  const relativo = caminho.slice(1);
+  return [
+    join(RAIZ_APP, 'dist', `${relativo}.html`),
+    join(RAIZ_APP, 'dist', relativo, 'index.html'),
+  ];
 }
 
 function verificarDist(rotas = lerRotas()) {
   const faltando = rotas
-    .filter((r) => !r.naoEncontrada && !existsSync(htmlDaRota(r.caminho)))
+    .filter(
+      (r) => !r.naoEncontrada && !htmlsDaRota(r.caminho).some((arquivo) => existsSync(arquivo)),
+    )
     .map((r) => r.caminho);
   if (faltando.length > 0) {
     throw new Error(
