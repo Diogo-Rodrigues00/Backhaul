@@ -2,9 +2,11 @@
 import { http, HttpResponse } from 'msw';
 
 import {
+  cpfJaCadastradoMock,
   EMAIL_JA_CADASTRADO_MOCK,
+  registrarMotoristaMock,
   TAMANHO_MINIMO_SENHA_MOCK,
-  usuariosMock,
+  todosUsuariosMock,
 } from '../fixtures/usuarios';
 import { respostaErro, respostaErros } from '../respostas';
 import { autenticar, eNumeroPositivo, lerCorpo, textoOuVazio } from './comum';
@@ -35,7 +37,9 @@ function digitos(corpo: Record<string, unknown>, campo: string, total: number): 
 
 function emailJaCadastrado(email: string): boolean {
   const minusculo = email.toLowerCase();
-  return minusculo === EMAIL_JA_CADASTRADO_MOCK || usuariosMock.some((u) => u.email === minusculo);
+  return (
+    minusculo === EMAIL_JA_CADASTRADO_MOCK || todosUsuariosMock().some((u) => u.email === minusculo)
+  );
 }
 
 export function criarHandlersSessao(baseUrl: string) {
@@ -47,7 +51,7 @@ export function criarHandlersSessao(baseUrl: string) {
       if (email === '' || senha === '') {
         return respostaErros(400, ['email e senha são obrigatórios']);
       }
-      const usuario = usuariosMock.find((u) => u.email === email.toLowerCase());
+      const usuario = todosUsuariosMock().find((u) => u.email === email.toLowerCase());
       if (usuario === undefined || senha.length < TAMANHO_MINIMO_SENHA_MOCK) {
         // Mesma mensagem para e-mail inexistente e senha errada (contrato).
         return respostaErro(401, 'email ou senha inválidos');
@@ -95,18 +99,13 @@ export function criarHandlersSessao(baseUrl: string) {
       }
       if (erros.length > 0) return respostaErros(400, erros);
       const email = textoOuVazio(corpo.email);
-      if (emailJaCadastrado(email)) return respostaErro(409, 'email já cadastrado');
-      return HttpResponse.json(
-        {
-          usuario: {
-            id: '77777777-7777-4777-8777-777777777777',
-            email,
-            tipo: 'motorista',
-            criado_em: new Date().toISOString(),
-          },
-        },
-        { status: 201 },
-      );
+      const cpf = textoOuVazio(corpo.cpf).replace(/\D/g, '');
+      // Contrato (docs/api.md): 409 com esta mensagem para e-mail ou CPF repetidos.
+      if (emailJaCadastrado(email) || cpfJaCadastradoMock(cpf)) {
+        return respostaErro(409, 'e-mail ou CPF já cadastrado');
+      }
+      const criado = registrarMotoristaMock(email, textoOuVazio(corpo.nome_completo), cpf);
+      return HttpResponse.json({ usuario: criado.usuario }, { status: 201 });
     }),
   ];
 }

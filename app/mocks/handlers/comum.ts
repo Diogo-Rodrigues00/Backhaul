@@ -1,6 +1,6 @@
 // Peças comuns dos handlers: autenticação por token de mock, leitura segura do corpo e ids fixos.
 import type { TipoUsuario } from '../../src/api/tipos';
-import { usuariosMock, type UsuarioMock } from '../fixtures/usuarios';
+import { todosUsuariosMock, type UsuarioMock } from '../fixtures/usuarios';
 import { respostaErro } from '../respostas';
 
 /** Id de qualquer recurso que o mock deve tratar como inexistente (404). */
@@ -20,7 +20,7 @@ export function autenticar(request: Request, permitidos?: TipoUsuario[]): Result
     return { resposta: respostaErro(401, 'token ausente') };
   }
   const token = cabecalho.slice('Bearer '.length);
-  const usuario = usuariosMock.find((u) => u.token === token);
+  const usuario = todosUsuariosMock().find((u) => u.token === token);
   if (usuario === undefined) {
     return { resposta: respostaErro(401, 'token inválido ou expirado') };
   }
