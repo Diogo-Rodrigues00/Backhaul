@@ -3,6 +3,7 @@
 // `naoEncontrada: true` marca a rota que deve cair na página 404 (não tem .html próprio em dist/).
 export const rotas = [
   { caminho: '/', perfil: null },
+  { caminho: '/entrar', perfil: null },
   // Rotas logadas: o teste grava o token de mock do perfil antes de abrir (e2e/fixtures.ts).
   { caminho: '/admin', perfil: 'admin' as const },
   { caminho: '/empresa/cargas', perfil: 'empresa' as const },
