@@ -21,8 +21,18 @@ import { SessaoContext, type EstadoSessao, type ValorSessao } from './SessaoCont
  * - 404 (usuário apagado): `conta-nao-encontrada`;
  * - rede ou 5xx: `anonimo` com o aviso `sem-conexao` e o token guardado, para a próxima abertura
  *   tentar de novo.
+ *
+ * `servidorPronto` (portão do servidor, card 014): a restauração só começa quando `GET /saude`
+ * respondeu, para o Render ainda acordando não mandar o usuário logado ao login. Fica `restaurando`
+ * até lá. Sem o portão (testes), o padrão é `true`.
  */
-export function SessaoProvider({ children }: { children: ReactNode }) {
+export function SessaoProvider({
+  children,
+  servidorPronto = true,
+}: {
+  children: ReactNode;
+  servidorPronto?: boolean;
+}) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [estado, setEstado] = useState<EstadoSessao>('restaurando');
@@ -86,8 +96,9 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  // Restaura a sessão ao abrir o app.
+  // Restaura a sessão ao abrir o app (depois que o servidor respondeu).
   useEffect(() => {
+    if (!servidorPronto) return;
     const epoca = epocaRef.current;
     let cancelado = false;
     const obsoleto = () => cancelado || epoca !== epocaRef.current;
@@ -124,7 +135,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [servidorPronto]);
 
   const valor = useMemo<ValorSessao>(
     () => ({ estado, usuario, aviso, entrar, sair }),

@@ -138,7 +138,8 @@ describe('usePortaoServidor (tempo controlado)', () => {
     await act(async () => {
       result.current.tentarDeNovo();
     });
-    expect(result.current.estado).toBe('verificando');
+    // Direto em `lento`: nunca passa por `verificando` (que mostraria o app por 500 ms).
+    expect(result.current.estado).toBe('lento');
     expect(result.current.tentativa).toBe(1);
     expect(requisitar).toHaveBeenCalledTimes(TOTAL_TENTATIVAS + 1);
   });

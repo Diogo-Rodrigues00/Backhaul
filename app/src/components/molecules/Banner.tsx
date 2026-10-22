@@ -18,6 +18,11 @@ export interface PropsBanner {
   children?: string;
   /** Botão ou link opcional, no fim do banner. */
   acao?: ReactNode;
+  /**
+   * `false`: o banner é só texto na tela, sem `role` nem região viva (conteúdo que muda sozinho e
+   * não deve ser anunciado a cada mudança, como o contador de tentativas). Padrão: `true`.
+   */
+  anunciar?: boolean;
 }
 
 const ICONE: Record<VarianteBanner, NomeIcone> = {
@@ -47,7 +52,7 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
  * Banner (DS 5.2 e 7): ícone + título + texto (+ ação), borda de 2 px; o sinal nunca é só a cor.
  * `erro` é `role="alert"` (anuncia na hora); `info`, `ok` e `aviso` são `role="status"` (educado).
  */
-export function Banner({ variante, titulo, children, acao }: PropsBanner) {
+export function Banner({ variante, titulo, children, acao, anunciar = true }: PropsBanner) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
 
@@ -60,7 +65,8 @@ export function Banner({ variante, titulo, children, acao }: PropsBanner) {
 
   return (
     <View
-      role={variante === 'erro' ? 'alert' : 'status'}
+      role={anunciar ? (variante === 'erro' ? 'alert' : 'status') : undefined}
+      aria-live={anunciar ? undefined : 'off'}
       style={[estilos.banner, { backgroundColor: cores.fundo, borderColor: cores.borda }]}
     >
       <Icone nome={ICONE[variante]} tamanho="destaque" cor={cores.icone} />
