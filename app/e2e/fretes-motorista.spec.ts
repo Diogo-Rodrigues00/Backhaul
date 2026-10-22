@@ -12,7 +12,7 @@ test.describe('meus fretes do motorista', () => {
     page,
   }) => {
     const lista = page.getByRole('list', { name: 'Fretes' });
-    await expect(lista.getByRole('listitem')).toHaveCount(3);
+    await expect(lista.getByRole('article')).toHaveCount(3);
 
     await expect(
       page.getByRole('button', { name: 'Iniciar transporte de Produtos inflamáveis' }),
