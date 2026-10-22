@@ -141,6 +141,9 @@ describe('Meus fretes (empresa)', () => {
     expect(
       screen.getByLabelText('Situação do pagamento: Pago, retido até a entrega'),
     ).toBeOnTheScreen();
+    // O GET do mock ainda traz `null`: o cartão segue o pagamento recém-registrado e não deixa pagar de novo.
+    expect(screen.queryByRole('button', { name: /^Pagar frete/ })).toBeNull();
+    expect(screen.queryByText('Aguardando pagamento')).toBeNull();
     await waitFor(() =>
       expect(screen.container.queryAll((el) => el.props.role === 'alertdialog')).toHaveLength(0),
     );

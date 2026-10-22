@@ -135,7 +135,7 @@ describe('CartaoFreteEmpresa', () => {
 
   it('com pagamento registrado, mostra o resumo com os valores recebidos', async () => {
     await montar({
-      statusPagamento: 'retido',
+      statusPagamento: null,
       pagamento: {
         valorFrete: 3200,
         percentualComissao: 7.5,

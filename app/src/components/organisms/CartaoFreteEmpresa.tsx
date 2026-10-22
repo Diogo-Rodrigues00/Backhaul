@@ -96,6 +96,8 @@ export function CartaoFreteEmpresa({
   const [erro, setErro] = useState<string | undefined>(undefined);
   const refBotao = useRef<View>(null);
   const refResumo = useRef<View>(null);
+  // Logo após o 201 a lista ainda pode trazer `null`: vale o pagamento que a API acabou de devolver.
+  const status = pagamento?.statusPagamento ?? statusPagamento;
 
   function abrir() {
     setErro(undefined);
@@ -138,7 +140,7 @@ export function CartaoFreteEmpresa({
         statusEntrega={statusEntrega}
         coletaEm={coletaEm}
         entregaEm={entregaEm}
-        statusPagamento={statusPagamento}
+        statusPagamento={status}
       />
       <View style={estilos.motorista}>
         <Texto nivel="sm" cor="secundario">
@@ -153,7 +155,7 @@ export function CartaoFreteEmpresa({
         />
       </View>
 
-      {statusPagamento === null ? (
+      {status === null ? (
         <View style={estilos.rodape}>
           <Botao
             ref={refBotao}
