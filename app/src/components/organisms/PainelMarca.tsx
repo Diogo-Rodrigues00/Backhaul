@@ -72,19 +72,20 @@ function criarEstilos({ colors, space }: TemaVisual) {
  * Painel da marca das telas de autenticação (AuthHero, DS 5.3): fundo asfalto, símbolo e nome,
  * a chamada do produto, três placas e a faixa tracejada. É decorativo: fica fora da árvore de
  * acessibilidade (`aria-hidden`) e a chamada é um parágrafo, porque o `h1` da tela é "Entrar".
- * As placas só aparecem acima de 720 px, para o formulário ficar perto do topo no celular.
+ * A marca e as placas só aparecem acima de 720 px, para o formulário ficar perto do topo no celular.
  */
 export function PainelMarca() {
   const estilos = useEstilos(criarEstilos);
 
   return (
     <View aria-hidden importantForAccessibility="no-hide-descendants" style={estilos.painel}>
-      <View style={estilos.marca}>
+      {/* No celular o cabeçalho já mostra a marca: sem ela aqui o formulário sobe na tela. */}
+      <Responsivo bp="sem-celular" style={estilos.marca}>
         <Desenho formas={simbolo} viewBox={VIEWBOX_SIMBOLO} tamanho={LADO_SIMBOLO} />
         <Texto nivel="xl" peso="bold" cor="sobreInverso" style={MARCA}>
           Backhaul
         </Texto>
-      </View>
+      </Responsivo>
       <View style={estilos.frase}>
         <Texto nivel="3xl" peso="bold" cor="sobreInverso">
           {'A urgência decide '}

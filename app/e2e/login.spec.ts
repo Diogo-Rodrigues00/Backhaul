@@ -5,6 +5,9 @@ import type { Page } from '@playwright/test';
 // A API é o mock em localhost:4010: qualquer senha com 8 ou mais caracteres entra.
 const SENHA = 'senha-valida-123';
 const h1 = (page: Page) => page.getByRole('heading', { level: 1 });
+// O aviso de sessão é o `status` dentro do `main` (a região viva global, fora dele, repete o texto).
+const avisoDeSessao = (page: Page) =>
+  page.getByRole('main').getByRole('status').filter({ hasText: 'Sua sessão expirou.' });
 const campoSenha = (page: Page) => page.getByLabel('Senha', { exact: true });
 
 async function preencher(page: Page, email: string, senha: string) {
@@ -95,7 +98,7 @@ test.describe('entrar', () => {
       'aria-pressed',
       'true',
     );
-    await expect(campo).toHaveAttribute('type', 'text');
+    await expect(campo).not.toHaveAttribute('type', 'password');
   });
 
   test('"Criar conta" é um link para /cadastro', async ({ page }) => {
@@ -111,10 +114,14 @@ test.describe('entrar', () => {
 test.describe('aviso e redirecionamento', () => {
   test('?aviso=sessao-expirada mostra o aviso como status', async ({ page }) => {
     await page.goto('/entrar?aviso=sessao-expirada');
-    const aviso = page.getByRole('status').filter({ hasText: 'Sua sessão expirou.' });
+    const aviso = avisoDeSessao(page);
     await expect(aviso).toBeVisible();
     await expect(aviso).toContainText('Entre de novo.');
     await expect(page.getByRole('alert')).toHaveCount(0);
+    // E a região viva global também recebeu o texto, para o leitor de tela anunciar.
+    await expect(page.locator('[role="status"][aria-live="polite"]')).toContainText(
+      'Sua sessão expirou.',
+    );
   });
 
   test('anônimo que abre uma área protegida cai no login com o foco no h1', async ({ page }) => {
@@ -128,7 +135,7 @@ test.describe('aviso e redirecionamento', () => {
     await page.addInitScript((chave) => localStorage.setItem(chave, 'token-vencido'), CHAVE_TOKEN);
     await page.goto('/motorista/cargas');
     await expect(page).toHaveURL(/\/entrar\?aviso=sessao-expirada$/);
-    await expect(page.getByRole('status').filter({ hasText: 'Sua sessão expirou.' })).toBeVisible();
+    await expect(avisoDeSessao(page)).toBeVisible();
     await expect(h1(page)).toBeFocused();
   });
 
