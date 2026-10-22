@@ -25,6 +25,11 @@ export interface PropsResumoMotorista {
   placa: string;
   capacidadeKg: NumeroEntrada;
   certificacoes: readonly CertificacaoResumida[];
+  /**
+   * Não repete o nome: o cartão que já o mostra como título (`h3` do CartaoProposta) usa o resumo
+   * só para o veículo e as certificações.
+   */
+  ocultarNome?: boolean;
 }
 
 function criarEstilos({ space: espaco }: TemaVisual) {
@@ -42,11 +47,12 @@ export function ResumoMotorista({
   placa,
   capacidadeKg,
   certificacoes,
+  ocultarNome = false,
 }: PropsResumoMotorista) {
   const estilos = useEstilos(criarEstilos);
   return (
     <View style={estilos.bloco}>
-      <Texto nivel="lg">{nome}</Texto>
+      {ocultarNome ? null : <Texto nivel="lg">{nome}</Texto>}
       <ListaDeFatos
         itens={[
           { rotulo: 'Veículo', valor: veiculo },
