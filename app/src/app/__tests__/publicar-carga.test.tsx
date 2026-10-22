@@ -22,7 +22,11 @@ jest.mock('@/lib/a11y', () => ({
   anunciar: jest.fn(),
   moverFoco: jest.fn(),
 }));
-// O Jest não executa import() dinâmico: a prévia (React.lazy) vem de um módulo falso, na hora.
+// O Jest não executa import() dinâmico: o formulário e a prévia (React.lazy) vêm de módulos falsos.
+jest.mock('@/telas/FormularioPublicarCarga.carregar', () => ({
+  carregarFormularioPublicarCarga: () =>
+    Promise.resolve(jest.requireActual('@/telas/FormularioPublicarCarga')),
+}));
 jest.mock('@/components/organisms/PreviaCarga.carregar', () => ({
   carregarPreviaCarga: () =>
     Promise.resolve(jest.requireActual('@/components/organisms/PreviaCarga')),

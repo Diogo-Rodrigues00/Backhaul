@@ -24,6 +24,30 @@ function criarEstilos({ space }: TemaVisual) {
   } as const;
 }
 
+export interface PropsGradeComPrevia {
+  children: ReactNode;
+  previa?: ReactNode;
+}
+
+/**
+ * A grade do template (formulário + lateral), sem a casca da tela. Existe para telas que carregam o
+ * formulário depois do primeiro render (React.lazy) e deixam a casca (h1, cabeçalho) no JS inicial.
+ */
+export function GradeComPrevia({ children, previa }: PropsGradeComPrevia) {
+  const estilos = useEstilos(criarEstilos);
+
+  return (
+    <View style={estilos.grade}>
+      <View style={estilos.formulario}>{children}</View>
+      {previa ? (
+        <Responsivo bp="sem-barra" style={estilos.previa}>
+          {previa}
+        </Responsivo>
+      ) : null}
+    </View>
+  );
+}
+
 /**
  * Formulário logado com lateral (FormWithPreviewTemplate, DS 5.4): `TemplateTela` + grade com o
  * formulário e, ao lado, a prévia de 340 px. A lateral some no ponto em que a barra de abas assume
@@ -35,18 +59,9 @@ export function TemplateFormularioComPrevia({
   previa,
   ...tela
 }: PropsTemplateFormularioComPrevia) {
-  const estilos = useEstilos(criarEstilos);
-
   return (
     <TemplateTela {...tela}>
-      <View style={estilos.grade}>
-        <View style={estilos.formulario}>{children}</View>
-        {previa ? (
-          <Responsivo bp="sem-barra" style={estilos.previa}>
-            {previa}
-          </Responsivo>
-        ) : null}
-      </View>
+      <GradeComPrevia previa={previa}>{children}</GradeComPrevia>
     </TemplateTela>
   );
 }
