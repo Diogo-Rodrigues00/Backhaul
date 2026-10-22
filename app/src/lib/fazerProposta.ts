@@ -1,31 +1,8 @@
-// Regras puras da proposta do motorista (card 025, MVP-13): validação do valor da contraproposta e
-// leitura dos erros de `POST /propostas`. Fica em lib para os componentes não importarem src/api.
+// Regras puras da proposta do motorista (card 025, MVP-13): textos dos botões e leitura dos erros de
+// `POST /propostas`. O valor da contraproposta fica em `valorProposto.ts`: assim o que é só do diálogo
+// (baixado sob demanda) não vai para o JS comum, que todas as rotas carregam (ADR 0011).
 import { ErroApi } from './erros';
 import { formatarMoeda, type NumeroEntrada } from './formatacao';
-import { paraNumero } from './numeros';
-import { numeroPositivo, numeroSemAmbiguidade, obrigatorio, type Validador } from './validacao';
-
-/** Aviso da contraproposta única (D-PO-05): aparece antes do envio e dentro do diálogo. */
-export const AVISO_CONTRAPROPOSTA_UNICA = 'Você só pode enviar uma contraproposta para esta carga.';
-
-const MENSAGEM_VALOR_VAZIO = 'Informe o valor da contraproposta.';
-
-/** Valor digitado ("3.200,50", "3200"): a primeira regra que falhar vira a mensagem do campo. */
-const REGRAS_DO_VALOR: readonly Validador[] = [obrigatorio, numeroSemAmbiguidade, numeroPositivo];
-
-/** `true` se o texto é um valor válido (número > 0, D-PO-14); senão, a mensagem em pt-BR. */
-export function validarValorProposto(texto: string): true | string {
-  for (const regra of REGRAS_DO_VALOR) {
-    const resultado = regra(texto);
-    if (resultado !== true) return regra === obrigatorio ? MENSAGEM_VALOR_VAZIO : resultado;
-  }
-  return true;
-}
-
-/** O texto digitado como número para o corpo da requisição; `null` se não for número. */
-export function valorPropostoComoNumero(texto: string): number | null {
-  return paraNumero(texto);
-}
 
 /** "Grãos, Uberlândia - MG → Uberaba - MG": identifica a carga nos nomes acessíveis dos botões. */
 export function descreverCarga(tipoCarga: string, origem: string, destino: string): string {

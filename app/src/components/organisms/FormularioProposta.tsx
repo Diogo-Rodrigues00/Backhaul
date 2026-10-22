@@ -12,7 +12,7 @@ import {
   AVISO_CONTRAPROPOSTA_UNICA,
   validarValorProposto,
   valorPropostoComoNumero,
-} from '@/lib/fazerProposta';
+} from '@/lib/valorProposto';
 import { formatarMoeda, type NumeroEntrada } from '@/lib/formatacao';
 import type { TipoPropostaEnviada } from '@/lib/propostasEnviadas';
 
