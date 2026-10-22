@@ -221,6 +221,9 @@ export default function PublicarCarga() {
     },
     mode: 'onSubmit',
     reValidateMode: 'onChange',
+    // O foco vai ao resumo de erros (CT-03), não ao primeiro campo: sem isto o react-hook-form
+    // tira o foco do resumo logo depois de `aoInvalidar`. Os links do resumo focam cada campo.
+    shouldFocusError: false,
   });
   const { isSubmitting } = formState;
 
