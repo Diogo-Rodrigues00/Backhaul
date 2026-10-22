@@ -30,7 +30,8 @@ import { ErroApi } from '@/lib/erros';
 import { useCargasProximas, useMinhasCargas, usePublicarCarga } from './cargas';
 import { useCertificacoes } from './certificacoes';
 import { chaves } from './chaves';
-import { useMinhasDisponibilidades, usePublicarDisponibilidade } from './disponibilidades';
+import { useMinhasDisponibilidades } from './disponibilidades';
+import { usePublicarDisponibilidade } from './publicarDisponibilidade';
 import {
   eFreteDaEmpresa,
   eFreteDoMotorista,

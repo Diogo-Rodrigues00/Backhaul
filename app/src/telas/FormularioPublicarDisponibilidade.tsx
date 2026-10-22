@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
+import { useContext } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { View, type ViewStyle } from 'react-native';
 
-import { usePublicarDisponibilidade } from '@/api/disponibilidades';
+import { usePublicarDisponibilidade } from '@/api/publicarDisponibilidade';
 import type { CorpoPublicarDisponibilidade } from '@/api/tipos';
 import { Botao } from '@/components/atoms/Botao';
 import { Link } from '@/components/atoms/Link';
@@ -21,7 +22,7 @@ import { paraNumero } from '@/lib/numeros';
 import { calcularExpiraEm } from '@/lib/prazos';
 import type { Urgencia } from '@/lib/rotulos';
 import { numeroAte, numeroSemAmbiguidade, obrigatorio } from '@/lib/validacao';
-import { useDisponibilidadeAtiva } from '@/state/disponibilidade-ativa/useDisponibilidadeAtiva';
+import { DisponibilidadeAtivaContext } from '@/state/disponibilidade-ativa/DisponibilidadeAtivaContext';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 
@@ -78,7 +79,10 @@ export default function FormularioPublicarDisponibilidade() {
   const estilos = useEstilos(criarEstilos);
   const router = useRouter();
   const publicar = usePublicarDisponibilidade();
-  const { registrarPublicada } = useDisponibilidadeAtiva();
+  // Lê o contexto direto, sem o hook `useDisponibilidadeAtiva`: esse módulo, importado também por
+  // outra rota, iria para o chunk comum e somaria ~2 KiB ao JS inicial de toda rota (ADR 0011). A
+  // rota fica dentro de `motorista/_layout`, que sempre monta o provider.
+  const registrarPublicada = useContext(DisponibilidadeAtivaContext)?.registrarPublicada;
 
   const { control, handleSubmit, setError, setFocus, formState } = useForm<Valores>({
     defaultValues: { local: null, raio: RAIO_PADRAO, urgencia: 'normal', prazo: PRAZO_PADRAO },
@@ -124,7 +128,7 @@ export default function FormularioPublicarDisponibilidade() {
         return;
       }
       // A nova vira a ativa e fica guardada no aparelho (D-PO-03); "Cargas próximas" já busca com ela.
-      registrarPublicada(publicada.disponibilidade);
+      registrarPublicada?.(publicada.disponibilidade);
       anunciar('Disponibilidade publicada');
       router.replace('/motorista/cargas');
     },
