@@ -7,3 +7,10 @@ process.env.EXPO_PUBLIC_API_URL = URL_BASE_TESTE;
 beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => servidor.resetHandlers());
 afterAll(() => servidor.close());
+
+// O Jest não executa `import()` dinâmico: o corpo de "Cargas próximas" (React.lazy, ADR 0011) vem de
+// um módulo falso que devolve o componente na hora. Vale para todo teste que renderize a rota.
+jest.mock('@/telas/CorpoCargasProximas.carregar', () => ({
+  carregarCorpoCargasProximas: () =>
+    Promise.resolve(jest.requireActual('@/telas/CorpoCargasProximas')),
+}));
