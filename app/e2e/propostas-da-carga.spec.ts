@@ -38,9 +38,9 @@ test.describe('lista', () => {
     ]);
     await expect(page.getByRole('button', { name: /^Aceitar proposta de / })).toHaveCount(4);
     await expect(page.getByRole('button', { name: /^Recusar proposta de / })).toHaveCount(4);
-    await expect(
-      page.getByRole('button', { name: 'Aceitar proposta de Carlos Lima' }),
-    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Aceitar proposta de Carlos Lima' })).toHaveCount(
+      0,
+    );
     await expect(page.getByRole('region', { name: 'Resumo da carga' })).toBeVisible();
   });
 
@@ -98,9 +98,9 @@ test.describe('aceitar com o teclado (D-PO-08)', () => {
       page.getByRole('alertdialog', { name: 'Recusar a proposta de Maria Souza?' }),
     ).toBeVisible();
     const resultado = await new AxeBuilder({ page }).withTags(TAGS_WCAG).analyze();
-    expect(
-      resultado.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.length} nó(s))`),
-    ).toEqual([]);
+    expect(resultado.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.length} nó(s))`)).toEqual(
+      [],
+    );
   });
 
   test('confirmar mostra "Frete criado" e o Tab seguinte chega a "Ver fretes"', async ({
@@ -117,7 +117,11 @@ test.describe('aceitar com o teclado (D-PO-08)', () => {
     await page.keyboard.press('Enter');
 
     await expect(page.getByRole('alertdialog')).toBeHidden();
-    await expect(page.getByText('Frete criado')).toBeVisible();
+    // O texto aparece no banner (dentro do <main>) e na região viva do anúncio (fora dele).
+    await expect(page.locator('#conteudo').getByText('Frete criado')).toBeVisible();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Frete criado' }).first(),
+    ).toBeAttached();
     await page.keyboard.press('Tab');
     const ver = page.getByRole('link', { name: 'Ver fretes' }).last();
     await expect(ver).toBeFocused();
@@ -133,6 +137,6 @@ test.describe('aceitar com o teclado (D-PO-08)', () => {
     await expect(dialogo).toBeVisible();
     await dialogo.getByRole('button', { name: 'Recusar proposta' }).click();
     await expect(dialogo).toBeHidden();
-    await expect(page.getByText('Frete criado')).toHaveCount(0);
+    await expect(page.locator('#conteudo').getByText('Frete criado')).toHaveCount(0);
   });
 });
