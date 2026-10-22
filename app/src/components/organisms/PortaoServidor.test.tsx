@@ -61,8 +61,10 @@ describe('PortaoServidor', () => {
       ).toBeOnTheScreen();
       expect(screen.getByText('Tentativa 3 de 18')).toBeOnTheScreen();
       expect(screen.getByText('Nova tentativa em 5 segundos.')).toBeOnTheScreen();
-      expect(papel('status')).toHaveLength(1);
+      // O contador muda a cada 5 s: só visual, sem região viva (o anúncio é feito uma vez).
+      expect(papel('status')).toHaveLength(0);
       expect(papel('alert')).toHaveLength(0);
+      expect(screen.container.queryAll((el) => el.props['aria-live'] === 'polite')).toHaveLength(0);
       expect(papel('main')).toHaveLength(1);
       expect(papel('banner')).toHaveLength(1);
     });
@@ -102,19 +104,44 @@ describe('PortaoServidor', () => {
   describe('anúncio na região educada', () => {
     // A rota do teste guarda a UI da primeira renderização: o estado muda por dentro.
     let mudarEstado: (estado: PropsPortaoServidor['estado']) => void = () => undefined;
+    let mudarTentativa: (tentativa: number) => void = () => undefined;
     function Controlado({ inicial }: { inicial: PropsPortaoServidor['estado'] }) {
       const [estado, setEstado] = useState(inicial);
+      const [tentativa, setTentativa] = useState(1);
       mudarEstado = setEstado;
-      return portao({ estado });
+      mudarTentativa = setTentativa;
+      return portao({ estado, tentativa });
     }
+
+    it('ao ficar lento anuncia uma vez; trocar a tentativa não anuncia de novo', async () => {
+      await renderizarComRota(<Controlado inicial="verificando" />);
+      expect(anunciar).not.toHaveBeenCalled();
+
+      await act(async () => mudarEstado('lento'));
+      expect(anunciar).toHaveBeenCalledTimes(1);
+      expect(anunciar).toHaveBeenCalledWith('Conectando ao servidor. Pode levar até 1 minuto.');
+
+      for (const tentativa of [2, 3, 4]) {
+        await act(async () => mudarTentativa(tentativa));
+      }
+      expect(anunciar).toHaveBeenCalledTimes(1);
+    });
 
     it('lento → pronto: anuncia que o servidor conectou', async () => {
       await renderizarComRota(<Controlado inicial="lento" />);
-      expect(anunciar).not.toHaveBeenCalled();
+      expect(anunciar).toHaveBeenCalledTimes(1);
 
       await act(async () => mudarEstado('pronto'));
-      expect(anunciar).toHaveBeenCalledWith('Servidor conectado.');
-      expect(anunciar).toHaveBeenCalledTimes(1);
+      expect(anunciar).toHaveBeenLastCalledWith('Servidor conectado.');
+      expect(anunciar).toHaveBeenCalledTimes(2);
+    });
+
+    it('falhou → lento (Tentar de novo): anuncia de novo que está conectando', async () => {
+      await renderizarComRota(<Controlado inicial="falhou" />);
+      expect(anunciar).not.toHaveBeenCalled();
+
+      await act(async () => mudarEstado('lento'));
+      expect(anunciar).toHaveBeenCalledWith('Conectando ao servidor. Pode levar até 1 minuto.');
     });
 
     it('verificando → pronto (servidor rápido): não anuncia nada', async () => {

@@ -26,6 +26,18 @@ describe('Banner', () => {
     expect(raiz().props.role).toBe('status');
   });
 
+  it('com anunciar={false} é só texto: sem role nem região viva', async () => {
+    await renderizar(
+      <Banner variante="info" anunciar={false} titulo="Tentativa 1 de 18">
+        Nova tentativa em 5 segundos.
+      </Banner>,
+    );
+    expect(screen.container.queryAll((el) => el.props.role === 'status')).toHaveLength(0);
+    expect(screen.container.queryAll((el) => el.props.role === 'alert')).toHaveLength(0);
+    expect(screen.container.queryAll((el) => el.props['aria-live'] === 'off')).toHaveLength(1);
+    expect(screen.getByText('Tentativa 1 de 18')).toBeOnTheScreen();
+  });
+
   it('mostra título, texto e ação', async () => {
     await renderizar(
       <Banner variante="aviso" titulo="Sessão expirada" acao={<Text>Entrar de novo</Text>}>

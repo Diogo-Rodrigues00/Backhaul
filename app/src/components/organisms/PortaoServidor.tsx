@@ -48,7 +48,8 @@ function criarEstilos({ colors, border, space }: TemaVisual) {
  * Portão do servidor (ADR 0005, D-PO-15). `verificando` e `pronto` mostram a tela normal; a tela
  * "Conectando ao servidor" só aparece em `lento` (a verificação passou de 500 ms) e some sozinha
  * quando o servidor responde. `falhou` (90 s sem resposta) oferece "Tentar de novo".
- * Quando o servidor acorda, o leitor de tela ouve "Servidor conectado" na região educada.
+ * Na região educada o leitor de tela ouve "Conectando ao servidor" uma vez e "Servidor conectado"
+ * quando ele acorda; o contador de tentativas é só visual (não é região viva).
  */
 export function PortaoServidor({
   estado,
@@ -58,10 +59,13 @@ export function PortaoServidor({
   aoTentarDeNovo,
   children,
 }: PropsPortaoServidor) {
-  const anterior = useRef(estado);
+  const anterior = useRef<EstadoDoPortao | null>(null);
 
   useEffect(() => {
-    if (anterior.current === 'lento' && estado === 'pronto') {
+    // Um anúncio por mudança de estado: o contador de tentativas muda a cada 5 s e fica mudo.
+    if (anterior.current !== 'lento' && estado === 'lento') {
+      anunciar('Conectando ao servidor. Pode levar até 1 minuto.');
+    } else if (anterior.current === 'lento' && estado === 'pronto') {
       anunciar('Servidor conectado.');
     }
     anterior.current = estado;
@@ -96,7 +100,11 @@ function TelaConectando({
       ilustracao={<EstradaAnimada />}
     >
       <View style={estilos.aviso}>
-        <Banner variante="info" titulo={`Tentativa ${tentativa} de ${totalTentativas}`}>
+        <Banner
+          variante="info"
+          anunciar={false}
+          titulo={`Tentativa ${tentativa} de ${totalTentativas}`}
+        >
           {`Nova tentativa em ${intervaloSegundos} segundos.`}
         </Banner>
       </View>

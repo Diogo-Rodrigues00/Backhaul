@@ -19,7 +19,7 @@ test.describe('servidor acordando', () => {
 
     await expect(h1(page, CONECTANDO)).toBeVisible();
     await expect(page.getByText('O servidor pode levar até 1 minuto para acordar.')).toBeVisible();
-    await expect(page.getByRole('status').filter({ hasText: 'Tentativa 1 de 18' })).toBeVisible();
+    await expect(page.getByText('Tentativa 1 de 18')).toBeVisible();
     // A região viva global está sempre no DOM; a da tela é a do banner.
     await expect(page.getByRole('alert')).toHaveCount(0);
 
