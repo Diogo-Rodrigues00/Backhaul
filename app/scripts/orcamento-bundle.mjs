@@ -7,6 +7,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
+await import('./diag-common.mjs'); // TEMPORARIO
 const KIB = 1024;
 const lerLimite = (nome, padrao) => {
   const valor = Number(process.env[nome]);
