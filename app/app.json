@@ -37,7 +37,13 @@
       ],
       "expo-font",
       "expo-secure-store",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O Backhaul usa sua localização para mostrar as cargas perto de você. Ela só é lida quando você toca em \"Usar minha localização\"."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
