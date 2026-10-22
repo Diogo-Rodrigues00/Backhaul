@@ -5,7 +5,9 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { criarQueryClient } from '@/api/consulta';
+import { INTERVALO_SAUDE_MS, usePortaoServidor } from '@/api/saude';
 import { RegiaoViva } from '@/components/atoms/RegiaoViva';
+import { PortaoServidor } from '@/components/organisms/PortaoServidor';
 import { useMocksProntos } from '@/lib/mocks';
 import { registrarServiceWorker } from '@/lib/pwa';
 
@@ -17,7 +19,7 @@ import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
 import { useFontesCarregadas } from '@/theme/fontes';
 
-// Ordem dos providers (ADR 0004 e 0006): Tema → Query → Sessão. O portão do servidor entra no card 014.
+// Ordem dos providers (ADR 0004 e 0006): Tema → Query → Sessão → Portão do servidor (card 014).
 // Slot, nunca Stack/Tabs: menos JS na web (ADR 0002).
 export default function LayoutRaiz() {
   // Produção: registra o service worker depois do `load` (no-op no nativo, no preview e em dev).
@@ -32,12 +34,28 @@ export default function LayoutRaiz() {
   );
 }
 
-/** Cliente de dados e sessão. Só montam quando tudo está pronto (o MSW do preview precisa estar de pé). */
+/**
+ * Cliente de dados, sessão e portão do servidor. Só montam quando tudo está pronto (o MSW do preview
+ * precisa estar de pé). O portão confere `GET /saude` uma vez por abertura (ADR 0005): a sessão só é
+ * restaurada depois que o servidor responde, então toda tela logada (e suas queries) já nasce com o
+ * servidor acordado. Em `verificando` as telas aparecem normalmente (HTML estático e LCP intactos).
+ */
 function Provedores({ children }: { children: ReactNode }) {
   const [queryClient] = useState(criarQueryClient);
+  const portao = usePortaoServidor();
   return (
     <QueryClientProvider client={queryClient}>
-      <SessaoProvider>{children}</SessaoProvider>
+      <SessaoProvider servidorPronto={portao.estado === 'pronto'}>
+        <PortaoServidor
+          estado={portao.estado}
+          tentativa={portao.tentativa}
+          totalTentativas={portao.totalTentativas}
+          intervaloSegundos={INTERVALO_SAUDE_MS / 1000}
+          aoTentarDeNovo={portao.tentarDeNovo}
+        >
+          {children}
+        </PortaoServidor>
+      </SessaoProvider>
     </QueryClientProvider>
   );
 }
