@@ -407,6 +407,23 @@ describe('erros da API', () => {
     expect(anunciarMock).not.toHaveBeenCalledWith('Disponibilidade publicada');
   });
 
+  it('404 (motorista sem perfil) mostra a mensagem da API no resumo e não publica', async () => {
+    servidor.use(
+      http.post(urlMock('/disponibilidades'), () =>
+        respostaErro(404, 'perfil de motorista não encontrado'),
+      ),
+    );
+    await abrir();
+    await escolherCidade('uberl', 'Uberlândia - MG');
+    await fireEvent.press(botaoPublicar());
+
+    await waitFor(() =>
+      expect(screen.getByText('perfil de motorista não encontrado')).toBeOnTheScreen(),
+    );
+    expect(caminho()).toBe('/motorista/disponibilidades/nova');
+    expect(anunciarMock).not.toHaveBeenCalledWith('Disponibilidade publicada');
+  });
+
   it('500 com HTML vira o texto padrão com "Tentar de novo", e tentar de novo publica', async () => {
     let chamadas = 0;
     servidor.use(
