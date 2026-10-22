@@ -9,6 +9,7 @@ export const rotas = [
   // Rotas logadas: o teste grava o token de mock do perfil antes de abrir (e2e/fixtures.ts).
   { caminho: '/admin', perfil: 'admin' as const },
   { caminho: '/empresa/cargas', perfil: 'empresa' as const },
+  { caminho: '/empresa/cargas/nova', perfil: 'empresa' as const },
   { caminho: '/motorista/cargas', perfil: 'motorista' as const },
   { caminho: '/nao-existe', perfil: null, naoEncontrada: true },
 ];
