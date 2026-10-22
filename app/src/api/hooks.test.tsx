@@ -435,7 +435,7 @@ describe('propostas', () => {
     const { wrapper } = preparar();
     const { result } = await renderHook(() => usePropostasDaCarga(CARGA_URGENTE_ID), { wrapper });
     await esperarSucesso(result);
-    expect(result.current.data?.propostas).toHaveLength(3);
+    expect(result.current.data?.propostas).toHaveLength(5);
     expect(result.current.data?.propostas[0]?.motorista.certificacoes[0]?.validade).toBe(
       '2027-05-01',
     );

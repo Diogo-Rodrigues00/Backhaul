@@ -29,6 +29,21 @@ describe('ResumoMotorista', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 
+  it('com ocultarNome não repete o nome e segue mostrando o resto', async () => {
+    await renderizar(
+      <ResumoMotorista
+        nome="João da Silva"
+        veiculo="Carreta"
+        placa="ABC1D23"
+        capacidadeKg={15000}
+        certificacoes={[]}
+        ocultarNome
+      />,
+    );
+    expect(screen.queryByText('João da Silva')).not.toBeOnTheScreen();
+    expect(screen.getByLabelText('Placa: ABC1D23')).toBeOnTheScreen();
+  });
+
   it('sem certificações mostra o texto de vazio', async () => {
     await renderizar(
       <ResumoMotorista
