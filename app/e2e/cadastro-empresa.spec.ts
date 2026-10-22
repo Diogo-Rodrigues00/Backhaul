@@ -21,7 +21,7 @@ test.describe('cadastro de empresa', () => {
     await expect(h1(page)).toHaveText('Cadastro de empresa');
 
     await page.getByLabel('E-mail').fill('nova@empresa.test');
-    await page.getByLabel('Senha').fill('senhaSegura8');
+    await page.getByLabel('Senha', { exact: true }).fill('senhaSegura8');
     await page.getByLabel('Razão social').fill('Transportes Rápidos LTDA');
     await page.getByLabel('CNPJ').fill('12.345.678/0001-99');
     await page.getByRole('button', { name: 'Criar conta' }).click();
@@ -33,13 +33,13 @@ test.describe('cadastro de empresa', () => {
   test('409 do mock: a mensagem aparece no resumo e a senha é limpa', async ({ page }) => {
     await page.goto('/cadastro/empresa');
     await page.getByLabel('E-mail').fill('existente@mock.test');
-    await page.getByLabel('Senha').fill('senhaSegura8');
+    await page.getByLabel('Senha', { exact: true }).fill('senhaSegura8');
     await page.getByLabel('Razão social').fill('Transportes Rápidos LTDA');
     await page.getByLabel('CNPJ').fill('12.345.678/0001-99');
     await page.getByRole('button', { name: 'Criar conta' }).click();
 
     await expect(page.getByRole('alert')).toContainText('email já cadastrado');
-    await expect(page.getByLabel('Senha')).toHaveValue('');
+    await expect(page.getByLabel('Senha', { exact: true })).toHaveValue('');
     await expect(page.getByLabel('E-mail')).toHaveValue('existente@mock.test');
   });
 
