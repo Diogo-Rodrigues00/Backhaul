@@ -149,6 +149,9 @@ describe('portão do servidor no layout raiz', () => {
     await fireEvent.press(botao);
     expect(chamadas()).toBe(TOTAL_TENTATIVAS + 1);
     expect(h1(FALHOU)).toBeNull();
+    // Direto na tela "Conectando": o app (com a sessão ainda restaurando) não aparece nem por 500 ms.
+    expect(h1(CONECTANDO)).toBeOnTheScreen();
+    expect(h1('Backhaul')).toBeNull();
 
     await avancar(600);
     expect(h1(CONECTANDO)).toBeOnTheScreen();

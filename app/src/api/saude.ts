@@ -93,17 +93,19 @@ async function executar(numero: number): Promise<void> {
   }
 }
 
-function iniciar(): void {
+function iniciar(estadoInicial: 'verificando' | 'lento' = 'verificando'): void {
   iniciada = true;
   execucaoAtual += 1;
   clearTimeout(cronometroLento);
   clearTimeout(cronometroEspera);
-  atualizar({ estado: 'verificando', tentativa: 1 });
+  atualizar({ estado: estadoInicial, tentativa: 1 });
   void executar(execucaoAtual);
 }
 
 function tentarDeNovo(): void {
-  iniciar();
+  // Depois de uma falha o usuário já sabe que o servidor está lento: volta direto à tela
+  // "Conectando" (sem mostrar o app por 500 ms com a sessão ainda sendo restaurada).
+  iniciar('lento');
 }
 
 function assinar(ouvinte: () => void): () => void {
@@ -125,7 +127,7 @@ export type PortaoServidor = Retrato & { tentarDeNovo: () => void };
 
 /**
  * Estado da verificação do servidor. `lento` aparece após 500 ms sem resposta; `pronto` quando
- * GET /saude responde 200; `falhou` depois de 18 tentativas (90 s). `tentarDeNovo` reinicia.
+ * GET /saude responde 200; `falhou` depois de 18 tentativas (90 s). `tentarDeNovo` reinicia direto em `lento`.
  */
 export function usePortaoServidor(): PortaoServidor {
   const atual = useSyncExternalStore(assinar, obterRetrato, obterRetratoServidor);
