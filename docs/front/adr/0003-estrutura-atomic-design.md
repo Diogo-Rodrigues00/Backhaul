@@ -46,3 +46,5 @@ Decisão fechada: atomic design (atoms, molecules, organisms, templates; telas n
 - Componentes são testáveis só com props (sem MSW); telas são testadas com MSW.
 
 **Adendo (card 008):** um atom pode importar outros atoms, `src/hooks` e `src/state/tema` (além de `src/theme` e `src/lib`); continua proibido importar `@/api`, molecules, organisms e templates.
+
+**Adendo (fix nova-carga-peso):** `src/telas` guarda o corpo de uma tela que a rota carrega por `React.lazy` para sair do JS inicial (ADR 0011). Tem o mesmo nível de uma tela (`src/app`): pode usar `src/api` e `src/state`; só a rota (`src/app/**`) o importa, por um arquivo `*.carregar.ts` (o Jest não executa `import()` dinâmico). A rota mantém a casca (h1, cabeçalho, abas) e um esqueleto acessível.
