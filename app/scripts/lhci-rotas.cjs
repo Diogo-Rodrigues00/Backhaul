@@ -28,8 +28,10 @@ function lerRotas() {
 // Arquivo que o export gera para a rota: "/" -> index.html, "/a/b" -> a/b.html. Rota de pasta com
 // `index.tsx` (ex.: /admin, /empresa/cargas) sai como a/b/index.html.
 function htmlsDaRota(caminho) {
-  if (caminho === '/') return [join(RAIZ_APP, 'dist', 'index.html')];
-  const relativo = caminho.slice(1);
+  // A query (?id=...) não faz parte do arquivo: o export gera um .html por rota (ADR 0002).
+  const semQuery = caminho.split('?')[0];
+  if (semQuery === '/') return [join(RAIZ_APP, 'dist', 'index.html')];
+  const relativo = semQuery.slice(1);
   return [
     join(RAIZ_APP, 'dist', `${relativo}.html`),
     join(RAIZ_APP, 'dist', relativo, 'index.html'),

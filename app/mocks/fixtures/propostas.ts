@@ -73,6 +73,42 @@ export const propostasDaCargaMock: PropostaRecebida[] = [
     },
   },
   {
+    id: 'bbbbbbbb-0000-4000-8000-000000000005',
+    tipo: 'contraproposta',
+    valor_proposto: 3300,
+    status: 'pendente',
+    criado_em: daquiAHoras(-1.5),
+    motorista: {
+      id: '66666666-6666-4666-8666-666666666666',
+      nome_completo: 'Ana Beatriz Rocha',
+      veiculo_tipo: 'truck',
+      veiculo_placa: 'RTY5U67',
+      capacidade_kg: 14000,
+      certificacoes: [
+        {
+          nome: 'MOPP - Classe 3 Inflamáveis',
+          validade: dataSemHora(validadeIso),
+          validado_por_admin: true,
+        },
+      ],
+    },
+  },
+  {
+    id: 'bbbbbbbb-0000-4000-8000-000000000006',
+    tipo: 'aceite',
+    valor_proposto: 3500,
+    status: 'pendente',
+    criado_em: daquiAHoras(-1),
+    motorista: {
+      id: '77777777-7777-4777-8777-777777777777',
+      nome_completo: 'Pedro Henrique Alves',
+      veiculo_tipo: 'carreta',
+      veiculo_placa: 'LMN7P89',
+      capacidade_kg: 20000,
+      certificacoes: [],
+    },
+  },
+  {
     id: PROPOSTA_RECUSADA_ID,
     tipo: 'contraproposta',
     valor_proposto: 2900,
