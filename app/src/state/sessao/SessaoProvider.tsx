@@ -47,7 +47,11 @@ export function SessaoProvider({
     async (motivo?: AvisoSessao) => {
       epocaRef.current += 1;
       tokenRef.current = null;
-      await Promise.all([apagar(CHAVES.token), apagar(CHAVES.disponibilidadeAtiva)]);
+      await Promise.all([
+        apagar(CHAVES.token),
+        apagar(CHAVES.disponibilidadeAtiva),
+        apagar(CHAVES.propostasEnviadas),
+      ]);
       queryClient.clear();
       setUsuario(null);
       setAviso(motivo ?? null);
@@ -78,7 +82,7 @@ export function SessaoProvider({
       await gravar(CHAVES.token, token);
       // A disponibilidade ativa pertence a quem a escolheu: outra conta no mesmo aparelho não a herda
       // (cobre também a sessão que acabou sem `sair`, como a queda de rede ao restaurar).
-      await apagar(CHAVES.disponibilidadeAtiva);
+      await Promise.all([apagar(CHAVES.disponibilidadeAtiva), apagar(CHAVES.propostasEnviadas)]);
       // Nada da conta anterior (ou de uma tentativa sem sair) pode aparecer na nova.
       queryClient.clear();
       setUsuario(dados);

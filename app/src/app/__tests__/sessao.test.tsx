@@ -35,6 +35,7 @@ jest.mock('@/lib/armazenamento', () => {
       token: 'backhaul.token',
       tema: 'backhaul.tema',
       disponibilidadeAtiva: 'backhaul.disponibilidadeAtiva',
+      propostasEnviadas: 'backhaul.propostasEnviadas',
     },
     ler: jest.fn(async (chave: string) => memoria.get(chave) ?? null),
     gravar: jest.fn(async (chave: string, valor: string) => void memoria.set(chave, valor)),
@@ -265,6 +266,7 @@ describe('sair', () => {
   it('apaga token e disponibilidade ativa, limpa o cache e abre o login (MVP-04)', async () => {
     await gravar(CHAVES.token, 'mock-motorista');
     await gravar(CHAVES.disponibilidadeAtiva, 'disp-1');
+    await gravar(CHAVES.propostasEnviadas, '[]');
     const cliente = await abrir('/motorista/cargas');
     await waitFor(() => expect(sonda()).toContain('autenticado'));
     cliente.setQueryData(['cargas', 'proximas'], { cargas: ['dados da sessão'] });
@@ -276,7 +278,15 @@ describe('sair', () => {
     expect(rota()).toBe('/entrar|sem-aviso');
     await expect(ler(CHAVES.token)).resolves.toBeNull();
     await expect(ler(CHAVES.disponibilidadeAtiva)).resolves.toBeNull();
-    expect(cliente.getQueryCache().getAll()).toHaveLength(0);
+    await expect(ler(CHAVES.propostasEnviadas)).resolves.toBeNull();
+    // Nada da sessão fica no cache. A tela de cargas próximas, ainda montada por um instante, recria
+    // consultas paradas (sem dados): o que importa é que nenhuma guarde dado da conta que saiu.
+    expect(
+      cliente
+        .getQueryCache()
+        .getAll()
+        .filter((q) => q.state.data !== undefined),
+    ).toHaveLength(0);
   });
 
   it('voltar a uma área protegida depois de sair não mostra dados nem mantém a sessão', async () => {
@@ -374,6 +384,22 @@ describe('entrar', () => {
 
     await waitFor(() => expect(caminho()).toBe('/motorista/cargas'));
     await expect(ler(CHAVES.disponibilidadeAtiva)).resolves.toBeNull();
+  });
+
+  it('motorista que entra não herda as propostas enviadas de quem usou o aparelho antes', async () => {
+    await gravar(
+      CHAVES.propostasEnviadas,
+      '[{"cargaId":"carga-do-usuario-a","enviadaEm":"2026-10-21T12:00:00.000Z","tipo":"aceite"}]',
+    );
+    await abrir('/entrar');
+    await waitFor(() => expect(sonda()).toBe('anonimo|-|-'));
+
+    await act(async () =>
+      fireEvent.press(screen.getByRole('button', { name: 'Entrar como motorista' })),
+    );
+
+    await waitFor(() => expect(caminho()).toBe('/motorista/cargas'));
+    await expect(ler(CHAVES.propostasEnviadas)).resolves.toBeNull();
   });
 
   it('401 do login é erro do formulário: nada de aviso de sessão, nada guardado, continua no login (D-PO-11)', async () => {
