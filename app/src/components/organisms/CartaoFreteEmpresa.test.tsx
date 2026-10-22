@@ -147,5 +147,11 @@ describe('CartaoFreteEmpresa', () => {
     expect(screen.getByLabelText('Percentual de comissão: 7,5%')).toBeOnTheScreen();
     expect(screen.getByLabelText('Comissão da plataforma: R$ 240,00')).toBeOnTheScreen();
     expect(botaoPagar()).toBeNull();
+
+    // Ids de rótulo únicos: o grupo do resumo e o article não podem apontar para o mesmo título.
+    const [artigo] = screen.container.queryAll((el) => el.props.role === 'article');
+    const [grupo] = screen.container.queryAll((el) => el.props.role === 'group');
+    expect(grupo?.props['aria-labelledby']).toBeTruthy();
+    expect(grupo?.props['aria-labelledby']).not.toBe(artigo?.props['aria-labelledby']);
   });
 });

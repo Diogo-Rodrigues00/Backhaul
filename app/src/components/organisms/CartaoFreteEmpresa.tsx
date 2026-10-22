@@ -168,7 +168,7 @@ export function CartaoFreteEmpresa({
 
       {pagamento ? (
         <ResumoPagamento
-          idBase={`frete-${id}`}
+          idBase={`pagamento-${id}`}
           refTitulo={refResumo}
           valorFrete={pagamento.valorFrete}
           percentualComissao={pagamento.percentualComissao}
