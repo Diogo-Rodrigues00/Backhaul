@@ -17,6 +17,7 @@ describe('rotaDeEntrada', () => {
   it('com aviso leva o motivo na query', () => {
     expect(rotaDeEntrada('sessao-expirada')).toBe('/entrar?aviso=sessao-expirada');
     expect(rotaDeEntrada('conta-nao-encontrada')).toBe('/entrar?aviso=conta-nao-encontrada');
+    expect(rotaDeEntrada('sem-conexao')).toBe('/entrar?aviso=sem-conexao');
   });
 });
 

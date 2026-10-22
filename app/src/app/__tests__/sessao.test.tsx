@@ -193,7 +193,7 @@ describe('restaurar a sessão', () => {
     await abrir('/empresa/cargas');
 
     await waitFor(() => expect(caminho()).toBe('/entrar'));
-    expect(rota()).toBe('/entrar|sem-aviso');
+    expect(rota()).toBe('/entrar|sem-conexao');
     await expect(ler(CHAVES.token)).resolves.toBe('mock-empresa');
   });
 });

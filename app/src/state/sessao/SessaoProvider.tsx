@@ -19,7 +19,8 @@ import { SessaoContext, type EstadoSessao, type ValorSessao } from './SessaoCont
  * - 200: `autenticado`; sem token: `anonimo`;
  * - 401: o cliente HTTP avisa (`aoSessaoExpirada`) e a sessão acaba com `sessao-expirada`;
  * - 404 (usuário apagado): `conta-nao-encontrada`;
- * - rede ou 5xx: `anonimo` com o token guardado, para a próxima abertura tentar de novo.
+ * - rede ou 5xx: `anonimo` com o aviso `sem-conexao` e o token guardado, para a próxima abertura
+ *   tentar de novo.
  */
 export function SessaoProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -111,7 +112,10 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
           await sairRef.current('conta-nao-encontrada');
           return;
         }
+        // Rede ou 5xx: o token continua guardado (a próxima abertura tenta de novo), mas o
+        // usuário precisa saber por que foi ao login.
         tokenRef.current = null;
+        setAviso('sem-conexao');
         setEstado('anonimo');
       }
     }

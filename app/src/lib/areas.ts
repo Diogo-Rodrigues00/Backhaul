@@ -5,7 +5,7 @@ import type { Href } from 'expo-router';
 export type TipoPerfil = 'empresa' | 'motorista' | 'admin';
 
 /** Motivo do login ter sido pedido de novo; o texto é exibido pela tela de login (card 015). */
-export type AvisoSessao = 'sessao-expirada' | 'conta-nao-encontrada';
+export type AvisoSessao = 'sessao-expirada' | 'conta-nao-encontrada' | 'sem-conexao';
 
 // Rotas ainda sem arquivo (login: card 015) não existem na lista tipada do expo-router.
 const ROTA_ENTRAR = '/entrar';
