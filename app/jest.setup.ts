@@ -14,3 +14,11 @@ jest.mock('@/telas/CorpoCargasProximas.carregar', () => ({
   carregarCorpoCargasProximas: () =>
     Promise.resolve(jest.requireActual('@/telas/CorpoCargasProximas')),
 }));
+
+// Idem para o diálogo de proposta (card 025): React.lazy na primeira abertura.
+jest.mock('@/components/organisms/FormularioProposta.carregar', () => ({
+  carregarFormularioProposta: () =>
+    Promise.resolve({
+      default: jest.requireActual('@/components/organisms/FormularioProposta').FormularioProposta,
+    }),
+}));
