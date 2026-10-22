@@ -32,6 +32,11 @@ import { respostaErro } from '../../../mocks/respostas';
 import { criarClienteDeTeste, entrarComoMock, sairDoMock } from '../../../mocks/utils-teste';
 import PropostasDaCarga from '../empresa/cargas/detalhe';
 
+jest.mock('@/telas/CorpoPropostasDaCarga.carregar', () => ({
+  carregarCorpoPropostasDaCarga: () =>
+    Promise.resolve(jest.requireActual('@/telas/CorpoPropostasDaCarga')),
+}));
+
 jest.mock('@/lib/a11y', () => ({
   ...jest.requireActual('@/lib/a11y'),
   anunciar: jest.fn(),
