@@ -11,5 +11,6 @@ export const rotas = [
   { caminho: '/admin', perfil: 'admin' as const },
   { caminho: '/empresa/cargas', perfil: 'empresa' as const },
   { caminho: '/motorista/cargas', perfil: 'motorista' as const },
+  { caminho: '/motorista/disponibilidades', perfil: 'motorista' as const },
   { caminho: '/nao-existe', perfil: null, naoEncontrada: true },
 ];

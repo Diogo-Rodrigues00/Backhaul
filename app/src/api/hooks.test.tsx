@@ -358,7 +358,7 @@ describe('disponibilidades', () => {
       id: DISPONIBILIDADE_ABERTA_ID,
       propostas_pendentes: 1,
     });
-    expect(result.current.data?.disponibilidades[1]?.status).toBe('expirado');
+    expect(result.current.data?.disponibilidades[2]?.status).toBe('expirado');
   });
 
   it('useMinhasDisponibilidades como empresa: 403', async () => {
