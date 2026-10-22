@@ -300,7 +300,7 @@ describe('cargas', () => {
     );
     await esperarSucesso(result);
     expect(consulta).toBe('?lat=-18.9186&lng=-48.2772&raio_km=100');
-    expect(result.current.data?.cargas).toHaveLength(2);
+    expect(result.current.data?.cargas).toHaveLength(cargasProximasMock.length);
   });
 
   it('useCargasProximas sem parâmetros fica parada', async () => {

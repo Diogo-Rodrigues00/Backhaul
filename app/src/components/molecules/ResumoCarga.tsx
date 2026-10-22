@@ -36,6 +36,11 @@ export interface PropsResumoCarga {
    */
   status?: StatusCarga;
   distanciaKm?: NumeroEntrada;
+  /**
+   * Quando informado, o tipo da carga vira o título (`h2`) com este `nativeID`, para o cartão se
+   * rotular por ele (`aria-labelledby`). O selo vem antes na ordem de leitura: urgência, depois tipo.
+   */
+  idTitulo?: string;
   /** Relógio para o status efetivo (CT-10). Padrão: agora. Injetável para teste. */
   agora?: Date;
 }
@@ -69,6 +74,7 @@ export function ResumoCarga({
   expiraEm,
   status,
   distanciaKm,
+  idTitulo,
   agora,
 }: PropsResumoCarga) {
   const estilos = useEstilos(criarEstilos);
@@ -103,7 +109,13 @@ export function ResumoCarga({
           <Etiqueta variante={VARIANTE_STATUS[efetivo]}>{rotuloStatusCarga(efetivo)}</Etiqueta>
         ) : null}
       </View>
-      <Texto nivel="lg">{tipoCarga}</Texto>
+      {idTitulo ? (
+        <Texto nivel="lg" role="heading" aria-level={2} nativeID={idTitulo}>
+          {tipoCarga}
+        </Texto>
+      ) : (
+        <Texto nivel="lg">{tipoCarga}</Texto>
+      )}
       <LinhaRota origem={origem} destino={destino} />
       <Preco valor={valorOferecido} rotulo="Valor oferecido" expirado={expirado} />
       <ListaDeFatos itens={itens} />

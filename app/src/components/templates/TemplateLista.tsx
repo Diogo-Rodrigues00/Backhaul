@@ -15,7 +15,7 @@ import { TemplateTela, type PropsTemplateTela } from './TemplateTela';
 
 export type EstadoLista = 'carregando' | 'erro' | 'vazio' | 'pronto';
 
-export interface PropsTemplateLista extends Omit<PropsTemplateTela, 'children'> {
+export interface PropsConteudoLista {
   estado: EstadoLista;
   /** Frase do estado de carregamento, sempre visível: "Carregando cargas…" (CT-01). */
   textoCarregando: string;
@@ -32,6 +32,9 @@ export interface PropsTemplateLista extends Omit<PropsTemplateTela, 'children'> 
   /** A lista, só renderizada em `pronto`. */
   children?: ReactNode;
 }
+
+export interface PropsTemplateLista
+  extends PropsConteudoLista, Omit<PropsTemplateTela, 'children'> {}
 
 // Altura reservada para carregando, vazio e erro: a lista chega sem empurrar o resto da tela (CLS 0).
 const ALTURA_MINIMA = 360;
@@ -60,12 +63,13 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
 }
 
 /**
- * Template de lista (ListTemplate): `TemplateTela` + os quatro estados de uma lista de dados.
+ * Template de lista (ListTemplate): `TemplateTela` + os quatro estados de uma lista de dados
+ * (`ConteudoLista`, que também pode ser usado sozinho dentro de um `TemplateTela`).
  * Carregando: spinner + texto + 3 esqueletos num `role="status"`. Vazio: mensagem e ação. Erro:
  * banner com "Tentar de novo". Pronto: a lista. Em telas com polling, a barra de novidades e o
  * botão "Atualizar" ficam acima, e a área tem altura mínima para o estado trocar sem pular.
  */
-export function TemplateLista({
+export function ConteudoLista({
   estado,
   textoCarregando,
   vazio,
@@ -74,53 +78,71 @@ export function TemplateLista({
   atualizando = false,
   novidade,
   children,
-  ...tela
-}: PropsTemplateLista) {
+}: PropsConteudoLista) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
   const mostrarTopo = (estado === 'pronto' || estado === 'vazio') && (novidade || aoAtualizar);
 
   return (
+    <View style={estilos.area} aria-busy={estado === 'carregando' || undefined}>
+      {mostrarTopo ? (
+        <View style={estilos.topo}>
+          {novidade ? (
+            <View style={estilos.barra}>
+              <BarraNovidades {...novidade} />
+            </View>
+          ) : null}
+          {aoAtualizar ? (
+            <BotaoAtualizar aoAtualizar={aoAtualizar} atualizando={atualizando} />
+          ) : null}
+        </View>
+      ) : null}
+
+      {estado === 'carregando' ? (
+        <View
+          style={[
+            estilos.cartao,
+            { backgroundColor: colors.bg.surface, borderColor: colors.border.subtle },
+          ]}
+        >
+          <Carregando texto={textoCarregando} tamanho="grande" />
+          {Array.from({ length: LINHAS_ESQUELETO }, (_, indice) => (
+            <Esqueleto key={indice} altura={ALTURA_ESQUELETO} />
+          ))}
+        </View>
+      ) : null}
+
+      {estado === 'erro' ? (
+        <EstadoErro
+          {...erro}
+          aoTentarDeNovo={erro?.aoTentarDeNovo ?? aoAtualizar ?? (() => undefined)}
+        />
+      ) : null}
+
+      {estado === 'vazio' && vazio ? <EstadoVazio {...vazio} /> : null}
+
+      {estado === 'pronto' ? children : null}
+    </View>
+  );
+}
+
+/** `TemplateTela` com o `ConteudoLista` dentro: o caso comum, sem carregamento sob demanda. */
+export function TemplateLista({ children, ...props }: PropsTemplateLista) {
+  const { estado, textoCarregando, vazio, erro, aoAtualizar, atualizando, novidade, ...tela } =
+    props;
+  return (
     <TemplateTela {...tela}>
-      <View style={estilos.area} aria-busy={estado === 'carregando' || undefined}>
-        {mostrarTopo ? (
-          <View style={estilos.topo}>
-            {novidade ? (
-              <View style={estilos.barra}>
-                <BarraNovidades {...novidade} />
-              </View>
-            ) : null}
-            {aoAtualizar ? (
-              <BotaoAtualizar aoAtualizar={aoAtualizar} atualizando={atualizando} />
-            ) : null}
-          </View>
-        ) : null}
-
-        {estado === 'carregando' ? (
-          <View
-            style={[
-              estilos.cartao,
-              { backgroundColor: colors.bg.surface, borderColor: colors.border.subtle },
-            ]}
-          >
-            <Carregando texto={textoCarregando} tamanho="grande" />
-            {Array.from({ length: LINHAS_ESQUELETO }, (_, indice) => (
-              <Esqueleto key={indice} altura={ALTURA_ESQUELETO} />
-            ))}
-          </View>
-        ) : null}
-
-        {estado === 'erro' ? (
-          <EstadoErro
-            {...erro}
-            aoTentarDeNovo={erro?.aoTentarDeNovo ?? aoAtualizar ?? (() => undefined)}
-          />
-        ) : null}
-
-        {estado === 'vazio' && vazio ? <EstadoVazio {...vazio} /> : null}
-
-        {estado === 'pronto' ? children : null}
-      </View>
+      <ConteudoLista
+        estado={estado}
+        textoCarregando={textoCarregando}
+        vazio={vazio}
+        erro={erro}
+        aoAtualizar={aoAtualizar}
+        atualizando={atualizando}
+        novidade={novidade}
+      >
+        {children}
+      </ConteudoLista>
     </TemplateTela>
   );
 }

@@ -6,6 +6,7 @@ export const CHAVES = {
   token: 'backhaul.token',
   tema: 'backhaul.tema',
   disponibilidadeAtiva: 'backhaul.disponibilidadeAtiva',
+  propostasEnviadas: 'backhaul.propostasEnviadas',
 } as const;
 
 export type Chave = (typeof CHAVES)[keyof typeof CHAVES];
