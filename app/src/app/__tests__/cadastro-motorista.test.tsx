@@ -114,9 +114,7 @@ describe('cadastro de motorista: envio', () => {
 
     await criarContaCadastroMotorista();
 
-    await waitFor(() =>
-      expect(screen.getByText('e-mail ou CPF já cadastrado')).toBeOnTheScreen(),
-    );
+    await waitFor(() => expect(screen.getByText('e-mail ou CPF já cadastrado')).toBeOnTheScreen());
     expect(screen.getByLabelText('Senha').props.value).toBe('');
     expect(screen.getByLabelText('E-mail').props.value).toBe('existente@mock.test');
     expect(screen.getByLabelText('Nome completo').props.value).toBe('João da Silva');
@@ -139,9 +137,7 @@ describe('cadastro de motorista: envio', () => {
     await criarContaCadastroMotorista();
 
     await waitFor(() => expect(screen.getByText('cpf deve ter 11 dígitos')).toBeOnTheScreen());
-    expect(
-      screen.getByText('capacidade_kg deve ser um número maior que zero'),
-    ).toBeOnTheScreen();
+    expect(screen.getByText('capacidade_kg deve ser um número maior que zero')).toBeOnTheScreen();
   });
 
   it('500 com HTML: mostra a mensagem padrão, nunca o HTML, e oferece "Tentar de novo"', async () => {
@@ -159,9 +155,7 @@ describe('cadastro de motorista: envio', () => {
   });
 
   it('erro 500 em JSON também vira a mensagem padrão, sem expor o texto da API', async () => {
-    servidor.use(
-      http.post(urlMock('/cadastro/motorista'), () => respostaErro(500, 'stack: boom')),
-    );
+    servidor.use(http.post(urlMock('/cadastro/motorista'), () => respostaErro(500, 'stack: boom')));
     await renderizarCadastroMotorista();
     await preencherCadastroMotorista({ email: 'json.500@mock.test' });
 

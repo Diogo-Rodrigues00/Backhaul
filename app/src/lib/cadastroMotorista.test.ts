@@ -1,4 +1,8 @@
-import { CAMPOS_DA_API, paraCorpoCadastroMotorista, type DadosCadastroMotorista } from './cadastroMotorista';
+import {
+  CAMPOS_DA_API,
+  paraCorpoCadastroMotorista,
+  type DadosCadastroMotorista,
+} from './cadastroMotorista';
 
 const DADOS: DadosCadastroMotorista = {
   email: '  joao@exemplo.com ',
