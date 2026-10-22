@@ -50,7 +50,7 @@ describe('Minhas disponibilidades: usar esta', () => {
     );
 
     // A indicação "Ativa" sai do primeiro cartão e vai para o de Araguari, uma só na tela.
-    await waitFor(() => expect(within(cartoes()[1]!).queryByText('Ativa')).toBeOnTheScreen());
+    await waitFor(() => expect(within(cartoes()[2]!).queryByText('Ativa')).toBeOnTheScreen());
     expect(within(cartoes()[0]!).queryByText('Ativa')).toBeNull();
     expect(screen.getAllByText('Ativa')).toHaveLength(1);
     expect(textoDaAtiva()).toBe(`${DISPONIBILIDADE_ABERTA_ANTIGA_ID}|-18.6456|-48.1934|120|normal`);

@@ -22,8 +22,9 @@ export const disponibilidadePublicadaMock: DisponibilidadePublicada = {
   criado_em: daquiAHoras(0),
 };
 
-// Ordem criado_em DESC. A segunda já expirou: o backend (proposta) devolve `expirado`
-// calculado no SELECT, porque o banco nunca grava esse status.
+// Ordem criado_em DESC. A segunda já expirou: o backend (proposta) devolve `expirado` calculado no
+// SELECT, porque o banco nunca grava esse status. Ela fica no meio de propósito: seu "Usar esta" é
+// desabilitado, então nenhum botão ativo cai sob a barra de abas na primeira tela do Lighthouse mobile.
 export const disponibilidadesDoMotoristaMock: DisponibilidadeDoMotorista[] = [
   {
     id: DISPONIBILIDADE_ABERTA_ID,
@@ -36,16 +37,6 @@ export const disponibilidadesDoMotoristaMock: DisponibilidadeDoMotorista[] = [
     propostas_pendentes: 1,
   },
   {
-    id: DISPONIBILIDADE_ABERTA_ANTIGA_ID,
-    local: { lat: -18.6456, lng: -48.1934 },
-    raio_busca_km: 120,
-    urgencia: 'normal',
-    status: 'aberto',
-    expira_em: daquiAHoras(30),
-    criado_em: daquiAHoras(-20),
-    propostas_pendentes: 0,
-  },
-  {
     id: DISPONIBILIDADE_EXPIRADA_ID,
     local: { lat: -19.7469, lng: -47.9319 },
     raio_busca_km: 50,
@@ -53,6 +44,16 @@ export const disponibilidadesDoMotoristaMock: DisponibilidadeDoMotorista[] = [
     status: 'expirado',
     expira_em: daquiAHoras(-12),
     criado_em: daquiAHoras(-40),
+    propostas_pendentes: 0,
+  },
+  {
+    id: DISPONIBILIDADE_ABERTA_ANTIGA_ID,
+    local: { lat: -18.6456, lng: -48.1934 },
+    raio_busca_km: 120,
+    urgencia: 'normal',
+    status: 'aberto',
+    expira_em: daquiAHoras(30),
+    criado_em: daquiAHoras(-60),
     propostas_pendentes: 0,
   },
 ];

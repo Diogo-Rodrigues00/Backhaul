@@ -83,8 +83,8 @@ describe('Minhas disponibilidades', () => {
 
     expect(titulosDosCartoes()).toEqual([
       'Perto de Uberlândia - MG',
-      'Perto de Araguari - MG',
       'Perto de Uberaba - MG',
+      'Perto de Araguari - MG',
     ]);
     expect(cartoes()).toHaveLength(3);
     expect(screen.getByText('80 km')).toBeOnTheScreen();
@@ -170,7 +170,7 @@ describe('Minhas disponibilidades', () => {
         `${DISPONIBILIDADE_ABERTA_ANTIGA_ID}|-18.6456|-48.1934|120|normal`,
       ),
     );
-    const cartaoAraguari = cartoes()[1]!;
+    const cartaoAraguari = cartoes()[2]!;
     expect(within(cartaoAraguari).getByText('Ativa')).toBeOnTheScreen();
     expect(screen.getAllByText('Ativa')).toHaveLength(1);
   });

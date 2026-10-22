@@ -19,8 +19,8 @@ test.describe('minhas disponibilidades', () => {
     const lista = page.getByRole('list', { name: 'Disponibilidades publicadas' });
     await expect(lista.getByRole('listitem')).toHaveCount(3);
     const uberlandia = lista.getByRole('listitem').nth(0);
-    const araguari = lista.getByRole('listitem').nth(1);
-    const uberaba = lista.getByRole('listitem').nth(2);
+    const uberaba = lista.getByRole('listitem').nth(1);
+    const araguari = lista.getByRole('listitem').nth(2);
 
     // Sem escolha manual, a ativa é a mais recente aberta e no prazo.
     await expect(uberlandia.getByText('Ativa', { exact: true })).toBeVisible();
@@ -45,7 +45,7 @@ test.describe('minhas disponibilidades', () => {
     await page.reload();
     await expect(lista.getByRole('listitem')).toHaveCount(3);
     await expect(
-      lista.getByRole('listitem').nth(1).getByText('Ativa', { exact: true }),
+      lista.getByRole('listitem').nth(2).getByText('Ativa', { exact: true }),
     ).toBeVisible();
   });
 
