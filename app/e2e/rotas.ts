@@ -18,5 +18,6 @@ export const rotas = [
   },
   { caminho: '/motorista/cargas', perfil: 'motorista' as const },
   { caminho: '/motorista/disponibilidades', perfil: 'motorista' as const },
+  { caminho: '/motorista/fretes', perfil: 'motorista' as const },
   { caminho: '/nao-existe', perfil: null, naoEncontrada: true },
 ];
