@@ -57,7 +57,7 @@ Protótipo aprovado: https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP
 - `<title>` por rota via `<Head>` (não no `+html.tsx`), por causa do title vazio do SDK 57.
 
 ## Limite de JS inicial (decidido em 2026-10-21)
-320 KiB (327.680 bytes), medido em bytes, para a infraestrutura comum; telas não aumentam. Ver adendo 2 do ADR 0011. Base atual com tema: 300.296 bytes.
+360 KiB (368.640 bytes), medido em bytes (adendo 3 do ADR 0011). Cards de tela não aumentam o JS inicial. Meta de otimização em 25–28/10: TanStack só nas áreas logadas, voltar a ≤ 340 KiB.
 
 ## Ações do Pedro (produção)
 - `vercel deploy --prod --yes` na raiz, com `front` atualizado (hoje `backhaul-front.vercel.app` serve build de teste com mock).

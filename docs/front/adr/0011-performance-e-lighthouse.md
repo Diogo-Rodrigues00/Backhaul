@@ -22,7 +22,7 @@ Portão: Lighthouse **100** em Performance, Acessibilidade, Boas práticas e SEO
 ### Orçamento (verificado por `scripts/orcamento-bundle.mjs` no CI, falha o PR se estourar)
 | Item | Limite (gzip) |
 |---|---|
-| JS inicial de qualquer rota (todos os `<script>` do HTML da rota) | **≤ 320 KiB = 327.680 bytes** (era 220 KB; revisado em 2026-10-20, ver adendos) |
+| JS inicial de qualquer rota (todos os `<script>` do HTML da rota) | **≤ 360 KiB = 368.640 bytes** (era 220 KB; revisado em 2026-10-21, ver adendos) |
 | Chunk próprio de cada rota | ≤ 30 KB |
 | CSS total | ≤ 15 KB |
 | Fontes | 2 arquivos `woff2` (Barlow 500/700), ≤ 40 KB juntos |
@@ -53,3 +53,9 @@ O tema (card 005) levou o JS inicial de 297.078 para 300.296 bytes, e os cards 0
 - A infraestrutura que toda tela usa (tema, sessão, cliente de dados) pode crescer até esse teto.
 - **Cards de tela não podem aumentar o JS inicial**: o código da tela fica no chunk da rota (≤ 30 KB).
 - Performance mobile < 100 continua aceita com a nota registrada; Acessibilidade, Boas práticas e SEO seguem 100.
+
+## Adendo 3 — 2026-10-21 (aprovado pelo Pedro): 360 KiB
+Medições reais depois dos cards 010 e 013: o card 013 (sessão) custou +21,5 KB no chunk do layout raiz (TanStack Query inteiro ~17 KB + cliente, erros e sessão ~4 KB), levando o JS inicial a ~330.000 B. Os formulários (card 009), quando duas rotas os usam, vão para o chunk comum (react-hook-form ~15 KiB + moléculas ~5 KiB), o que leva toda rota a ~343–350 KiB. Decisão: o orçamento de JS inicial passa a **360 KiB (368.640 bytes)**, medido em bytes (`ORCAMENTO_JS_INICIAL_BYTES`).
+- Cards de tela continuam proibidos de aumentar o JS inicial (código da tela no chunk da rota, ≤ 30 KB).
+- Performance mobile < 100 segue aceita com a nota registrada (pode cair para a faixa de 80–90); Acessibilidade, Boas práticas e SEO seguem 100.
+- **Meta de otimização (janela 25–28/10):** carregar o TanStack Query só nas áreas logadas (fetchers sem TanStack em `api/*.ts`, hooks em `*.hooks.ts`, `QueryClientProvider` dentro de `AreaProtegida`; adendo ao ADR 0004), alias mais enxuto do TanStack, teste de carregamento sob demanda dos formulários; objetivo: voltar a ≤ 340 KiB.
