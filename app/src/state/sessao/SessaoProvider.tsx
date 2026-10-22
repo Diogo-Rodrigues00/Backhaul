@@ -76,6 +76,9 @@ export function SessaoProvider({
         throw erro;
       }
       await gravar(CHAVES.token, token);
+      // A disponibilidade ativa pertence a quem a escolheu: outra conta no mesmo aparelho não a herda
+      // (cobre também a sessão que acabou sem `sair`, como a queda de rede ao restaurar).
+      await apagar(CHAVES.disponibilidadeAtiva);
       // Nada da conta anterior (ou de uma tentativa sem sair) pode aparecer na nova.
       queryClient.clear();
       setUsuario(dados);

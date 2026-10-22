@@ -362,6 +362,20 @@ describe('entrar', () => {
     await expect(ler(CHAVES.token)).resolves.toBe('mock-motorista');
   });
 
+  it('motorista que entra não herda a disponibilidade ativa de quem usou o aparelho antes', async () => {
+    // Sobra do usuário A: a sessão dele acabou sem `sair` (ex.: queda de rede ao restaurar).
+    await gravar(CHAVES.disponibilidadeAtiva, '{"id":"disp-do-usuario-a"}');
+    await abrir('/entrar');
+    await waitFor(() => expect(sonda()).toBe('anonimo|-|-'));
+
+    await act(async () =>
+      fireEvent.press(screen.getByRole('button', { name: 'Entrar como motorista' })),
+    );
+
+    await waitFor(() => expect(caminho()).toBe('/motorista/cargas'));
+    await expect(ler(CHAVES.disponibilidadeAtiva)).resolves.toBeNull();
+  });
+
   it('401 do login é erro do formulário: nada de aviso de sessão, nada guardado, continua no login (D-PO-11)', async () => {
     await abrir('/entrar');
     await waitFor(() => expect(sonda()).toBe('anonimo|-|-'));

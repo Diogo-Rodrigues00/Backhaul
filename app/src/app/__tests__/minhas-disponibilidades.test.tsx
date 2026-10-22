@@ -188,6 +188,33 @@ describe('Minhas disponibilidades', () => {
     expect(within(cartoes()[0]!).getByText('Ativa')).toBeOnTheScreen();
   });
 
+  it('chave guardada com JSON inválido é ignorada: vale a mais recente aberta e no prazo', async () => {
+    await gravar(CHAVES.disponibilidadeAtiva, '{quebrado');
+    await abrirMinhasDisponibilidades();
+    await aguardarSessao();
+    await aguardarLista();
+
+    await waitFor(() => expect(textoDaAtiva().startsWith(DISPONIBILIDADE_ABERTA_ID)).toBe(true));
+    expect(within(cartoes()[0]!).getByText('Ativa')).toBeOnTheScreen();
+  });
+
+  it('escolha guardada cujo id não está na lista real cai na mais recente (sem usar a cópia local)', async () => {
+    await gravar(
+      CHAVES.disponibilidadeAtiva,
+      serializarEscolha({
+        id: disponibilidadePublicadaMock.id,
+        publicada: disponibilidadePublicadaMock,
+      }),
+    );
+    await abrirMinhasDisponibilidades();
+    await aguardarSessao();
+    await aguardarLista();
+
+    await waitFor(() => expect(textoDaAtiva().startsWith(DISPONIBILIDADE_ABERTA_ID)).toBe(true));
+    // A lista é a da API: três cartões, sem a cópia local entre eles.
+    expect(cartoes()).toHaveLength(3);
+  });
+
   it('CT-02: sem nenhuma disponibilidade, mostra "Nenhuma disponibilidade publicada" e a ação', async () => {
     servidor.use(http.get(urlMock(ROTA_MINHAS), () => HttpResponse.json({ disponibilidades: [] })));
     await abrirMinhasDisponibilidades();
