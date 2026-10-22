@@ -9,10 +9,7 @@ import { Etiqueta, type VarianteEtiqueta } from '@/components/atoms/Etiqueta';
 import { Preco } from '@/components/atoms/Preco';
 import { Texto } from '@/components/atoms/Texto';
 import { Titulo } from '@/components/atoms/Titulo';
-import {
-  ResumoMotorista,
-  type PropsResumoMotorista,
-} from '@/components/molecules/ResumoMotorista';
+import { ResumoMotorista, type PropsResumoMotorista } from '@/components/molecules/ResumoMotorista';
 import { useMovimentoReduzido } from '@/hooks/useMovimentoReduzido';
 import { formatarDataHora, formatarMoeda, type NumeroEntrada } from '@/lib/formatacao';
 import {

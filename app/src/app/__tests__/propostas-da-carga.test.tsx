@@ -17,7 +17,11 @@ import { anunciar, moverFoco } from '@/lib/a11y';
 import { TemaContext } from '@/state/tema/TemaProvider';
 import { valorDoTema } from '@/test-utils/renderComTema';
 
-import { CARGA_FECHADA_ID, CARGA_NORMAL_ID, CARGA_URGENTE_ID } from '../../../mocks/fixtures/cargas';
+import {
+  CARGA_FECHADA_ID,
+  CARGA_NORMAL_ID,
+  CARGA_URGENTE_ID,
+} from '../../../mocks/fixtures/cargas';
 import {
   freteCriadoMock,
   PROPOSTA_PENDENTE_ID,
@@ -236,7 +240,9 @@ describe('propostas da carga: aceitar e recusar (D-PO-08)', () => {
     await abrir();
     await screen.findByText('Propostas (5)');
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Aceitar proposta de João da Silva' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Aceitar proposta de João da Silva' }),
+    );
     expect(await screen.findByText('Aceitar a proposta de João da Silva?')).toBeOnTheScreen();
     expect(
       screen.getByText(
@@ -301,7 +307,9 @@ describe('propostas da carga: aceitar e recusar (D-PO-08)', () => {
     await abrir();
     await screen.findByText('Propostas (5)');
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Aceitar proposta de João da Silva' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Aceitar proposta de João da Silva' }),
+    );
     await screen.findByText('Aceitar a proposta de João da Silva?');
     await fireEvent.press(screen.getByRole('button', { name: 'Aceitar proposta' }));
 
@@ -338,7 +346,9 @@ describe('propostas da carga: aceitar e recusar (D-PO-08)', () => {
     await abrir();
     await screen.findByText('Propostas (5)');
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Recusar proposta de João da Silva' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Recusar proposta de João da Silva' }),
+    );
     expect(await screen.findByText('Recusar a proposta de João da Silva?')).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'Recusar proposta' }));
 
@@ -365,7 +375,9 @@ describe('propostas da carga: aceitar e recusar (D-PO-08)', () => {
     await screen.findByText('Propostas (5)');
     expect(leituras).toBe(1);
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Aceitar proposta de João da Silva' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Aceitar proposta de João da Silva' }),
+    );
     await screen.findByText('Aceitar a proposta de João da Silva?');
     await fireEvent.press(screen.getByRole('button', { name: 'Aceitar proposta' }));
 
@@ -385,7 +397,9 @@ describe('propostas da carga: aceitar e recusar (D-PO-08)', () => {
     await abrir();
     await screen.findByText('Propostas (5)');
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Recusar proposta de João da Silva' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Recusar proposta de João da Silva' }),
+    );
     await screen.findByText('Recusar a proposta de João da Silva?');
     await fireEvent.press(screen.getByRole('button', { name: 'Recusar proposta' }));
 
@@ -418,7 +432,9 @@ describe('propostas da carga: novidades (CT-09)', () => {
     await waitFor(() => expect(anunciado).toHaveBeenCalledWith('1 nova proposta'));
     expect(screen.getAllByText('1 nova proposta').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Nova')).toHaveLength(1);
-    expect(screen.getAllByTestId('destaque-proposta', { includeHiddenElements: true })).toHaveLength(1);
+    expect(
+      screen.getAllByTestId('destaque-proposta', { includeHiddenElements: true }),
+    ).toHaveLength(1);
   });
 
   it('o botão "Atualizar" e a barra de novidades estão sempre presentes', async () => {

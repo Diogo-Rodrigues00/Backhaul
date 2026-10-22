@@ -3,11 +3,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { useMovimentoReduzido } from '@/hooks/useMovimentoReduzido';
 import { comTema, renderizar } from '@/test-utils/renderComTema';
 
-import {
-  CartaoProposta,
-  DURACAO_DESTAQUE_MS,
-  type PropsCartaoProposta,
-} from './CartaoProposta';
+import { CartaoProposta, DURACAO_DESTAQUE_MS, type PropsCartaoProposta } from './CartaoProposta';
 
 jest.mock('@/hooks/useMovimentoReduzido', () => ({ useMovimentoReduzido: jest.fn(() => false) }));
 jest.mock('@/hooks/useLoopAnimado', () => ({
@@ -70,10 +66,14 @@ describe('CartaoProposta', () => {
   it('Aceitar e Recusar têm nome único e avisam a tela', async () => {
     const p = props();
     await renderizar(<CartaoProposta {...p} />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Aceitar proposta de João da Silva' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Aceitar proposta de João da Silva' }),
+    );
     expect(p.aoAceitar).toHaveBeenCalledTimes(1);
     expect(p.aoRecusar).not.toHaveBeenCalled();
-    await fireEvent.press(screen.getByRole('button', { name: 'Recusar proposta de João da Silva' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Recusar proposta de João da Silva' }),
+    );
     expect(p.aoRecusar).toHaveBeenCalledTimes(1);
   });
 
