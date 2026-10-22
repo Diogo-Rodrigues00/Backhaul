@@ -16,6 +16,11 @@ import { cargasDaEmpresaMock, CARGA_URGENTE_ID } from '../../../mocks/fixtures/c
 import { propostasDaCargaMock } from '../../../mocks/fixtures/propostas';
 import PropostasDaCarga from '../empresa/cargas/detalhe';
 
+jest.mock('@/telas/CorpoPropostasDaCarga.carregar', () => ({
+  carregarCorpoPropostasDaCarga: () =>
+    Promise.resolve(jest.requireActual('@/telas/CorpoPropostasDaCarga')),
+}));
+
 jest.mock('@/lib/a11y', () => ({
   ...jest.requireActual('@/lib/a11y'),
   anunciar: jest.fn(),
