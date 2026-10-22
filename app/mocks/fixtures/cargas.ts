@@ -12,6 +12,8 @@ const mopp3Nome = mopp3?.nome ?? null;
 export const CARGA_URGENTE_ID = 'cccccccc-0000-4000-8000-000000000001';
 export const CARGA_NORMAL_ID = 'cccccccc-0000-4000-8000-000000000002';
 export const CARGA_FECHADA_ID = 'cccccccc-0000-4000-8000-000000000003';
+/** Aberta com o prazo já vencido: aparece como "Expirada" (CT-10). */
+export const CARGA_VENCIDA_ID = 'cccccccc-0000-4000-8000-000000000005';
 
 const uberlandia = { lat: -18.9186, lng: -48.2772 };
 const uberaba = { lat: -19.7469, lng: -47.9319 };
@@ -62,6 +64,21 @@ export const cargasDaEmpresaMock: CargaDaEmpresa[] = [
     criado_em: daquiAHoras(-50),
     certificacao_exigida: null,
     total_propostas: 1,
+  },
+  {
+    id: CARGA_VENCIDA_ID,
+    tipo_carga: 'Bobinas de aço',
+    origem: uberlandia,
+    destino: araguari,
+    peso_kg: 18000,
+    valor_oferecido: 5200,
+    urgencia: 'normal',
+    status: 'aberto',
+    certificacao_requerida_id: null,
+    expira_em: daquiAHoras(-2),
+    criado_em: daquiAHoras(-80),
+    certificacao_exigida: null,
+    total_propostas: 0,
   },
 ];
 
