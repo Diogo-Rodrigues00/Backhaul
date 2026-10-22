@@ -1,5 +1,6 @@
 import {
   aplicarStatusFrete,
+  descreverMudancasFretesEmpresa,
   descreverMudancasFretes,
   type FreteAcompanhado,
 } from './descreverMudancasFretes';
@@ -88,5 +89,65 @@ describe('aplicarStatusFrete', () => {
       status_pagamento: 'retido',
       empresa: 'Y',
     });
+  });
+});
+
+// ---- Meus fretes da empresa (card 028) ----
+const freteObservado = (id: string, statusEntrega: string, tipoCarga = `Carga ${id}`) => ({
+  id,
+  tipo_carga: tipoCarga,
+  status_entrega: statusEntrega,
+});
+
+describe('descreverMudancasFretesEmpresa', () => {
+  it('sem leitura anterior ou atual, não há o que anunciar', () => {
+    const lista = { fretes: [freteObservado('a', 'aceito')] };
+    expect(descreverMudancasFretesEmpresa(undefined, lista)).toBeNull();
+    expect(descreverMudancasFretesEmpresa(lista, undefined)).toBeNull();
+  });
+
+  it('nada mudou: null', () => {
+    const lista = { fretes: [freteObservado('a', 'aceito'), freteObservado('b', 'entregue')] };
+    expect(descreverMudancasFretesEmpresa(lista, { fretes: [...lista.fretes] })).toBeNull();
+  });
+
+  it('aceito para em_transito: "Transporte iniciado: tipo"', () => {
+    expect(
+      descreverMudancasFretesEmpresa(
+        { fretes: [freteObservado('a', 'aceito', 'Grãos')] },
+        { fretes: [freteObservado('a', 'em_transito', 'Grãos')] },
+      ),
+    ).toBe('Transporte iniciado: Grãos');
+  });
+
+  it('em_transito para entregue: "Entrega confirmada: tipo"', () => {
+    expect(
+      descreverMudancasFretesEmpresa(
+        { fretes: [freteObservado('a', 'em_transito', 'Soja')] },
+        { fretes: [freteObservado('a', 'entregue', 'Soja')] },
+      ),
+    ).toBe('Entrega confirmada: Soja');
+  });
+
+  it('várias mudanças saem juntas; frete novo e status sem frase são ignorados', () => {
+    expect(
+      descreverMudancasFretesEmpresa(
+        {
+          fretes: [
+            freteObservado('a', 'aceito', 'Grãos'),
+            freteObservado('b', 'em_transito', 'Soja'),
+            freteObservado('c', 'aceito'),
+          ],
+        },
+        {
+          fretes: [
+            freteObservado('a', 'em_transito', 'Grãos'),
+            freteObservado('b', 'entregue', 'Soja'),
+            freteObservado('c', 'cancelado'),
+            freteObservado('d', 'aceito'),
+          ],
+        },
+      ),
+    ).toBe('Transporte iniciado: Grãos. Entrega confirmada: Soja');
   });
 });

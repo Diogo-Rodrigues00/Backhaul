@@ -10,6 +10,7 @@ export const rotas = [
   // Rotas logadas: o teste grava o token de mock do perfil antes de abrir (e2e/fixtures.ts).
   { caminho: '/admin', perfil: 'admin' as const },
   { caminho: '/empresa/cargas', perfil: 'empresa' as const },
+  { caminho: '/empresa/fretes', perfil: 'empresa' as const },
   { caminho: '/empresa/cargas/nova', perfil: 'empresa' as const },
   // Id da fixture com 5 propostas (mocks/fixtures/cargas.ts: CARGA_URGENTE_ID). O id vai na query (ADR 0002).
   {
