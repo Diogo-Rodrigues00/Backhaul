@@ -22,6 +22,11 @@ jest.mock('@/lib/a11y', () => ({
   anunciar: jest.fn(),
   moverFoco: jest.fn(),
 }));
+// O Jest não executa import() dinâmico: a prévia (React.lazy) vem de um módulo falso, na hora.
+jest.mock('@/components/organisms/PreviaCarga.carregar', () => ({
+  carregarPreviaCarga: () =>
+    Promise.resolve(jest.requireActual('@/components/organisms/PreviaCarga')),
+}));
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
   default: jest.fn(),
@@ -150,11 +155,12 @@ describe('a tela', () => {
     await preencherTudo();
     await fireEvent.press(screen.getByRole('radio', { name: 'Crítico' }));
 
+    // A prévia é carregada por React.lazy, depois da primeira renderização.
+    expect(await screen.findByText('Produtos inflamáveis')).toBeOnTheScreen();
     const previa = screen.container.queryAll(
       (el) => el.props.role === 'group' && el.props['aria-label'] === 'Prévia da carga',
     );
     expect(previa).toHaveLength(1);
-    expect(screen.getByText('Produtos inflamáveis')).toBeOnTheScreen();
     expect(screen.getAllByText(/Uberlândia - MG/).length).toBeGreaterThan(0);
   });
 });

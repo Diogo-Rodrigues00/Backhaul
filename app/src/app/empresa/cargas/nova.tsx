@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   Controller,
   useForm,
@@ -21,9 +21,9 @@ import { CampoSelecao, type OpcaoSelecao } from '@/components/molecules/CampoSel
 import { CampoTexto } from '@/components/molecules/CampoTexto';
 import { aplicarErroApi, useEnvioUnico, useResumoErros } from '@/components/molecules/formulario';
 import { GrupoOpcoes, type OpcaoGrupo } from '@/components/molecules/GrupoOpcoes';
-import { ResumoCarga } from '@/components/molecules/ResumoCarga';
 import { ResumoErros } from '@/components/molecules/ResumoErros';
 import { CartaoFormulario, CelulaFormulario } from '@/components/organisms/CartaoFormulario';
+import { carregarPreviaCarga } from '@/components/organisms/PreviaCarga.carregar';
 import { SeletorLocal, type Local } from '@/components/organisms/SeletorLocal';
 import { useCasca } from '@/components/organisms/useCasca';
 import { TemplateFormularioComPrevia } from '@/components/templates/TemplateFormularioComPrevia';
@@ -129,16 +129,9 @@ function opcoesDeCertificacao(certificacoes: readonly Certificacao[]): OpcaoSele
   ];
 }
 
-function criarEstilos({ border, colors, radius, space }: TemaVisual) {
+function criarEstilos({ space }: TemaVisual) {
   return {
     previa: { gap: space[4] } satisfies ViewStyle,
-    cartaoPrevia: {
-      padding: space[5],
-      borderWidth: border.width,
-      borderRadius: radius.lg,
-      borderColor: colors.border.subtle,
-      backgroundColor: colors.bg.surface,
-    } satisfies ViewStyle,
     certificacao: { gap: space[3], minWidth: 0 } satisfies ViewStyle,
     tentarDeNovo: { alignSelf: 'flex-start' } satisfies ViewStyle,
   } as const;
@@ -170,6 +163,12 @@ function CampoLocal({
   return <SeletorLocal id={id} rotulo={rotulo} valor={value} aoMudar={onChange} erro={erro} />;
 }
 
+// A prévia carrega depois, fora do JS inicial da rota: fica escondida até 960 px e não é o LCP.
+const PreviaCarga = lazy(carregarPreviaCarga);
+
+// `false` no HTML estático e na hidratação, `true` depois (sem useEffect + setState).
+const semAssinatura = () => () => undefined;
+
 /** "Como o motorista vai ver": o mesmo `ResumoCarga` da lista do motorista, com o que já foi preenchido. */
 function PreviaDaCarga({
   control,
@@ -178,7 +177,13 @@ function PreviaDaCarga({
   control: Control<Valores>;
   certificacoes: readonly Certificacao[] | undefined;
 }) {
-  const estilos = useEstilos(criarEstilos);
+  // A prévia mostra "Expira em" a partir de "agora": o relógio do HTML estático difere do do
+  // navegador, então ela só aparece depois da hidratação (senão o React acusa texto diferente).
+  const montado = useSyncExternalStore(
+    semAssinatura,
+    () => true,
+    () => false,
+  );
   const valores = useWatch({ control });
   const horas = Number(valores.prazo ?? PRAZO_PADRAO);
   // O prazo da prévia é recalculado só quando a pessoa troca a opção, não a cada tecla.
@@ -186,9 +191,11 @@ function PreviaDaCarga({
   const certificacao =
     certificacoes?.find((item) => item.id === valores.certificacaoId)?.nome ?? null;
 
+  if (!montado) return null;
+
   return (
-    <View role="group" aria-label="Prévia da carga" style={estilos.cartaoPrevia}>
-      <ResumoCarga
+    <Suspense fallback={null}>
+      <PreviaCarga
         tipoCarga={valores.tipoCarga?.trim() || 'Tipo de carga'}
         origem={valores.origem?.rotulo ?? 'Origem'}
         destino={valores.destino?.rotulo ?? 'Destino'}
@@ -198,7 +205,7 @@ function PreviaDaCarga({
         certificacao={certificacao}
         expiraEm={expiraEm}
       />
-    </View>
+    </Suspense>
   );
 }
 
