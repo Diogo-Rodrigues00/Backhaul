@@ -1,6 +1,8 @@
 // Cadastro de motorista (MVP-06, D-PO-01, D-PO-14). Oito campos, sem passos extras: Enter avança
 // de campo em campo e, no último, envia. Depois do 201 o app entra sozinho e abre "Cargas próximas".
 import { useRouter, type Href } from 'expo-router';
+import { useRef } from 'react';
+import { Platform, type TextInput } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 
 import { useCadastrarMotorista } from '@/api/sessao';
@@ -137,15 +139,37 @@ export default function CadastroMotorista() {
   // Depois de `aoValido`: o envio único que o botão e o "Tentar de novo" usam.
   const enviarUnico = useEnvioUnico(() => handleSubmit(aoValido, resumo.aoInvalidar)());
 
-  // Enter num campo leva o foco ao próximo; no último, envia. O CartaoFormulario não recebe
-  // `aoEnviar`: o listener dele enviaria a partir de qualquer campo.
-  function aoEnterNoCampo(campo: Campo) {
+  // Referência de cada campo (para achar o campo com o foco na web).
+  const campos = useRef<Partial<Record<Campo, TextInput | null>>>({});
+  function registrar(campo: Campo, ref: (elemento: TextInput | null) => void) {
+    return (elemento: TextInput | null) => {
+      ref(elemento);
+      campos.current[campo] = elemento;
+    };
+  }
+
+  // Enter avança para o próximo campo; no último, envia.
+  function avancar(campo: Campo) {
     const proximo = ORDEM[ORDEM.indexOf(campo) + 1];
     if (proximo === undefined) {
       void enviarUnico();
       return;
     }
     setFocus(proximo);
+  }
+
+  // iPhone: o `onSubmitEditing` de cada campo.
+  function aoEnterNoCampo(campo: Campo) {
+    if (Platform.OS === 'web') return; // na web o Enter chega por `aoEnterNaWeb`
+    avancar(campo);
+  }
+
+  // Web: o CartaoFormulario cancela o Enter (keydown) e chama `aoEnviar`. O `onSubmitEditing` do
+  // react-native-web não dispara nesse caso, então o campo com o foco é descoberto aqui.
+  function aoEnterNaWeb() {
+    const ativo = document.activeElement;
+    const campo = ORDEM.find((nome) => (campos.current[nome] as unknown) === ativo);
+    if (campo !== undefined) avancar(campo);
   }
 
   return (
@@ -155,6 +179,7 @@ export default function CadastroMotorista() {
     >
       <CartaoFormulario
         nome="Cadastro de motorista"
+        aoEnviar={aoEnterNaWeb}
         resumo={
           <ResumoErros
             {...resumo.props}
@@ -186,7 +211,7 @@ export default function CadastroMotorista() {
             rules={REGRAS.email}
             render={({ field, fieldState }) => (
               <CampoTexto
-                ref={field.ref}
+                ref={registrar('email', field.ref)}
                 rotulo="E-mail"
                 autoComplete="email"
                 inputMode="email"
@@ -212,7 +237,7 @@ export default function CadastroMotorista() {
             rules={REGRAS.senha}
             render={({ field, fieldState }) => (
               <CampoSenha
-                ref={field.ref}
+                ref={registrar('senha', field.ref)}
                 rotulo="Senha"
                 tipo="nova-senha"
                 ajuda="Mínimo de 8 caracteres."
@@ -235,7 +260,7 @@ export default function CadastroMotorista() {
             rules={REGRAS.nomeCompleto}
             render={({ field, fieldState }) => (
               <CampoTexto
-                ref={field.ref}
+                ref={registrar('nomeCompleto', field.ref)}
                 rotulo="Nome completo"
                 autoComplete="name"
                 textContentType="name"
@@ -258,7 +283,7 @@ export default function CadastroMotorista() {
             rules={REGRAS.cpf}
             render={({ field, fieldState }) => (
               <CampoTexto
-                ref={field.ref}
+                ref={registrar('cpf', field.ref)}
                 rotulo="CPF"
                 ajuda="Pode digitar com ou sem pontos e traço."
                 inputMode="numeric"
@@ -281,7 +306,7 @@ export default function CadastroMotorista() {
             rules={REGRAS.cnh}
             render={({ field, fieldState }) => (
               <CampoTexto
-                ref={field.ref}
+                ref={registrar('cnh', field.ref)}
                 rotulo="CNH"
                 inputMode="numeric"
                 value={field.value}
@@ -303,7 +328,7 @@ export default function CadastroMotorista() {
             rules={REGRAS.veiculoTipo}
             render={({ field, fieldState }) => (
               <CampoTexto
-                ref={field.ref}
+                ref={registrar('veiculoTipo', field.ref)}
                 rotulo="Tipo de veículo"
                 ajuda="Ex.: carreta, truck, toco."
                 value={field.value}
@@ -325,7 +350,7 @@ export default function CadastroMotorista() {
             rules={REGRAS.veiculoPlaca}
             render={({ field, fieldState }) => (
               <CampoTexto
-                ref={field.ref}
+                ref={registrar('veiculoPlaca', field.ref)}
                 rotulo="Placa"
                 autoCapitalize="characters"
                 autoCorrect={false}
@@ -348,7 +373,7 @@ export default function CadastroMotorista() {
             rules={REGRAS.capacidadeKg}
             render={({ field, fieldState }) => (
               <CampoNumero
-                ref={field.ref}
+                ref={registrar('capacidadeKg', field.ref)}
                 rotulo="Capacidade em kg"
                 sufixo="kg"
                 modo="inteiro"
