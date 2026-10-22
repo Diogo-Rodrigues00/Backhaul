@@ -139,7 +139,8 @@ function criarEstilos({ border, colors, radius, space }: TemaVisual) {
       borderColor: colors.border.subtle,
       backgroundColor: colors.bg.surface,
     } satisfies ViewStyle,
-    certificacao: { gap: space[3], alignItems: 'flex-start' } satisfies ViewStyle,
+    certificacao: { gap: space[3], minWidth: 0 } satisfies ViewStyle,
+    tentarDeNovo: { alignSelf: 'flex-start' } satisfies ViewStyle,
   } as const;
 }
 
@@ -462,15 +463,17 @@ export default function PublicarCarga() {
               )}
             />
             {erroCertificacoes ? (
-              <Botao
-                variante="secundario"
-                icone="refresh"
-                carregando={certificacoes.isFetching}
-                rotuloCarregando="Tentando…"
-                aoPressionar={() => certificacoes.refetch()}
-              >
-                Tentar de novo
-              </Botao>
+              <View style={estilos.tentarDeNovo}>
+                <Botao
+                  variante="secundario"
+                  icone="refresh"
+                  carregando={certificacoes.isFetching}
+                  rotuloCarregando="Tentando…"
+                  aoPressionar={() => certificacoes.refetch()}
+                >
+                  Tentar de novo
+                </Botao>
+              </View>
             ) : null}
           </View>
         </CelulaFormulario>
