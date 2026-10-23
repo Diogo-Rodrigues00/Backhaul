@@ -1,13 +1,7 @@
 import { useRouter } from 'expo-router';
 import { lazy, Suspense, useEffect, useMemo, useSyncExternalStore } from 'react';
-import {
-  Controller,
-  useForm,
-  useWatch,
-  type Control,
-  type ControllerRenderProps,
-} from 'react-hook-form';
-import { Platform, View, type ViewStyle } from 'react-native';
+import { Controller, useForm, useWatch, type Control } from 'react-hook-form';
+import { View, type ViewStyle } from 'react-native';
 
 import { useCertificacoes } from '@/api/certificacoes';
 import { usePublicarCarga } from '@/api/cargas';
@@ -20,28 +14,24 @@ import { CampoNumero } from '@/components/molecules/CampoNumero';
 import { CampoSelecao, type OpcaoSelecao } from '@/components/molecules/CampoSelecao';
 import { CampoTexto } from '@/components/molecules/CampoTexto';
 import { aplicarErroApi, useEnvioUnico, useResumoErros } from '@/components/molecules/formulario';
-import { GrupoOpcoes, type OpcaoGrupo } from '@/components/molecules/GrupoOpcoes';
+import { GrupoOpcoes } from '@/components/molecules/GrupoOpcoes';
 import { ResumoErros } from '@/components/molecules/ResumoErros';
 import { CartaoFormulario, CelulaFormulario } from '@/components/organisms/CartaoFormulario';
 import { carregarPreviaCarga } from '@/components/organisms/PreviaCarga.carregar';
-import { SeletorLocal, type Local } from '@/components/organisms/SeletorLocal';
+import type { Local } from '@/components/organisms/SeletorLocal';
 import { useCasca } from '@/components/organisms/useCasca';
 import { GradeComPrevia } from '@/components/templates/TemplateFormularioComPrevia';
 import { anunciar } from '@/lib/a11y';
 import { ErroApi } from '@/lib/erros';
 import { paraNumero } from '@/lib/numeros';
-import { calcularExpiraEm, OPCOES_PRAZO } from '@/lib/prazos';
-import { rotuloUrgencia, type Urgencia } from '@/lib/rotulos';
-import {
-  MAX,
-  maximo,
-  numeroPositivo,
-  numeroSemAmbiguidade,
-  obrigatorio,
-  type Validador,
-} from '@/lib/validacao';
+import { calcularExpiraEm } from '@/lib/prazos';
+import type { Urgencia } from '@/lib/rotulos';
+import { MAX, maximo, numeroPositivo, numeroSemAmbiguidade, obrigatorio } from '@/lib/validacao';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
+
+import { CampoLocal } from './CampoLocal';
+import { encadear, OPCOES_DE_PRAZO, OPCOES_URGENCIA, PRAZO_PADRAO } from './camposComuns';
 
 // Corpo da tela Publicar carga (card 019, MVP-08, D-PO-02, D-PO-14): formulário e prévia "Como o
 // motorista vai ver". Carregado por React.lazy a partir de `app/empresa/cargas/nova.tsx` (ADR 0011).
@@ -59,7 +49,6 @@ interface Valores {
   prazo: string;
 }
 
-const PRAZO_PADRAO = '24';
 const SEM_CERTIFICACAO = '';
 const MENSAGEM_ORIGEM_IGUAL_DESTINO = 'Origem e destino precisam ser diferentes';
 const MENSAGEM_CERTIFICACOES = 'Não foi possível carregar as certificações.';
@@ -86,26 +75,6 @@ const ROTULOS = {
   certificacaoId: 'Certificação exigida',
   prazo: 'Prazo',
 } as const;
-
-const OPCOES_URGENCIA: readonly OpcaoGrupo<Urgencia>[] = (
-  ['normal', 'urgente', 'critico'] as const
-).map((urgencia) => ({ valor: urgencia, rotulo: rotuloUrgencia(urgencia), urgencia }));
-
-const OPCOES_DE_PRAZO: readonly OpcaoGrupo[] = OPCOES_PRAZO.map(({ horas, rotulo }) => ({
-  valor: String(horas),
-  rotulo,
-}));
-
-/** A primeira mensagem que falhar (como os demais formulários: um erro por campo). */
-function encadear(...validadores: Validador[]): Validador {
-  return (valor) => {
-    for (const validar of validadores) {
-      const resultado = validar(valor);
-      if (resultado !== true) return resultado;
-    }
-    return true;
-  };
-}
 
 const validarTipoCarga = encadear(obrigatorio, maximo(MAX.tipo_carga));
 const validarPeso = encadear(obrigatorio, numeroSemAmbiguidade, numeroPositivo);
@@ -136,32 +105,6 @@ function criarEstilos({ space }: TemaVisual) {
     certificacao: { gap: space[3], minWidth: 0 } satisfies ViewStyle,
     tentarDeNovo: { alignSelf: 'flex-start' } satisfies ViewStyle,
   } as const;
-}
-
-/**
- * `SeletorLocal` ligado ao campo do formulário. O seletor não é um único controle, então o foco do
- * resumo de erros (e do primeiro campo com erro) vai ao campo de busca pelo id, na web.
- */
-function CampoLocal({
-  id,
-  rotulo,
-  campo,
-  erro,
-}: {
-  id: string;
-  rotulo: string;
-  campo: ControllerRenderProps<Valores, 'origem' | 'destino'>;
-  erro?: string;
-}) {
-  const { ref, value, onChange } = campo;
-  useEffect(() => {
-    ref({
-      focus: () => {
-        if (Platform.OS === 'web') document.getElementById(id)?.focus();
-      },
-    });
-  }, [ref, id]);
-  return <SeletorLocal id={id} rotulo={rotulo} valor={value} aoMudar={onChange} erro={erro} />;
 }
 
 // A prévia carrega depois, fora do JS inicial da rota: fica escondida até 960 px e não é o LCP.

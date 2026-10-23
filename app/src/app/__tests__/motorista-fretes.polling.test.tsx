@@ -17,6 +17,11 @@ import { valorDoTema } from '@/test-utils/renderComTema';
 import { fretesDoMotoristaMock } from '../../../mocks/fixtures/fretes';
 import MeusFretes from '../motorista/fretes';
 
+// O Jest não executa import() dinâmico: o corpo da tela (React.lazy) vem de um módulo falso.
+jest.mock('@/telas/CorpoMeusFretesMotorista.carregar', () => ({
+  carregarCorpoMeusFretesMotorista: () =>
+    Promise.resolve(jest.requireActual('@/telas/CorpoMeusFretesMotorista')),
+}));
 jest.mock('@/lib/a11y', () => ({
   ...jest.requireActual('@/lib/a11y'),
   anunciar: jest.fn(),
