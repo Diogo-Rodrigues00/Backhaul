@@ -1,6 +1,7 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
 
+import { CSS_SESSAO_INICIAL, SCRIPT_SESSAO_INICIAL } from '@/lib/sessaoNaInicial';
 import { gerarCssGlobal } from '@/theme/css';
 import { colors } from '@/theme/tokens';
 
@@ -43,6 +44,8 @@ export default function Raiz({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-title" content="Backhaul" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <script dangerouslySetInnerHTML={{ __html: scriptDoTema }} />
+        {/* Só em `/` e só com token: esconde a apresentação até a sessão ser conferida (sem piscar). */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_SESSAO_INICIAL }} />
         {FONTES_PRELOAD.map((href) => (
           <link
             key={href}
@@ -56,6 +59,7 @@ export default function Raiz({ children }: PropsWithChildren) {
         <ScrollViewStyleReset />
         {/* Depois do ScrollViewStyleReset: o body volta a rolar (telas altas, zoom 200%). */}
         <style id="tema-global" dangerouslySetInnerHTML={{ __html: cssGlobal }} />
+        <style id="sessao-inicial" dangerouslySetInnerHTML={{ __html: CSS_SESSAO_INICIAL }} />
       </head>
       <body>{children}</body>
     </html>
