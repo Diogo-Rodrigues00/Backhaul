@@ -9,7 +9,12 @@ test.beforeEach(({}, info) => {
 });
 
 const ROTAS = [
-  { caminho: '/', arquivo: 'index.html', titulo: 'Backhaul', h1: 'Backhaul' },
+  {
+    caminho: '/',
+    arquivo: 'index.html',
+    titulo: 'Backhaul · A urgência decide quem sai na frente',
+    h1: 'Bem-vindo ao Backhaul',
+  },
   {
     caminho: '/nao-existe',
     arquivo: '+not-found.html',
@@ -108,7 +113,9 @@ test.describe('teclado e foco', () => {
 
     await page.getByRole('link', { name: 'Voltar para o início' }).click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Backhaul' })).toBeFocused();
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Bem-vindo ao Backhaul' }),
+    ).toBeFocused();
   });
 });
 
