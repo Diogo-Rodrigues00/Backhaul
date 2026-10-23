@@ -1,6 +1,6 @@
 # Auditoria final do front (card 030)
 
-_Executada em 2026-10-23, sobre `origin/front` (commit 6ddab38) + PR #89 do card 030. **Números do CI** (Linux, `ubuntu-latest`): run 39922814359, commit b372346, que tem o mesmo código do app do HEAD do PR (o commit seguinte só altera este documento). Os números marcados como "local" vêm da máquina Windows 11 do desenvolvedor, **não estão em nenhum log do CI** e são só referência. `#88` e `#90` ainda não estavam em `front` nesta data: depois que entrarem, rode `npm run orcamento` de novo (a home nova do #90 mexe em `/`; `/entrar` tem só 0,4 KiB de folga)._
+_Executada em 2026-10-23, sobre `origin/front` (commit 6ddab38) + PR #89 do card 030. **Números do CI** (Linux, `ubuntu-latest`): run 39922814359, commit b372346, que tem o mesmo código do app do HEAD do PR (o commit seguinte só altera este documento). Os números marcados como "local" vêm da máquina Windows 11 do desenvolvedor, **não estão em nenhum log do CI** e são só referência. `#88` (só docs) entrou em `front` depois do run citado e não muda o JS; o `#90` ainda não estava em `front`: depois que entrar, rode `npm run orcamento` de novo (a home nova mexe em `/`; `/entrar` tem só 0,4 KiB de folga)._
 
 ## Resumo
 
