@@ -1,80 +1,61 @@
 # STATUS — Front-end do Backhaul
 
-_Atualizado em 2026-10-20._
+_Atualizado em 2026-10-23, véspera do congelamento de funcionalidades (24/10)._
 
 ## Fase atual
-**Fase 3/4 — Fundação e execução dos cards** (Fase 2 aprovada em 2026-10-20)
+**Fase 5 — Fechamento.** O fluxo principal do MVP está completo e mergeado em `front`. Resta: PR #90 (home e menu), janela de correção 25–28/10, ensaio em 28/10, apresentação em 29/10 e Mostra Tech em 12/11.
 
 ## Fases
 | Fase | Estado |
 |---|---|
-| 0 — Preparação | concluída (PR #13 mergeado em `front`) |
+| 0 — Preparação | concluída |
 | 1 — Grill do produto | concluída (PRD + MVP aprovados em 2026-10-20) |
 | 2 — Arquitetura e cards | concluída (cards, ADRs, DS e protótipo aprovados) |
-| 3 — Fundação | em andamento (card 001) |
-| 4 — Execução dos cards | pendente |
-| 5 — Fechamento | pendente |
-
-## Fase 0 — checklist
-- [x] `git clone`, branch `front` criada e publicada
-- [x] `gh` logado (PedroAugusto2208, permissão WRITE), `vercel` logado, Node 22.18, Python 3.12/3.13
-- [x] 10 agentes criados em `~/.claude/agents/`
-- [x] `app/CLAUDE.md` e estrutura `docs/front/`
-- [x] Relatório inicial do `integracao-api`: `relatorio-api-inicial.md`
-- [x] PR #13 da preparação mergeado em `front`
-- [ ] Expo Go no iPhone do Pedro (**pendente: Pedro**)
-
-## Fase 1 — checklist
-- [x] Grill do produto (decisões em `decisoes.md`, origem "Grill F1")
-- [x] `prd.md` e `mvp.md` escritos pelo `produto`
-- [x] Aprovação do Pedro (PRD + MVP)
-
-## Fase 2 — checklist
-- [x] ADRs e estrutura de pastas (tech-lead)
-- [x] Lista de cards com dependências e modelo (tech-lead)
-- [x] Design system + protótipos (designer, adiantado)
-- [x] Aprovação do Pedro: lista de cards
-- [x] Aprovação do Pedro: protótipos (Artifact)
-- [x] Issues criadas no GitHub (#16–#50)
+| 3 — Fundação | concluída (cards 001–008) |
+| 4 — Execução dos cards | concluída para o MVP (cards 009–030, exceto 026) |
+| 5 — Fechamento | em andamento |
 
 ## Cards por estado
-Lista completa em `cards/README.md`.
+Lista completa em `cards/README.md`. Cards 001–035 = issues #16–#50.
 
 | Estado | Cards |
 |---|---|
-| Em execução | — (008 Atoms é o próximo) |
-| Aguardando |  007 Cidades (espera LISTA de cidades do grupo) · demais cards seguem as ondas do `cards/README.md` |
-| Mergeados | 001 (#51), 006 (#53), 004 (#59), 003 (#58), 002 (#54), 005 (#57); issues #16–#21 fechadas |
-
-Issues: cards 001–035 = issues #16–#50 (label `front` + `mvp`/`se der`; ordem do `cards/README.md`). Ex.: 001 = #16, 002 = #17, 013 = #28, 024 = #42, 025 = #43.
+| Mergeados | 001–025, 027, 028, 029, 030 (issues fechadas) |
+| Em PR | #90 `fix/inicio-e-menu` (home com Entrar e Criar conta; menu sem "Minhas propostas") |
+| Cortado do MVP | 026 Minhas propostas (depende da rota 4a do Diogo; só no backlog) |
+| "Se der", não iniciados | 031 certificações do motorista, 032 admin aprova certificações, 033 cancelar carga, 034 cancelar disponibilidade, 035 mapa |
 
 Protótipo aprovado: https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP
+Site publicado: https://backhaul-front.vercel.app (último deploy de produção em 2026-10-23, com `front` até o card 023).
 
-## Notas para os próximos cards (auditoria do 001)
-- 002/003: `serve dist` não entrega `+not-found.html` e Lighthouse aborta com 404 real; CI precisa de servidor/rewrite que sirva a página do app; decidir se `/_sitemap` vai para produção; `public/.gitkeep` vira `/.gitkeep`.
-- 005/010: `ScrollViewStyleReset` põe `body{overflow:hidden}`: telas altas precisam de `ScrollView` (zoom 200%). Foco visível e alvo ≥ 24 px a cargo dos atoms (008).
-- RNTL 14: `renderRouter` é assíncrono; `getByRole` não acha landmarks em `View`.
-- `<title>` por rota via `<Head>` (não no `+html.tsx`), por causa do title vazio do SDK 57.
+## Limite de JS inicial
+360 KiB (368.640 bytes), medido em bytes, por rota (adendo 3 do ADR 0011). Piso atual de qualquer rota: ~355,5 KiB (pacote comum + entry); rotas mais pesadas a < 4 KiB do limite (`/entrar` com ~0,4 KiB de folga). Telas pesadas usam casca na rota + corpo em `src/telas` via `React.lazy` depois da hidratação (ADR 0003). **Meta de otimização em 25–28/10:** carregar o TanStack Query só nas áreas logadas (fetchers sem TanStack em `api/*.ts`, hooks em `*.hooks.ts`, `QueryClientProvider` dentro de `AreaProtegida`), alias mais enxuto, e voltar a ≤ 340 KiB.
 
-## Limite de JS inicial (decidido em 2026-10-21)
-360 KiB (368.640 bytes), medido em bytes (adendo 3 do ADR 0011). Cards de tela não aumentam o JS inicial. Meta de otimização em 25–28/10: TanStack só nas áreas logadas, voltar a ≤ 340 KiB.
+## Dívida técnica conhecida (detalhes em `auditoria-final.md`)
+- `BarraAbas` sticky sobrepõe alvos da primeira dobra no mobile (`target-size`); contornado na tela de publicar disponibilidade e na fixture da lista. Precisa de folga de rolagem sob a barra no template.
+- Comissão some ao recarregar a página (`GET /fretes/meus` não a devolve); aparece só logo após o pagamento.
+- Lighthouse mobile Performance 85–93 (aceito pelas decisões); Performance de desktop oscila no CI (0,88–1,00) e já reprovou PRs sem relação com a mudança (PR #88 só de docs passou ao reexecutar). Decisão pendente do Pedro: tornar `warn` no desktop como no mobile.
+- iPhone/Expo Go, VoiceOver e Dynamic Type não verificados em nenhuma tela.
+- Ajustes menores de revisão (ver PRs): foco após recusar proposta e após 409; `ResumoCarga` mostra o selo de urgência em carga expirada; `aria-controls` do combobox só com a lista aberta; helper único do rótulo "Nome - UF".
 
-## Ações do Pedro (produção)
-- `vercel deploy --prod --yes` na raiz, com `front` atualizado (hoje `backhaul-front.vercel.app` serve build de teste com mock).
-- Settings > Deployment Protection na Vercel: desligar "Vercel Authentication".
-- Pedir ao Diogo: domínio da Vercel no `CORS_ORIGIN`; app da Vercel autorizado no repositório (preview por PR).
-- Proteção da branch `front`: comando no PR #54. Cuidado: o CI só roda com mudança em `app/**`; PR só de docs fica sem checks.
-
-## Bloqueios
-- Skill `react-native-skills` não existe com esse nome; usando `vercel-react-native-skills` (confirmado pelo Pedro).
-- Grill da Fase 1 usa `anthropic-skills:grill-me` (escolha do Pedro). Agentes novos só carregam em sessão nova: iniciar com `claude --agent orquestrador`.
+## Backend (dependências do Diogo)
+- **CORS:** `https://backhaul-front.vercel.app` NÃO está no `CORS_ORIGIN` do Render (só `localhost:8081`): o site publicado não loga. **Bloqueia a demo real.**
+- **Seed de demo:** `database/seed.sql` tem `hash_fake_*`; falta 1 empresa e 2 motoristas (um com MOPP aprovado e válido, outro sem) com senha real, e cargas com e sem MOPP perto de Uberlândia.
+- **Rotas ausentes:** `GET /propostas/minhas` e `GET /disponibilidades/minhas` (404 em produção). O front usa plano B local no aparelho (cada login do motorista exige publicar a disponibilidade de novo).
+- Desejável: `percentual_comissao`/`valor_comissao` em `GET /fretes/meus`; 409 para disponibilidade não aberta; ping em `/saude` em 28/10, 29/10 e 12/11.
 
 ## Depende do Pedro
-- Instalar Expo Go agora, desligar atualização automática de apps até 12/11, logar na mesma conta Expo no iPhone e no CLI.
-- Para usar GitHub Projects: `gh auth refresh -s read:project,project` (o token atual não tem o escopo).
-- Lista de cidades com lat/lng (membros do grupo) até 21/10: bloqueia o card 007.
-- Instalar Expo Go no iPhone.
-- Avisar o Diogo: PR da base (`feat/app-base`) vai para `front` e sai depois do grill do PRD.
-- Pedir ao Diogo (ver item abaixo): rotas faltantes (fora do contrato) e inclusão no `CORS_ORIGIN` de `http://localhost:8081` e do domínio da Vercel.
-- Aprovações: PRD + MVP (Fase 1); lista de cards (Fase 2); protótipos do designer em Artifact (antes dos cards de tela).
-- Mandar ao Diogo: rotas B/C1/C2 e prazos, `CORS_ORIGIN`, ping no `/saude` nos dias de apresentação, seed da demo (texto pronto no fim do grill).
+- Mandar ao Diogo o texto de CORS, seed e rotas (acima).
+- Instalar Expo Go no iPhone (desligar atualização automática de apps até 12/11; mesma conta Expo no iPhone e no CLI).
+- Confirmar com o professor que PWA conta como "instalável".
+- Preencher o "Quadro de contas" do `roteiro-demo.md` **fora do repositório** depois do seed.
+- Decidir: Performance de desktop como `warn`; antecipar a otimização do TanStack (recomendado depois do #90).
+- Opcional: proteção da branch `front` (comando no PR #54; o CI só roda com mudança em `app/**`).
+- Opcional: GitHub Projects (`gh auth refresh -s read:project,project`).
+
+## Janela 25–28/10 (só correção, acabamento, a11y e Lighthouse)
+1. Otimização estrutural do JS (TanStack nas áreas).
+2. Folga de rolagem sob a barra de abas (`target-size`).
+3. Verificar no iPhone (Expo Go) e com leitor de tela.
+4. Ensaio em 28/10 no ambiente hospedado, 2 vezes seguidas, seguindo `roteiro-demo.md`.
+5. Vídeo de backup da demo.
