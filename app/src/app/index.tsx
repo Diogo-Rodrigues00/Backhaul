@@ -41,8 +41,9 @@ export default function Inicio() {
   useEffect(() => {
     if (estado === 'anonimo') liberarPaginaInicial();
   }, [estado]);
-  // Ao sair da `/` (o redirecionamento) a marca sai do <html>: o <main> da área é `#conteudo` também.
-  useEffect(() => liberarPaginaInicial, []);
+  // Sem cleanup de propósito: o portão do servidor desmonta a home (tela "Conectando") e a remonta
+  // quando o servidor volta; a marca precisa continuar até a sessão ser conferida. O CSS só esconde o
+  // `#conteudo` que contém `data-inicio`, então a marca esquecida no <html> não afeta as outras telas.
 
   return (
     <TemplateTela
@@ -51,7 +52,7 @@ export default function Inicio() {
       descricao="Plataforma que conecta caminhoneiros disponíveis a cargas urgentes próximas."
       cabecalho={<Cabecalho variante="simples" />}
     >
-      <View role="group" aria-label="Como começar" style={estilos.acoes}>
+      <View role="group" aria-label="Como começar" dataSet={{ inicio: '1' }} style={estilos.acoes}>
         <View style={estilos.acao}>
           <Link
             href="/entrar"

@@ -20,9 +20,9 @@ Estado em 23/10/2026, conferido no código de `src/app`. O congelamento de funci
 | Motorista | Minhas disponibilidades (escolhe a ativa), Publicar disponibilidade (cidade da lista ou GPS), Cargas próximas, proposta (aceitar o valor ou uma contraproposta), Meus fretes (inicia transporte e confirma entrega, atualiza sozinha) |
 | Administrador | Só uma tela informando que não há telas para esse perfil |
 
-**Em andamento:** "Minhas propostas" do motorista (card 026). A rota `/motorista/propostas` ainda não existe, embora o item apareça no menu do motorista. Cards "se der" (certificações, cancelamentos, mapa) não foram iniciados.
+**Fora do MVP:** "Minhas propostas" do motorista (card 026). A rota `/motorista/propostas` não existe e o item foi removido do menu do motorista. Cards "se der" (certificações, cancelamentos, mapa) não foram iniciados.
 
-A página inicial `/` ainda é provisória (título e descrição, sem botões). Entre por `/entrar` ou `/cadastro`.
+A página inicial `/` mostra a frase do produto e os botões "Entrar" (`/entrar`) e "Criar conta" (`/cadastro`); quem já tem sessão vai direto para a sua área.
 
 ## Pré-requisitos
 

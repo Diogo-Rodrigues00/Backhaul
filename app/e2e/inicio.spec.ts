@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { entrarComoPerfil, expect, test } from './fixtures';
 
 // Página inicial pública (`/`): marca, frase do produto e as portas "Entrar" e "Criar conta".
@@ -41,20 +42,90 @@ test.describe('visitante', () => {
   });
 });
 
+// Amostra a cada quadro se o h1 da home está visível (existe e `visibility` não é hidden). Guarda em
+// `window.__viuAHome` e em `__viuAHomeEm` (ms desde o início) o primeiro quadro em que ela apareceu.
+async function vigiarAHome(page: Page): Promise<void> {
+  await page.addInitScript((titulo) => {
+    const w = window as unknown as { __viuAHome?: boolean };
+    w.__viuAHome = false;
+    const olhar = () => {
+      const h1 = [...document.querySelectorAll('h1')].find((el) => el.textContent === titulo);
+      if (h1 && getComputedStyle(h1).visibility !== 'hidden') w.__viuAHome = true;
+      requestAnimationFrame(olhar);
+    };
+    requestAnimationFrame(olhar);
+  }, H1);
+}
+const viuAHome = (page: Page) =>
+  page.evaluate(() => (window as unknown as { __viuAHome: boolean }).__viuAHome);
+
 test.describe('quem já tem sessão', () => {
-  test('não vê a apresentação nem por um instante: vai direto à sua área', async ({ page }) => {
+  test('nunca vê a apresentação: vai direto à sua área', async ({ page }) => {
     await entrarComoPerfil(page, 'motorista');
+    await vigiarAHome(page);
     // Segura a restauração da sessão: o HTML estático da `/` já está na tela, mas escondido.
     await page.route('**/eu', async (rota) => {
       await new Promise((resolver) => setTimeout(resolver, 1500));
       await rota.continue();
     });
     await page.goto('/');
+    await page.waitForTimeout(800);
+    expect(await viuAHome(page)).toBe(false);
 
-    const apresentacao = page.getByRole('heading', { level: 1, name: H1 });
-    await expect(apresentacao).toBeHidden();
-    await expect(page.getByRole('link', { name: 'Criar conta' })).toBeHidden();
     await expect(page).toHaveURL(/\/motorista\/cargas$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Cargas próximas' })).toBeVisible();
+    expect(await viuAHome(page)).toBe(false);
+  });
+
+  test('token inválido (401): a home não aparece e o app abre /entrar com o aviso', async ({
+    page,
+  }) => {
+    await entrarComoPerfil(page, 'motorista');
+    await vigiarAHome(page);
+    await page.route('**/eu', (rota) =>
+      rota.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ erro: 'token inválido' }),
+      }),
+    );
+    await page.goto('/');
+
+    await expect(page).toHaveURL(/\/entrar\?aviso=sessao-expirada$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Entrar' })).toBeVisible();
+    expect(await viuAHome(page)).toBe(false);
+  });
+
+  test('servidor com erro 5xx na sessão: a home reaparece e o token continua guardado', async ({
+    page,
+  }) => {
+    await entrarComoPerfil(page, 'motorista');
+    await page.route('**/eu', (rota) =>
+      rota.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ erro: 'erro interno' }),
+      }),
+    );
+    await page.goto('/');
+
+    await expect(page.getByRole('heading', { level: 1, name: H1 })).toBeVisible();
+    await expect(page.getByRole('main').getByRole('link', { name: 'Entrar' })).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+    expect(await page.evaluate(() => localStorage.getItem('backhaul.token'))).toBe(
+      'mock-motorista',
+    );
+  });
+
+  test('JavaScript falhando: a home volta sozinha depois de 7 s (rede de segurança em CSS)', async ({
+    page,
+  }) => {
+    await entrarComoPerfil(page, 'motorista');
+    await page.route('**/_expo/static/js/**', (rota) => rota.abort());
+    await page.goto('/');
+
+    const h1 = page.getByRole('heading', { level: 1, name: H1 });
+    await expect(h1).toBeHidden();
+    await expect(h1).toBeVisible({ timeout: 12_000 });
   });
 });
