@@ -56,7 +56,7 @@ Fluxo completo, do primeiro `POST /__mock/reset` ao último passo. Inclui 3 espe
 | Reflexo: entrega chega à empresa (polling real) | 6,4 s | 7,9 a 9,5 s |
 | Reflexo: frete e pagamento chegam ao motorista (relógio acelerado) | 60 ms e 67 ms | 24 a 36 ms |
 
-Run anterior do CI (commit 17771d7, sem os passos B9 e MOPP): fluxo 48,7 s; reflexos 8,6, 9,5 e 5,9 s; relógio acelerado 58 e 51 ms. A variação de 5,9 a 9,5 s é a fase do polling de 10 s em relação ao momento da ação.
+Run do HEAD final do PR (39926060125, só docs a mais): fluxo 49,1 s; reflexos 8,5, 9,4 e 6,9 s; relógio acelerado 50 e 46 ms; Lighthouse mobile Performance 86 a 94; orçamento e 250 testes do Playwright iguais. Run anterior do CI (commit 17771d7, sem os passos B9 e MOPP): fluxo 48,7 s; reflexos 8,6, 9,5 e 5,9 s; relógio acelerado 58 e 51 ms. A variação de 5,9 a 9,5 s é a fase do polling de 10 s em relação ao momento da ação.
 
 Todos abaixo dos 15 s da meta. O pior caso teórico do polling é 10 s mais o tempo da requisição. O roteiro humano de ≤ 5 min (PRD §8) depende de quem apresenta e do ambiente hospedado; o E2E mostra que a parte automática cabe em menos de 1 min.
 
