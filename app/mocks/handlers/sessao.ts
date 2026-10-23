@@ -42,6 +42,19 @@ function emailJaCadastrado(email: string): boolean {
   );
 }
 
+/** Validação do corpo de POST /cadastro/motorista (compartilhada com o mock com estado do E2E). */
+export function validarCadastroMotorista(corpo: Record<string, unknown>): string[] {
+  const erros = [
+    ...validarCredenciais(corpo),
+    ...exigir(corpo, ['nome_completo', 'cnh', 'veiculo_tipo', 'veiculo_placa']),
+    ...digitos(corpo, 'cpf', 11),
+  ];
+  if (!eNumeroPositivo(corpo.capacidade_kg)) {
+    erros.push('capacidade_kg deve ser um número maior que zero');
+  }
+  return erros;
+}
+
 export function criarHandlersSessao(baseUrl: string) {
   return [
     http.post(`${baseUrl}/login`, async ({ request }) => {
@@ -89,14 +102,7 @@ export function criarHandlersSessao(baseUrl: string) {
 
     http.post(`${baseUrl}/cadastro/motorista`, async ({ request }) => {
       const corpo = await lerCorpo(request);
-      const erros = [
-        ...validarCredenciais(corpo),
-        ...exigir(corpo, ['nome_completo', 'cnh', 'veiculo_tipo', 'veiculo_placa']),
-        ...digitos(corpo, 'cpf', 11),
-      ];
-      if (!eNumeroPositivo(corpo.capacidade_kg)) {
-        erros.push('capacidade_kg deve ser um número maior que zero');
-      }
+      const erros = validarCadastroMotorista(corpo);
       if (erros.length > 0) return respostaErros(400, erros);
       const email = textoOuVazio(corpo.email);
       const cpf = textoOuVazio(corpo.cpf).replace(/\D/g, '');
