@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 
 import { entrarComoPerfil, expect, test } from './fixtures';
@@ -25,6 +26,33 @@ const VALOR_CONTRAPROPOSTA = '3200,00';
 /** O polling é de 10 s (ADR 0010); o PRD aceita até 15 s entre as janelas. */
 const LIMITE_REFLEXO_MS = 15_000;
 
+const TAGS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+
+/** axe com 0 violações no estado em que a tela está agora (estados com dados reais do fluxo). */
+async function axeSemViolacoes(page: Page) {
+  // Espera as transições terminarem: o axe mediria o contraste de um quadro no meio do fade.
+  await page.waitForFunction(
+    () => document.getAnimations().every((animacao) => animacao.playState !== 'running'),
+    undefined,
+    { timeout: 5_000 },
+  );
+  const resultado = await new AxeBuilder({ page }).withTags(TAGS_WCAG).analyze();
+  expect(
+    resultado.violations.map(
+      (v) => `${v.id}: ${v.help} -> ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`,
+    ),
+  ).toEqual([]);
+}
+
+/** O mesmo, nos dois temas (a janela volta ao tema claro no fim). */
+async function axeNosDoisTemas(page: Page) {
+  for (const esquema of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: esquema });
+    await axeSemViolacoes(page);
+  }
+  await page.emulateMedia({ colorScheme: 'light' });
+}
+
 const h1 = (page: Page) => page.getByRole('heading', { level: 1 });
 const moeda = (valor: string) => new RegExp(`R\\$\\s*${valor}`);
 
@@ -49,6 +77,13 @@ async function observarAnuncios(context: BrowserContext) {
     }, 50);
   });
 }
+
+// Quem tem o foco agora (para provar que uma novidade chegando por polling não o move).
+const descreverFoco = (page: Page) =>
+  page.evaluate(() => {
+    const ativo = document.activeElement;
+    return ativo ? `${ativo.tagName}#${ativo.id}.${ativo.getAttribute('role') ?? ''}` : 'nenhum';
+  });
 
 const anuncios = (page: Page) =>
   page.evaluate(() => (window as unknown as { __anuncios?: string[] }).__anuncios ?? []);
@@ -100,6 +135,7 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
   const inicioDoFluxo = Date.now();
   const reflexos: Record<string, number> = {};
   const tempos: Record<string, number> = {};
+  let focoAntesDaProposta = '';
   const marcar = (nome: string) => {
     tempos[nome] = Date.now() - inicioDoFluxo;
   };
@@ -202,6 +238,7 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       const critica = janelaM.getByRole('article', { name: CARGA });
       await expect(critica.getByText('Crítico')).toBeVisible();
       await expect(critica.getByText(MOPP)).toBeVisible();
+      await axeNosDoisTemas(janelaM);
       marcar('motorista com MOPP vê a crítica');
     });
 
@@ -210,6 +247,7 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       await janelaE.getByRole('link', { name: `Ver propostas de ${CARGA}` }).click();
       await expect(janelaE).toHaveURL(/\/empresa\/cargas\/detalhe\?id=/);
       await expect(janelaE.getByText('Nenhuma proposta ainda')).toBeVisible();
+      focoAntesDaProposta = await descreverFoco(janelaE);
     });
 
     // O motorista com MOPP deixa a tela de fretes aberta para ver o frete aparecer sozinho depois.
@@ -260,9 +298,11 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       await expect(janelaE.getByRole('heading', { level: 2, name: 'Propostas (1)' })).toBeVisible();
       // Chegou com anúncio na região viva e sem mover o foco.
       expect(await anuncios(janelaE)).toContain('1 nova proposta');
+      expect(await descreverFoco(janelaE)).toBe(focoAntesDaProposta);
       const proposta = janelaE.getByRole('heading', { level: 3, name: MOTORISTA_MOPP.nome });
       await expect(proposta).toBeVisible();
       await expect(janelaE.getByText(moeda('3\\.200,00')).first()).toBeVisible();
+      await axeNosDoisTemas(janelaE);
       marcar('empresa viu a proposta chegar');
     });
 
@@ -358,6 +398,7 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       await expect(resumo).toContainText(moeda('240,00'));
       await expect(resumo).toContainText('Pago, retido até a entrega');
       expect(await anuncios(janelaE)).toContain('Pagamento registrado');
+      await axeNosDoisTemas(janelaE);
       marcar('empresa pagou');
     });
     const tPagamento = Date.now();
@@ -412,6 +453,8 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       await expect(resumo).toContainText(/7,5\s*%/);
       await expect(cartao.getByText('Liberado ao motorista', { exact: true })).toHaveCount(2);
       await expect(cartao.getByText('Pago, retido até a entrega')).toHaveCount(0);
+      await axeNosDoisTemas(janelaE);
+      await axeNosDoisTemas(janelaMFretes);
       marcar('empresa viu entregue e liberado');
     });
   } finally {
