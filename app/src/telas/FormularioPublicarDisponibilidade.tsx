@@ -202,7 +202,7 @@ export default function FormularioPublicarDisponibilidade() {
             render={({ field, fieldState }) => (
               <CampoNumero
                 rotulo={ROTULOS.raio}
-                ajuda="Até onde você aceita buscar carga. De 1 a 500 km."
+                ajuda="Até onde você aceita buscar carga a partir do local escolhido, de 1 a 500 km. Quanto maior o raio, mais cargas aparecem."
                 sufixo="km"
                 modo="decimal"
                 value={field.value}
