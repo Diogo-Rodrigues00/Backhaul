@@ -41,6 +41,8 @@ export default function Inicio() {
   useEffect(() => {
     if (estado === 'anonimo') liberarPaginaInicial();
   }, [estado]);
+  // Ao sair da `/` (o redirecionamento) a marca sai do <html>: o <main> da área é `#conteudo` também.
+  useEffect(() => liberarPaginaInicial, []);
 
   return (
     <TemplateTela

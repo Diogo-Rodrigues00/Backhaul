@@ -72,6 +72,14 @@ describe('página inicial', () => {
     );
   });
 
+  it('ao sair da página inicial (redirecionamento) a marca sai do <html>', async () => {
+    await renderRouter({ _layout: LayoutRaiz, index: Inicio }, { initialUrl: '/' });
+    jest.mocked(liberarPaginaInicial).mockClear();
+
+    await screen.unmount();
+    expect(liberarPaginaInicial).toHaveBeenCalled();
+  });
+
   it('visitante sem sessão: libera a página (tira a marca do <html>) e continua em /', async () => {
     await renderRouter({ _layout: LayoutRaiz, index: Inicio }, { initialUrl: '/' });
 
