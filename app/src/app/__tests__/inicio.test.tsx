@@ -1,13 +1,13 @@
 // Página inicial pública (`/`): marca, frase do produto e as duas portas de entrada.
 import { renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
-import { liberarPaginaInicial } from '@/lib/sessaoNaInicial';
+import { liberarPaginaInicial } from '@/lib/paginaInicial';
 
 import LayoutRaiz from '../_layout';
 import Inicio from '../index';
 
-jest.mock('@/lib/sessaoNaInicial', () => ({
-  ...jest.requireActual('@/lib/sessaoNaInicial'),
+jest.mock('@/lib/paginaInicial', () => ({
+  ...jest.requireActual('@/lib/paginaInicial'),
   liberarPaginaInicial: jest.fn(),
 }));
 
@@ -34,20 +34,22 @@ beforeEach(() => {
 });
 
 describe('página inicial', () => {
-  it('um único h1, a descrição, a marca e a frase do produto', async () => {
+  it('um único h1, a frase do produto, a descrição e a marca', async () => {
     await renderRouter({ _layout: LayoutRaiz, index: Inicio }, { initialUrl: '/' });
 
     const titulos = screen.getAllByRole('heading');
     expect(titulos).toHaveLength(1);
     expect(titulos[0]?.props['aria-level']).toBe(1);
-    expect(screen.getByRole('heading', { name: 'Bem-vindo ao Backhaul' })).toBeOnTheScreen();
+    expect(
+      screen.getByRole('heading', { name: 'A urgência decide quem sai na frente' }),
+    ).toBeOnTheScreen();
     expect(
       screen.getByText(
         'Plataforma que conecta caminhoneiros disponíveis a cargas urgentes próximas.',
       ),
     ).toBeOnTheScreen();
-    // O painel da marca é decorativo (aria-hidden) e traz a frase do produto, como no login.
-    expect(screen.getByText('quem sai na frente.', { includeHiddenElements: true })).toBeTruthy();
+    // A marca está no cabeçalho (o h1 é a frase do produto, a mesma do painel do login).
+    expect(screen.getByRole('link', { name: /Backhaul/ })).toBeOnTheScreen();
     expect(screen.container.queryAll((el) => el.props.role === 'main')).toHaveLength(1);
     expect(screen.container.queryAll((el) => el.props.role === 'banner')).toHaveLength(1);
   });

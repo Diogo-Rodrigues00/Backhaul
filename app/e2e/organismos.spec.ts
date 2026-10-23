@@ -13,7 +13,7 @@ const ROTAS = [
     caminho: '/',
     arquivo: 'index.html',
     titulo: 'Backhaul · A urgência decide quem sai na frente',
-    h1: 'Bem-vindo ao Backhaul',
+    h1: 'A urgência decide quem sai na frente',
   },
   {
     caminho: '/nao-existe',
@@ -114,7 +114,7 @@ test.describe('teclado e foco', () => {
     await page.getByRole('link', { name: 'Voltar para o início' }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(
-      page.getByRole('heading', { level: 1, name: 'Bem-vindo ao Backhaul' }),
+      page.getByRole('heading', { level: 1, name: 'A urgência decide quem sai na frente' }),
     ).toBeFocused();
   });
 });

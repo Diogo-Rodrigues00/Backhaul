@@ -1,20 +1,34 @@
 import { useEffect } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
+import { DivisorEstrada } from '@/components/atoms/DivisorEstrada';
 import { Link } from '@/components/atoms/Link';
-import { TemplateAutenticacao } from '@/components/templates/TemplateAutenticacao';
-import { liberarPaginaInicial } from '@/lib/sessaoNaInicial';
+import { Cabecalho } from '@/components/organisms/Cabecalho';
+import { TemplateTela } from '@/components/templates/TemplateTela';
+import { liberarPaginaInicial } from '@/lib/paginaInicial';
 import { useRedirecionarSeAutenticado } from '@/state/sessao/useRedirecionarSeAutenticado';
 import { useSessao } from '@/state/sessao/useSessao';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 
-// Página inicial pública: a marca e a frase do produto (painel do TemplateAutenticacao, o mesmo do
-// login) e as duas portas de entrada. O h1 e a descrição ficam no HTML estático (LCP, ADR 0011).
-const DESCRICAO = 'Plataforma que conecta caminhoneiros disponíveis a cargas urgentes próximas.';
+// Página inicial pública: a marca está no cabeçalho, o h1 é a frase do produto (a mesma do painel do
+// login) e os dois botões grandes levam a "Entrar" e "Criar conta". O h1 e a descrição ficam no HTML
+// estático (LCP, ADR 0011). Só usa componentes que as demais telas já carregam: o JS inicial não cresce.
+const LARGURA_BOTAO = 240;
 
 function criarEstilos({ space }: TemaVisual) {
-  return { acoes: { gap: space[3] } satisfies ViewStyle } as const;
+  return {
+    acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: space[4] } satisfies ViewStyle,
+    // `flexBasis` + `flexGrow`: lado a lado quando cabe, empilhados e de largura cheia no celular.
+    acao: {
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: LARGURA_BOTAO,
+      maxWidth: 360,
+      minWidth: 0,
+    } satisfies ViewStyle,
+    estrada: { width: '100%', maxWidth: 360 } satisfies ViewStyle,
+  } as const;
 }
 
 export default function Inicio() {
@@ -29,27 +43,35 @@ export default function Inicio() {
   }, [estado]);
 
   return (
-    <TemplateAutenticacao
-      titulo="Bem-vindo ao Backhaul"
+    <TemplateTela
+      titulo="A urgência decide quem sai na frente"
       tituloDaPagina="Backhaul · A urgência decide quem sai na frente"
-      descricao={DESCRICAO}
+      descricao="Plataforma que conecta caminhoneiros disponíveis a cargas urgentes próximas."
+      cabecalho={<Cabecalho variante="simples" />}
     >
       <View role="group" aria-label="Como começar" style={estilos.acoes}>
-        <Link
-          href="/entrar"
-          variante="botao"
-          aparencia={{ variante: 'primario', tamanho: 'lg', bloco: true, icone: 'arrow-right' }}
-        >
-          Entrar
-        </Link>
-        <Link
-          href="/cadastro"
-          variante="botao"
-          aparencia={{ variante: 'secundario', tamanho: 'lg', bloco: true }}
-        >
-          Criar conta
-        </Link>
+        <View style={estilos.acao}>
+          <Link
+            href="/entrar"
+            variante="botao"
+            aparencia={{ variante: 'primario', tamanho: 'lg', bloco: true, icone: 'arrow-right' }}
+          >
+            Entrar
+          </Link>
+        </View>
+        <View style={estilos.acao}>
+          <Link
+            href="/cadastro"
+            variante="botao"
+            aparencia={{ variante: 'secundario', tamanho: 'lg', bloco: true }}
+          >
+            Criar conta
+          </Link>
+        </View>
       </View>
-    </TemplateAutenticacao>
+      <View style={estilos.estrada}>
+        <DivisorEstrada variante="cinza" />
+      </View>
+    </TemplateTela>
   );
 }

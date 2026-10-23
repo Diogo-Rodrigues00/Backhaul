@@ -15,8 +15,6 @@ import { useEstilos } from '@/state/tema/useEstilos';
 export interface PropsTemplateAutenticacao {
   /** O `h1` e o `<title>` da rota ("Entrar"). Único por rota. */
   titulo: string;
-  /** `<title>` completo, quando `titulo · Backhaul` não serve (a página inicial: "Backhaul · Backhaul"). */
-  tituloDaPagina?: string;
   /** Uma frase sob o título e a `meta description`. Também no HTML estático (LCP, ADR 0011). */
   descricao: string;
   /** Aviso no topo do cartão, acima do título (sessão expirada etc.). */
@@ -63,7 +61,6 @@ function criarEstilos({ colors, space }: TemaVisual) {
  */
 export function TemplateAutenticacao({
   titulo,
-  tituloDaPagina,
   descricao,
   aviso,
   children,
@@ -75,7 +72,7 @@ export function TemplateAutenticacao({
   return (
     <View style={estilos.raiz}>
       <Head>
-        <title>{tituloDaPagina ?? `${titulo} · Backhaul`}</title>
+        <title>{`${titulo} · Backhaul`}</title>
         <meta name="description" content={descricao} />
       </Head>
       <CorpoDaTela barra={null}>

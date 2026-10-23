@@ -1,10 +1,6 @@
 import { CHAVES } from './armazenamentoComum';
-import {
-  ATRIBUTO_SESSAO_INICIAL,
-  CSS_SESSAO_INICIAL,
-  liberarPaginaInicial,
-  SCRIPT_SESSAO_INICIAL,
-} from './sessaoNaInicial';
+import { ATRIBUTO_SESSAO_INICIAL, liberarPaginaInicial } from './paginaInicial';
+import { CSS_SESSAO_INICIAL, SCRIPT_SESSAO_INICIAL } from './sessaoNaInicial';
 
 // Executa o script do <head> contra um `location`, um `localStorage` e um `document` de mentira.
 function rodar(pathname: string, token: string | null, quebra = false) {

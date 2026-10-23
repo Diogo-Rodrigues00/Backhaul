@@ -242,7 +242,7 @@ describe('guardas por perfil', () => {
 
     await waitFor(() => expect(sonda()).toBe('anonimo|-|-'));
     expect(caminho()).toBe('/');
-    expect(titulo('Bem-vindo ao Backhaul')).toBeOnTheScreen();
+    expect(titulo('A urgência decide quem sai na frente')).toBeOnTheScreen();
   });
 });
 

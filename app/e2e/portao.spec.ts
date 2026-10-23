@@ -23,14 +23,14 @@ test.describe('servidor acordando', () => {
     // A região viva global está sempre no DOM; a da tela é a do banner.
     await expect(page.getByRole('alert')).toHaveCount(0);
 
-    await expect(h1(page, 'Bem-vindo ao Backhaul')).toBeVisible();
+    await expect(h1(page, 'A urgência decide quem sai na frente')).toBeVisible();
     await expect(h1(page, CONECTANDO)).toHaveCount(0);
     await expect(page).toHaveURL(/\/$/);
   });
 
   test('servidor rápido: a tela nunca aparece', async ({ page }) => {
     await page.goto('/');
-    await expect(h1(page, 'Bem-vindo ao Backhaul')).toBeVisible();
+    await expect(h1(page, 'A urgência decide quem sai na frente')).toBeVisible();
     await page.waitForLoadState('networkidle');
     await expect(h1(page, CONECTANDO)).toHaveCount(0);
   });
@@ -125,7 +125,7 @@ test.describe('servidor que não responde', () => {
     // O servidor "volta": o botão reinicia o ciclo e o app abre sozinho.
     await page.unroute('**/saude');
     await page.getByRole('button', { name: 'Tentar de novo' }).click();
-    await expect(h1(page, 'Bem-vindo ao Backhaul')).toBeVisible();
+    await expect(h1(page, 'A urgência decide quem sai na frente')).toBeVisible();
     await expect(h1(page, FALHOU)).toHaveCount(0);
   });
 });

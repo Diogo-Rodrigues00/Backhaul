@@ -32,7 +32,7 @@ test.describe('tema', () => {
     const page = await contexto.newPage();
     await page.goto('/');
     await expect(
-      page.getByRole('heading', { name: 'Bem-vindo ao Backhaul', level: 1 }),
+      page.getByRole('heading', { name: 'A urgência decide quem sai na frente', level: 1 }),
     ).toBeVisible();
     expect(await fundo(page)).toBe(ESCURO);
     expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBeUndefined();
@@ -66,7 +66,10 @@ test.describe('tema', () => {
       const contexto = await browser.newContext({ colorScheme: esquema });
       const page = await contexto.newPage();
       await page.goto('/');
-      const h1 = page.getByRole('heading', { name: 'Bem-vindo ao Backhaul', level: 1 });
+      const h1 = page.getByRole('heading', {
+        name: 'A urgência decide quem sai na frente',
+        level: 1,
+      });
       expect(await h1.evaluate((el) => getComputedStyle(el).color)).toBe(cor);
       await contexto.close();
     }
@@ -162,7 +165,7 @@ test.describe('responsivo sem JavaScript e rolagem', () => {
     await page.goto('/');
     // Espera a hidratação: antes dela o conteúdo pode ainda não estar medido (CI é mais lento).
     await expect(
-      page.getByRole('heading', { name: 'Bem-vindo ao Backhaul', level: 1 }),
+      page.getByRole('heading', { name: 'A urgência decide quem sai na frente', level: 1 }),
     ).toBeVisible();
     await page.waitForLoadState('networkidle');
     const antes = await page.evaluate(() => ({

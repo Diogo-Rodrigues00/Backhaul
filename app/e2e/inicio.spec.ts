@@ -2,7 +2,7 @@ import { entrarComoPerfil, expect, test } from './fixtures';
 
 // Página inicial pública (`/`): marca, frase do produto e as portas "Entrar" e "Criar conta".
 // O axe nos dois temas e em 320 px já cobre `/` pela lista de e2e/rotas.ts.
-const H1 = 'Bem-vindo ao Backhaul';
+const H1 = 'A urgência decide quem sai na frente';
 
 test.describe('visitante', () => {
   test('mostra um h1, a frase do produto e os dois botões grandes', async ({ page }) => {

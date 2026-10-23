@@ -98,7 +98,7 @@ describe('portão do servidor no layout raiz', () => {
 
     expect(chamadas()).toBe(1);
     expect(h1(CONECTANDO)).toBeNull();
-    expect(h1('Bem-vindo ao Backhaul')).toBeOnTheScreen();
+    expect(h1('A urgência decide quem sai na frente')).toBeOnTheScreen();
     expect(anunciar).not.toHaveBeenCalled();
   });
 
@@ -106,14 +106,14 @@ describe('portão do servidor no layout raiz', () => {
     simularSaude(['pendente']);
     await abrir();
 
-    expect(h1('Bem-vindo ao Backhaul')).toBeOnTheScreen();
+    expect(h1('A urgência decide quem sai na frente')).toBeOnTheScreen();
     await avancar(499);
     expect(h1(CONECTANDO)).toBeNull();
-    expect(h1('Bem-vindo ao Backhaul')).toBeOnTheScreen();
+    expect(h1('A urgência decide quem sai na frente')).toBeOnTheScreen();
 
     await avancar(1);
     expect(h1(CONECTANDO)).toBeOnTheScreen();
-    expect(h1('Bem-vindo ao Backhaul')).toBeNull();
+    expect(h1('A urgência decide quem sai na frente')).toBeNull();
     expect(screen.getByText('Tentativa 1 de 18')).toBeOnTheScreen();
   });
 
@@ -132,7 +132,7 @@ describe('portão do servidor no layout raiz', () => {
     await avancar(INTERVALO_SAUDE_MS);
     expect(chamadas()).toBe(3);
     expect(h1(CONECTANDO)).toBeNull();
-    expect(h1('Bem-vindo ao Backhaul')).toBeOnTheScreen();
+    expect(h1('A urgência decide quem sai na frente')).toBeOnTheScreen();
     expect(anunciar).toHaveBeenCalledWith('Servidor conectado.');
   });
 
@@ -151,7 +151,7 @@ describe('portão do servidor no layout raiz', () => {
     expect(h1(FALHOU)).toBeNull();
     // Direto na tela "Conectando": o app (com a sessão ainda restaurando) não aparece nem por 500 ms.
     expect(h1(CONECTANDO)).toBeOnTheScreen();
-    expect(h1('Bem-vindo ao Backhaul')).toBeNull();
+    expect(h1('A urgência decide quem sai na frente')).toBeNull();
 
     await avancar(600);
     expect(h1(CONECTANDO)).toBeOnTheScreen();
