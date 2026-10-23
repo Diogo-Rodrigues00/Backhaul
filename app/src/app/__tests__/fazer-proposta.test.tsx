@@ -19,9 +19,10 @@ import {
   ouvirAnunciosDoTeste,
 } from '@/test-utils/cenarioFazerProposta';
 
-import { CARGA_NORMAL_ID } from '../../../mocks/fixtures/cargas';
+import { CARGA_NORMAL_ID, CARGA_URGENTE_ID } from '../../../mocks/fixtures/cargas';
 import { DISPONIBILIDADE_ABERTA_ID } from '../../../mocks/fixtures/disponibilidades';
 import { servidor, urlMock } from '../../../mocks/node';
+import { respostaErro, respostaHtml } from '../../../mocks/respostas';
 
 jest.mock('@/lib/armazenamento', () => {
   const memoria = new Map<string, string>();
@@ -134,6 +135,46 @@ describe('Fazer proposta: botões do cartão', () => {
     // Pendente guardada para a carga: só "Proposta enviada".
     await waitFor(() => expect(cartaoDa(CARGA).getByText('Proposta enviada')).toBeOnTheScreen());
     expect(cartaoDa(CARGA).queryByRole('button')).toBeNull();
+  });
+});
+
+// Contra a API real a rota 4a (GET /propostas/minhas) ainda não existe: os botões têm de aparecer
+// mesmo assim, e a carga já proposta neste aparelho continua só com "Proposta enviada".
+describe('Fazer proposta: sem GET /propostas/minhas', () => {
+  it.each([
+    ['404 com HTML do Express', () => respostaHtml(404)],
+    ['500', () => respostaErro(500, 'erro interno')],
+    ['falha de rede', () => HttpResponse.error()],
+  ])('%s: os botões aparecem e a carga já proposta segue marcada', async (_nome, resposta) => {
+    servidor.use(http.get(urlMock('/propostas/minhas'), resposta));
+    await gravar(
+      CHAVES.propostasEnviadas,
+      JSON.stringify([
+        { cargaId: CARGA_URGENTE_ID, enviadaEm: '2026-10-21T12:00:00.000Z', tipo: 'aceite' },
+      ]),
+    );
+    await abrirComLista();
+    await aguardarAcoes(CARGA);
+
+    expect(botaoDoCartao(CARGA, ACEITAR)).toBeOnTheScreen();
+    expect(botaoDoCartao(CARGA, 'Contraproposta')).toBeOnTheScreen();
+    const proposta = cartaoDa('Produtos inflamáveis');
+    expect(proposta.getByText('Proposta enviada')).toBeOnTheScreen();
+    expect(proposta.queryByRole('button')).toBeNull();
+  });
+
+  it('a carga já proposta nunca mostra botões, nem enquanto o aparelho é lido', async () => {
+    servidor.use(http.get(urlMock('/propostas/minhas'), () => respostaHtml(404)));
+    await gravar(
+      CHAVES.propostasEnviadas,
+      JSON.stringify([
+        { cargaId: CARGA_URGENTE_ID, enviadaEm: '2026-10-21T12:00:00.000Z', tipo: 'aceite' },
+      ]),
+    );
+    await abrirComLista();
+    await aguardarAcoes(CARGA);
+    // Os botões só surgem juntos, depois de saber quem já tem proposta.
+    expect(cartaoDa('Produtos inflamáveis').queryByRole('button')).toBeNull();
   });
 });
 
