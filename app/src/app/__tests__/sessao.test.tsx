@@ -12,6 +12,7 @@ import { useCasca } from '@/components/organisms/useCasca';
 import { TemplateTela } from '@/components/templates/TemplateTela';
 import { apagar, CHAVES, gravar, ler } from '@/lib/armazenamento';
 import { ErroApi } from '@/lib/erros';
+import { liberarPaginaInicial } from '@/lib/paginaInicial';
 import { SessaoProvider } from '@/state/sessao/SessaoProvider';
 import { useSessao } from '@/state/sessao/useSessao';
 import { TemaContext } from '@/state/tema/TemaProvider';
@@ -27,6 +28,11 @@ import MinhasCargas from '../empresa/cargas/index';
 import Inicio from '../index';
 import LayoutMotorista from '../motorista/_layout';
 import CargasProximas from '../motorista/cargas';
+
+jest.mock('@/lib/paginaInicial', () => ({
+  ...jest.requireActual('@/lib/paginaInicial'),
+  liberarPaginaInicial: jest.fn(),
+}));
 
 jest.mock('@/lib/armazenamento', () => {
   const memoria = new Map<string, string>();
@@ -185,6 +191,30 @@ describe('restaurar a sessão', () => {
 
     await waitFor(() => expect(caminho()).toBe('/entrar'));
     expect(rota()).toBe('/entrar|conta-nao-encontrada');
+    await expect(ler(CHAVES.token)).resolves.toBeNull();
+  });
+
+  it('/ com token e GET /eu em 5xx: a home reaparece (libera a marca) e o token fica', async () => {
+    await gravar(CHAVES.token, 'mock-motorista');
+    servidor.use(http.get(urlMock('/eu'), () => respostaErro(500, 'erro interno')));
+    jest.mocked(liberarPaginaInicial).mockClear();
+    await abrir('/');
+
+    await waitFor(() => expect(sonda()).toContain('anonimo'));
+    await waitFor(() => expect(liberarPaginaInicial).toHaveBeenCalled());
+    expect(caminho()).toBe('/');
+    expect(titulo('A urgência decide quem sai na frente')).toBeOnTheScreen();
+    await expect(ler(CHAVES.token)).resolves.toBe('mock-motorista');
+  });
+
+  it('/ com token inválido (401): vai ao login com o aviso e a home não é liberada', async () => {
+    await gravar(CHAVES.token, 'token-vencido');
+    servidor.use(http.get(urlMock('/eu'), () => respostaErro(401, 'token inválido')));
+    jest.mocked(liberarPaginaInicial).mockClear();
+    await abrir('/');
+
+    await waitFor(() => expect(caminho()).toBe('/entrar'));
+    expect(rota()).toBe('/entrar|sessao-expirada');
     await expect(ler(CHAVES.token)).resolves.toBeNull();
   });
 

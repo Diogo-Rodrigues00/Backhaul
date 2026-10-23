@@ -11,5 +11,15 @@ export const SCRIPT_SESSAO_INICIAL =
   `try{if(location.pathname==='/'&&localStorage.getItem('backhaul.token')!==null)` +
   `document.documentElement.setAttribute('${ATRIBUTO_SESSAO_INICIAL}','')}catch(e){}`;
 
-// `#conteudo` é o <main> de toda tela (ID_CONTEUDO). `visibility` esconde também da leitura de tela.
-export const CSS_SESSAO_INICIAL = `html[${ATRIBUTO_SESSAO_INICIAL}] #conteudo{visibility:hidden}`;
+// `#conteudo` é o <main> de toda tela (ID_CONTEUDO); `:has([data-inicio])` limita a regra ao <main> da
+// home (os botões levam `data-inicio`), então o portão do servidor e as áreas logadas nunca somem.
+// `visibility` esconde também da leitura de tela.
+// Rede de segurança só em CSS: se o JS não rodar (offline sem cache, chunk 404, erro de script) ninguém
+// tira a marca; depois de 7 s a animação (duração mínima, só o atraso conta) devolve `visibility:visible`. Com o JS
+// funcionando a marca sai antes, assim que a sessão é conferida. `prefers-reduced-motion` só encurta a
+// duração (css.ts), nunca o atraso.
+export const ATRASO_LIBERAR_SEGUNDOS = 7;
+export const CSS_SESSAO_INICIAL =
+  `html[${ATRIBUTO_SESSAO_INICIAL}] #conteudo:has([data-inicio])` +
+  `{visibility:hidden;animation:backhaul-liberar-inicio .01s ${ATRASO_LIBERAR_SEGUNDOS}s forwards}` +
+  `@keyframes backhaul-liberar-inicio{to{visibility:visible}}`;

@@ -72,12 +72,21 @@ describe('página inicial', () => {
     );
   });
 
-  it('ao sair da página inicial (redirecionamento) a marca sai do <html>', async () => {
+  it('desmontar a home (portão do servidor em "Conectando") NÃO tira a marca do <html>', async () => {
     await renderRouter({ _layout: LayoutRaiz, index: Inicio }, { initialUrl: '/' });
+    await waitFor(() => expect(liberarPaginaInicial).toHaveBeenCalled());
     jest.mocked(liberarPaginaInicial).mockClear();
 
     await screen.unmount();
-    expect(liberarPaginaInicial).toHaveBeenCalled();
+    expect(liberarPaginaInicial).not.toHaveBeenCalled();
+  });
+
+  it('os botões levam data-inicio: é por ele que o CSS acha o <main> da home', async () => {
+    await renderRouter({ _layout: LayoutRaiz, index: Inicio }, { initialUrl: '/' });
+
+    const grupo = screen.container.queryAll((el) => el.props.role === 'group');
+    expect(grupo).toHaveLength(1);
+    expect(grupo[0]?.props.dataSet).toEqual({ inicio: '1' });
   });
 
   it('visitante sem sessão: libera a página (tira a marca do <html>) e continua em /', async () => {

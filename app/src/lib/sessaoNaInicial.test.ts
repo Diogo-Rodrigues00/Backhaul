@@ -1,6 +1,10 @@
 import { CHAVES } from './armazenamentoComum';
 import { ATRIBUTO_SESSAO_INICIAL, liberarPaginaInicial } from './paginaInicial';
-import { CSS_SESSAO_INICIAL, SCRIPT_SESSAO_INICIAL } from './sessaoNaInicial';
+import {
+  ATRASO_LIBERAR_SEGUNDOS,
+  CSS_SESSAO_INICIAL,
+  SCRIPT_SESSAO_INICIAL,
+} from './sessaoNaInicial';
 
 // Executa o script do <head> contra um `location`, um `localStorage` e um `document` de mentira.
 function rodar(pathname: string, token: string | null, quebra = false) {
@@ -45,9 +49,17 @@ describe('script que esconde a apresentação de quem já tem sessão', () => {
     expect(SCRIPT_SESSAO_INICIAL).toContain(`'${CHAVES.token}'`);
   });
 
-  it('o CSS só esconde o <main> quando a marca está no <html>', () => {
-    expect(CSS_SESSAO_INICIAL).toBe(
-      `html[${ATRIBUTO_SESSAO_INICIAL}] #conteudo{visibility:hidden}`,
+  it('o CSS só esconde o <main> da home quando a marca está no <html>', () => {
+    expect(CSS_SESSAO_INICIAL).toContain(
+      `html[${ATRIBUTO_SESSAO_INICIAL}] #conteudo:has([data-inicio]){visibility:hidden;`,
+    );
+  });
+
+  it('o CSS devolve a home sozinho depois de 7 s, sem JavaScript (rede de segurança)', () => {
+    expect(ATRASO_LIBERAR_SEGUNDOS).toBe(7);
+    expect(CSS_SESSAO_INICIAL).toContain('animation:backhaul-liberar-inicio .01s 7s forwards');
+    expect(CSS_SESSAO_INICIAL).toContain(
+      '@keyframes backhaul-liberar-inicio{to{visibility:visible}}',
     );
   });
 });
