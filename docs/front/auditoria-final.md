@@ -1,17 +1,17 @@
 # Auditoria final do front (card 030)
 
-_Executada em 2026-10-23, sobre `origin/front` + PR do card 030. Números do CI (Linux, `ubuntu-latest`, run 39899183983) e da máquina local (Windows 11), indicados em cada tabela._
+_Executada em 2026-10-23, sobre `origin/front` (commit 6ddab38) + PR #89 do card 030. **Números do CI** (Linux, `ubuntu-latest`): run 39922814359, commit b372346, que tem o mesmo código do app do HEAD do PR (o commit seguinte só altera este documento). Os números marcados como "local" vêm da máquina Windows 11 do desenvolvedor, **não estão em nenhum log do CI** e são só referência. `#88` e `#90` ainda não estavam em `front` nesta data: depois que entrarem, rode `npm run orcamento` de novo (a home nova do #90 mexe em `/`; `/entrar` tem só 0,4 KiB de folga)._
 
 ## Resumo
 
 | Item | Resultado |
 |---|---|
 | Fluxo da demo de ponta a ponta (2 janelas, mock com estado) | **passa** (CI e local); 1 bug real encontrado e corrigido |
-| Reflexo entre janelas (meta PRD §8: ≤ 15 s) | **5,9 a 9,4 s** com o polling real de 10 s |
+| Reflexo entre janelas (meta PRD §8: ≤ 15 s) | **6,4 a 9,4 s** com o polling real de 10 s (run b372346; 5,9 a 9,5 s em runs anteriores) |
 | axe, todas as rotas de `e2e/rotas.ts`, tema claro e escuro, 1280 px e 320 px | **0 violações** (250 testes passaram, 54 pulados por serem de um só projeto) |
 | axe nos estados reais do fluxo (propostas chegando, pagamento feito, fretes entregues), nos dois temas | **0 violações** |
 | Lighthouse desktop, 15 rotas | **100 / 100 / 100 / 100** |
-| Lighthouse mobile, 15 rotas | Acessibilidade, Boas práticas e SEO **100**; Performance **86 a 93** (aceito: adendo do ADR 0011, só avisa) |
+| Lighthouse mobile, 15 rotas | Acessibilidade, Boas práticas e SEO **100**; Performance **85 a 92** neste run (86 a 93 em runs anteriores; varia de um run para outro; aceito: adendo do ADR 0011, só avisa) |
 | Orçamento de JS inicial (360 KiB) | **respeitado** nas 15 rotas; a mais cheia tem 0,4 KiB de folga |
 | Jest | 136 suítes, 1246 testes, todos passaram no CI |
 | Aba oculta por 30 s | **0 requisições** nas três telas com atualização automática |
@@ -31,7 +31,7 @@ Três contextos de navegador, cada um com seu `localStorage`: **A** empresa, **B
 | A2 | A | Abre as propostas da carga ("Nenhuma proposta ainda") e deixa a tela aberta |
 | B3 | B | Abre "Meus fretes" (vazio) em outra aba da mesma janela, com relógio falso |
 | B4 | B | Contraproposta de R$ 3.200,00 (201, "Proposta enviada") |
-| A3 | A | **Reflexo 1 (tempo real):** a proposta aparece sem clique em **≤ 15 s**, a região viva anuncia "1 nova proposta" e **o foco não se move**; axe nos dois temas |
+| A3 | A | **Reflexo 1 (tempo real):** a proposta aparece sem clique em **≤ 15 s**, com nome, valor, placa e a certificação **MOPP** do motorista; a região viva anuncia "1 nova proposta" e **o foco não se move**; axe nos dois temas |
 | A4 | A | Aceita (diálogo), "Frete criado", segue por "Ver fretes"; o cartão mostra o motorista e "Pagar frete" |
 | B5 | B | **Reflexo 2 (relógio acelerado):** o frete aparece na outra janela ("Aguardando pagamento", "Iniciar transporte") |
 | B6 | B | Inicia o transporte (diálogo) |
@@ -40,6 +40,7 @@ Três contextos de navegador, cada um com seu `localStorage`: **A** empresa, **B
 | B7 | B | **Reflexo 4 (relógio acelerado):** "Pago, retido até a entrega" e o anúncio "Pagamento recebido: ..." |
 | B8 | B | Confirma a entrega: "Liberado ao motorista", anúncio de entrega e pagamento liberado, sem botões no cartão |
 | A7 | A | **Reflexo 5 (tempo real):** "Entregue", anúncio "Entrega confirmada: ...", pagamento **liberado** no cartão e no resumo (era o bug do item 4); axe nos dois temas, nas duas janelas |
+| B9 | B | Sai ("Sair") e entra de novo pelo formulário: volta a "Cargas próximas", e "Meus fretes" mostra o frete entregue e liberado |
 
 Há ainda 3 testes de **aba oculta**: em "Meus fretes" (empresa e motorista) e em "Propostas da carga", com relógio falso e o evento `visibilitychange`. Controle: com a aba visível, 30 s de relógio geram pelo menos 2 leituras (o teste enxerga o polling); com a aba oculta, 30 s geram **0**.
 
@@ -47,13 +48,15 @@ Há ainda 3 testes de **aba oculta**: em "Meus fretes" (empresa e motorista) e e
 
 Fluxo completo, do primeiro `POST /__mock/reset` ao último passo. Inclui 3 esperas reais de polling e 5 varreduras de axe (10 execuções, claro e escuro).
 
-| | Local (Windows) | CI (Linux) |
+| | CI (Linux, run 39922814359) | Local (Windows; não confirmado em log do CI) |
 |---|---|---|
-| Fluxo completo | 41 a 46 s | 49,6 s |
-| Reflexo: proposta chega à empresa (polling real) | 8,5 a 9,1 s | 8,1 s |
-| Reflexo: andamento muda na empresa (polling real) | 8,9 a 9,4 s | 9,4 s |
-| Reflexo: entrega chega à empresa (polling real) | 7,9 a 9,5 s | 5,9 s |
-| Reflexo: frete e pagamento chegam ao motorista (relógio acelerado) | 24 a 36 ms | 48 a 68 ms |
+| Fluxo completo | 52,3 s | 41 a 46 s |
+| Reflexo: proposta chega à empresa (polling real) | 8,1 s | 8,5 a 9,1 s |
+| Reflexo: andamento muda na empresa (polling real) | 9,4 s | 8,9 a 9,4 s |
+| Reflexo: entrega chega à empresa (polling real) | 6,4 s | 7,9 a 9,5 s |
+| Reflexo: frete e pagamento chegam ao motorista (relógio acelerado) | 60 ms e 67 ms | 24 a 36 ms |
+
+Run anterior do CI (commit 17771d7, sem os passos B9 e MOPP): fluxo 48,7 s; reflexos 8,6, 9,5 e 5,9 s; relógio acelerado 58 e 51 ms. A variação de 5,9 a 9,5 s é a fase do polling de 10 s em relação ao momento da ação.
 
 Todos abaixo dos 15 s da meta. O pior caso teórico do polling é 10 s mais o tempo da requisição. O roteiro humano de ≤ 5 min (PRD §8) depende de quem apresenta e do ambiente hospedado; o E2E mostra que a parte automática cabe em menos de 1 min.
 
@@ -74,31 +77,31 @@ Todos abaixo dos 15 s da meta. O pior caso teórico do polling é 10 s mais o te
 
 ### Lighthouse (mediana de 3 execuções, CI)
 
-Desktop: **100 nas 4 categorias em todas as 15 rotas.**
+Desktop (mesmo run): **100 nas 4 categorias em todas as 15 rotas.**
 
-Mobile (4G simulado, CPU 4x mais lenta):
+Mobile (4G simulado, CPU 4x mais lenta), run 39922814359. Acessibilidade, Boas práticas e SEO: **100 em todas as 15 rotas**. Performance:
 
-| Rota | Performance | Acessibilidade | Boas práticas | SEO |
-|---|---|---|---|---|
-| / | 91 | 100 | 100 | 100 |
-| /cadastro | 92 | 100 | 100 | 100 |
-| /cadastro/empresa | 90 | 100 | 100 | 100 |
-| /entrar | 91 | 100 | 100 | 100 |
-| /cadastro/motorista | 90 | 100 | 100 | 100 |
-| /admin | 92 | 100 | 100 | 100 |
-| /empresa/cargas | 87 | 100 | 100 | 100 |
-| /empresa/fretes | 87 | 100 | 100 | 100 |
-| /empresa/cargas/nova | 87 | 100 | 100 | 100 |
-| /empresa/cargas/detalhe | 88 | 100 | 100 | 100 |
-| /motorista/cargas | 87 | 100 | 100 | 100 |
-| /motorista/disponibilidades | 90 | 100 | 100 | 100 |
-| /motorista/disponibilidades/nova | 86 | 100 | 100 | 100 |
-| /motorista/fretes | 89 | 100 | 100 | 100 |
-| /nao-existe | 93 | 100 | 100 | 100 |
+| Rota | Performance |
+|---|---|
+| / | 91 |
+| /cadastro | 92 |
+| /cadastro/empresa | 89 |
+| /entrar | 89 |
+| /cadastro/motorista | 90 |
+| /admin | 91 |
+| /empresa/cargas | 88 |
+| /empresa/fretes | 88 |
+| /empresa/cargas/nova | 85 |
+| /empresa/cargas/detalhe | 87 |
+| /motorista/cargas | 85 |
+| /motorista/disponibilidades | 90 |
+| /motorista/disponibilidades/nova | 86 |
+| /motorista/fretes | 86 |
+| /nao-existe | 92 |
 
 Performance mobile abaixo de 100 é decisão registrada (adendo do ADR 0011): o portão só avisa. O limite de 360 KiB de JS inicial é a causa conhecida; a meta de otimização (TanStack só nas áreas logadas, voltar a ≤ 340 KiB) segue para a janela de 25 a 28/10.
 
-### Orçamento de bundle (CI, KiB gzip nível 9)
+### Orçamento de bundle (CI, run 39922814359, KiB gzip nível 9)
 
 | Rota | JS inicial | Folga até 360 KiB |
 |---|---|---|
@@ -154,6 +157,7 @@ Nenhum outro bug de fluxo, foco ou anúncio apareceu: o foco não se move quando
 - **Telas que não existem no MVP entregue:** minhas propostas (026), certificações (031 e 032), cancelamentos (033 e 034) e mapa (035).
 - **Seed de demo:** o E2E usa o motorista com MOPP do mock. O seed real (2 motoristas com e sem MOPP aprovado e válido, senhas reais) é pedido ao Diogo (PRD §11, item 3) e não foi verificado.
 - **Jest intermitente** em `cadastro/empresa.test.tsx` sob carga (achado 3).
+- **Variação da Performance mobile entre runs** (85 a 93 na mesma base de código): o portão só avisa; não trate uma nota isolada como regressão.
 
 ## 6. Não verificado
 
