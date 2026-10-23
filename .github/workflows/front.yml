@@ -50,7 +50,8 @@ jobs:
   web:
     needs: qualidade
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # O job leva ~23 min (Lighthouse: 3 execuções x 15 rotas x mobile e desktop); 25 não deixava folga.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
