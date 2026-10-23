@@ -125,7 +125,7 @@ test.describe('sair', () => {
 test.describe('casca logada: navegação por largura', () => {
   for (const perfil of ['empresa', 'motorista'] as const) {
     const caminho = perfil === 'empresa' ? '/empresa/cargas' : '/motorista/cargas';
-    const itens = perfil === 'empresa' ? 3 : 4;
+    const itens = 3;
 
     test(`${perfil}: exatamente 1 navegação visível e os links da área`, async ({ page }) => {
       await entrarComoPerfil(page, perfil);

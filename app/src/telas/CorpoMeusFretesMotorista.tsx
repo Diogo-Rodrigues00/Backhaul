@@ -179,7 +179,7 @@ export default function CorpoMeusFretesMotorista() {
         vazio={{
           titulo: 'Nenhum frete ainda',
           descricao: 'Quando uma empresa aceitar a sua proposta, o frete aparece aqui.',
-          acao: <Link href="/motorista/propostas">Ver minhas propostas</Link>,
+          acao: <Link href="/motorista/cargas">Ver cargas próximas</Link>,
           icone: 'truck',
         }}
         erro={{

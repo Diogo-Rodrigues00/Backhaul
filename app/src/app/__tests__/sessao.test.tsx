@@ -242,7 +242,7 @@ describe('guardas por perfil', () => {
 
     await waitFor(() => expect(sonda()).toBe('anonimo|-|-'));
     expect(caminho()).toBe('/');
-    expect(titulo('Backhaul')).toBeOnTheScreen();
+    expect(titulo('A urgência decide quem sai na frente')).toBeOnTheScreen();
   });
 });
 
@@ -449,18 +449,15 @@ describe('cabeçalho e abas da área (web)', () => {
     }
   });
 
-  it('motorista: os 4 destinos', async () => {
+  it('motorista: os 3 destinos (sem "Minhas propostas", rota fora do MVP)', async () => {
     await gravar(CHAVES.token, 'mock-motorista');
     await abrir('/motorista/cargas');
     await waitFor(() => expect(sonda()).toContain('autenticado'));
 
     const [nav] = navegacoes();
-    for (const rotulo of [
-      'Cargas próximas',
-      'Disponibilidade',
-      'Minhas propostas',
-      'Meus fretes',
-    ]) {
+    expect(within(nav!).getAllByRole('link')).toHaveLength(3);
+    expect(within(nav!).queryByRole('link', { name: 'Minhas propostas' })).toBeNull();
+    for (const rotulo of ['Cargas próximas', 'Disponibilidade', 'Meus fretes']) {
       expect(within(nav!).getByRole('link', { name: rotulo })).toBeOnTheScreen();
     }
     expect(within(nav!).getByRole('link', { name: 'Cargas próximas' }).props['aria-current']).toBe(

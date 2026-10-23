@@ -133,13 +133,13 @@ describe('meus fretes do motorista: leitura (MVP-16)', () => {
     expect(screen.getByText(/Esta tela atualiza sozinha a cada 10 s/)).toBeOnTheScreen();
   });
 
-  it('CT-02: sem fretes mostra "Nenhum frete ainda" e "Ver minhas propostas"', async () => {
+  it('CT-02: sem fretes mostra "Nenhum frete ainda" e "Ver cargas próximas"', async () => {
     servidor.use(http.get(urlMock('/fretes/meus'), () => HttpResponse.json({ fretes: [] })));
     await abrir();
 
     expect(await screen.findByText('Nenhum frete ainda')).toBeOnTheScreen();
-    const [link] = screen.getAllByRole('link', { name: 'Ver minhas propostas' });
-    expect(link?.props.href).toBe('/motorista/propostas');
+    const [link] = screen.getAllByRole('link', { name: 'Ver cargas próximas' });
+    expect(link?.props.href).toBe('/motorista/cargas');
   });
 
   it('CT-01: enquanto carrega, mostra "Carregando fretes…"', async () => {

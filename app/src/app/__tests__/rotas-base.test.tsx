@@ -5,11 +5,11 @@ import LayoutRaiz from '../_layout';
 import Inicio from '../index';
 
 describe('rotas da base', () => {
-  it('/ tem um único heading nível 1 "Backhaul" e a região principal', async () => {
+  it('/ tem um único heading nível 1 "A urgência decide quem sai na frente" e a região principal', async () => {
     // No RNTL 14 o render é assíncrono: renderRouter devolve uma Promise.
     await renderRouter({ _layout: LayoutRaiz, index: Inicio }, { initialUrl: '/' });
 
-    const titulo = screen.getByRole('heading', { name: 'Backhaul' });
+    const titulo = screen.getByRole('heading', { name: 'A urgência decide quem sai na frente' });
     expect(titulo.props['aria-level']).toBe(1);
     expect(screen.getAllByRole('heading')).toHaveLength(1);
     // View não é elemento de acessibilidade para o RNTL, então getByRole não enxerga landmarks.
