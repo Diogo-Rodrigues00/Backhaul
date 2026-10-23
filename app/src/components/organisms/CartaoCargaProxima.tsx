@@ -1,8 +1,8 @@
 // Cartão de carga do motorista (CargaCard motorista, DS 5.3 e 6): faixa de urgência no topo, o
 // resumo da carga com distância e, no rodapé, "Proposta enviada" ou as ações de proposta. Não busca
 // dados: a tela entrega a carga pronta por props (ADR 0003).
-import type { ReactNode } from 'react';
-import { View, type ViewStyle } from 'react-native';
+import type { ReactNode, Ref } from 'react';
+import { Platform, View, type ViewStyle } from 'react-native';
 
 import { Etiqueta } from '@/components/atoms/Etiqueta';
 import { FaixaUrgencia } from '@/components/atoms/FaixaUrgencia';
@@ -36,6 +36,8 @@ export interface PropsCartaoCargaProxima {
   propostaEnviada?: boolean;
   /** Ações de proposta ("Aceitar R$ X", "Contraproposta"): preenchidas pelo card 025. */
   acoes?: ReactNode;
+  /** Elemento "Proposta enviada": o card 025 leva o foco até ele depois do envio. */
+  refPropostaEnviada?: Ref<View>;
   /** Relógio para o status efetivo (CT-10). Padrão: agora. Injetável para teste. */
   agora?: Date;
 }
@@ -88,6 +90,7 @@ export function CartaoCargaProxima({
   distanciaKm,
   propostaEnviada = false,
   acoes,
+  refPropostaEnviada,
   agora,
 }: PropsCartaoCargaProxima) {
   const estilos = useEstilos(criarEstilos);
@@ -128,7 +131,14 @@ export function CartaoCargaProxima({
           agora={agora}
         />
         {expirado ? null : propostaEnviada ? (
-          <View style={estilos.rodape} nativeID={idPropostaEnviada(id)}>
+          <View
+            ref={refPropostaEnviada}
+            style={estilos.rodape}
+            nativeID={idPropostaEnviada(id)}
+            // Alvo de foco programático (não entra na ordem do Tab); no iPhone, um bloco só para o VoiceOver.
+            tabIndex={-1}
+            accessible={Platform.OS !== 'web'}
+          >
             <Etiqueta variante="ok" icone="check">
               {TEXTO_PROPOSTA_ENVIADA}
             </Etiqueta>

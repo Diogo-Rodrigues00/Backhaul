@@ -34,6 +34,11 @@ export interface PropsDialogoConfirmacao {
    * foco do VoiceOver. Na web, sem ele, volta ao elemento que tinha o foco ao abrir.
    */
   refRetorno?: RefObject<unknown>;
+  /**
+   * Na web, o foco inicial vai a este elemento (um campo, por exemplo) em vez do botão Cancelar.
+   * Sem ele, ou sem elemento montado, vale o padrão. No iPhone o foco inicial continua no título.
+   */
+  refFocoInicial?: RefObject<unknown>;
 }
 
 // Véu do protótipo (--backdrop): `bg.inverse` (asfalto) a 62%, numa camada à
@@ -122,6 +127,7 @@ export function DialogoConfirmacao({
   aoConfirmar,
   aoFechar,
   refRetorno,
+  refFocoInicial,
 }: PropsDialogoConfirmacao) {
   const estilos = useEstilos(criarEstilos);
   const reduzido = useMovimentoReduzido();
@@ -155,9 +161,10 @@ export function DialogoConfirmacao({
   }, [refRetorno]);
 
   const aoMostrar = useCallback(() => {
-    if (Platform.OS === 'web') focarBotaoWeb(refCancelar);
-    else moverFoco(refTitulo);
-  }, []);
+    if (Platform.OS !== 'web') moverFoco(refTitulo);
+    else if (refFocoInicial?.current) moverFoco(refFocoInicial);
+    else focarBotaoWeb(refCancelar);
+  }, [refFocoInicial]);
 
   // Esc e o gesto de voltar fecham, menos durante o envio (senão burlariam o botão travado).
   const pedirFechamento = useCallback(() => {
