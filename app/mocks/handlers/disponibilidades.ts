@@ -10,7 +10,7 @@ import { autenticar, eDataFutura, lerCorpo } from './comum';
 
 const URGENCIAS = ['normal', 'urgente', 'critico'];
 
-function validar(corpo: Record<string, unknown>): string[] {
+export function validarDisponibilidade(corpo: Record<string, unknown>): string[] {
   const erros: string[] = [];
   const local = corpo.local as Record<string, unknown> | undefined;
   const lat = local?.lat;
@@ -38,7 +38,7 @@ export function criarHandlersDisponibilidades(baseUrl: string) {
       const { resposta } = autenticar(request, ['motorista']);
       if (resposta) return resposta;
       const corpo = await lerCorpo(request);
-      const erros = validar(corpo);
+      const erros = validarDisponibilidade(corpo);
       if (erros.length > 0) return respostaErros(400, erros);
       return HttpResponse.json(
         {

@@ -21,7 +21,7 @@ function eCoordenada(valor: unknown): boolean {
   );
 }
 
-function validarCarga(corpo: Record<string, unknown>): string[] {
+export function validarCarga(corpo: Record<string, unknown>): string[] {
   const erros: string[] = [];
   if (textoOuVazio(corpo.tipo_carga) === '') erros.push('tipo_carga é obrigatório');
   if (!eCoordenada(corpo.origem)) erros.push('origem deve ter lat e lng válidos');

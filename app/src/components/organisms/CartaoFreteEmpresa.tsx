@@ -96,8 +96,9 @@ export function CartaoFreteEmpresa({
   const [erro, setErro] = useState<string | undefined>(undefined);
   const refBotao = useRef<View>(null);
   const refResumo = useRef<View>(null);
-  // Logo após o 201 a lista ainda pode trazer `null`: vale o pagamento que a API acabou de devolver.
-  const status = pagamento?.statusPagamento ?? statusPagamento;
+  // A lista é a mais recente (o polling traz o "liberado" quando o motorista entrega): vale o status
+  // dela. Só logo após o 201, quando a lista ainda pode trazer `null`, vale o que a API acabou de devolver.
+  const status = statusPagamento ?? pagamento?.statusPagamento ?? null;
 
   function abrir() {
     setErro(undefined);
@@ -175,7 +176,7 @@ export function CartaoFreteEmpresa({
           valorFrete={pagamento.valorFrete}
           percentualComissao={pagamento.percentualComissao}
           valorComissao={pagamento.valorComissao}
-          statusPagamento={pagamento.statusPagamento}
+          statusPagamento={status ?? pagamento.statusPagamento}
         />
       ) : null}
 

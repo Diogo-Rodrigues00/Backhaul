@@ -154,4 +154,24 @@ describe('CartaoFreteEmpresa', () => {
     expect(grupo?.props['aria-labelledby']).toBeTruthy();
     expect(grupo?.props['aria-labelledby']).not.toBe(artigo?.props['aria-labelledby']);
   });
+
+  it('a lista mais nova vence o 201: depois da entrega o frete e o resumo mostram "liberado"', async () => {
+    // Achado do E2E do fluxo completo (card 030): pagou em trânsito (retido), o motorista entregou
+    // e o polling trouxe `liberado`; a tela não pode continuar dizendo "retido".
+    await montar({
+      statusEntrega: 'entregue',
+      statusPagamento: 'liberado',
+      pagamento: {
+        valorFrete: 3200,
+        percentualComissao: 7.5,
+        valorComissao: 240,
+        statusPagamento: 'retido',
+      },
+    });
+    expect(screen.queryByText('Pago, retido até a entrega')).toBeNull();
+    expect(screen.getAllByText('Liberado ao motorista').length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Situação do pagamento: Liberado ao motorista')).toBeOnTheScreen();
+    // A comissão continua sendo a que a API devolveu no 201.
+    expect(screen.getByLabelText('Comissão da plataforma: R$ 240,00')).toBeOnTheScreen();
+  });
 });
