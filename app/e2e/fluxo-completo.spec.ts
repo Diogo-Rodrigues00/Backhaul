@@ -302,6 +302,10 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       const proposta = janelaE.getByRole('heading', { level: 3, name: MOTORISTA_MOPP.nome });
       await expect(proposta).toBeVisible();
       await expect(janelaE.getByText(moeda('3\\.200,00')).first()).toBeVisible();
+      // PRD §4.3 passo 5: veículo, placa e a certificação MOPP do motorista, na proposta dele.
+      const cartaoProposta = janelaE.getByRole('listitem').filter({ hasText: MOTORISTA_MOPP.nome });
+      await expect(cartaoProposta.getByText(MOPP)).toBeVisible();
+      await expect(cartaoProposta).toContainText('ABC1D23');
       await axeNosDoisTemas(janelaE);
       marcar('empresa viu a proposta chegar');
     });
@@ -456,6 +460,18 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       await axeNosDoisTemas(janelaE);
       await axeNosDoisTemas(janelaMFretes);
       marcar('empresa viu entregue e liberado');
+    });
+
+    await test.step('B9. motorista sai e entra de novo: a sessão volta e o frete entregue continua lá', async () => {
+      await janelaM.bringToFront();
+      await janelaM.getByRole('button', { name: 'Sair' }).first().click();
+      await expect(janelaM).toHaveURL(/\/entrar/);
+      await entrar(janelaM, MOTORISTA_MOPP.email, /\/motorista\/cargas$/);
+      await janelaM.goto('/motorista/fretes');
+      const cartao = janelaM.getByRole('article', { name: CARGA });
+      await expect(cartao).toBeVisible();
+      await expect(cartao.getByText('Liberado ao motorista', { exact: true })).toBeVisible();
+      marcar('motorista saiu e entrou de novo');
     });
   } finally {
     const total = Date.now() - inicioDoFluxo;
