@@ -10,10 +10,11 @@ const ITENS: Record<TipoPerfil, readonly ItemNavegacao[]> = {
     { href: '/empresa/cargas/nova', rotulo: 'Publicar carga', icone: 'plus' },
     { href: '/empresa/fretes', rotulo: 'Meus fretes', icone: 'truck' },
   ],
+  // "Minhas propostas" (/motorista/propostas) fica de fora: o card 026 está cortado do MVP e a rota
+  // não existe (404). Volta a esta lista quando a rota existir.
   motorista: [
     { href: '/motorista/cargas', rotulo: 'Cargas próximas', icone: 'map-pin' },
     { href: '/motorista/disponibilidades', rotulo: 'Disponibilidade', icone: 'locate' },
-    { href: '/motorista/propostas', rotulo: 'Minhas propostas', icone: 'file' },
     { href: '/motorista/fretes', rotulo: 'Meus fretes', icone: 'truck' },
   ],
   admin: [],
