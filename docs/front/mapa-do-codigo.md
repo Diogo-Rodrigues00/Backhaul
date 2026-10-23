@@ -36,7 +36,7 @@ Uma página com as perguntas técnicas mais prováveis da banca e onde está a r
 
 ## Lacunas que a banca pode achar (respostas honestas)
 
-- **"Minhas propostas" (card 026)** não foi entregue: o item aparece no menu do motorista e a rota `/motorista/propostas` ainda não existe. Em andamento.
-- **Página inicial `/`** é provisória (sem botões de entrar e cadastrar); o acesso é por `/entrar` e `/cadastro`. `src/app/index.tsx`.
+- **"Minhas propostas" (card 026)** está fora do MVP: a rota `/motorista/propostas` não existe e o item foi removido do menu do motorista (`src/components/organisms/itensDaArea.ts`).
+- **Página inicial `/`** (`src/app/index.tsx`): frase do produto e botões "Entrar" e "Criar conta"; quem tem token guardado não a vê (script e CSS em `src/lib/sessaoNaInicial.ts`, com liberação automática após 7 s se o JS falhar).
 - **Comissão** só aparece logo depois de pagar (decisão registrada como Q3 no PRD; depende de campo novo em `GET /fretes/meus`).
 - **Admin** não tem telas; "se der" (certificações, cancelamentos, mapa) não foi iniciado.

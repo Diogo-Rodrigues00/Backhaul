@@ -14,7 +14,7 @@ Verificado no código e por `curl` em 23/10/2026. O que é "instantâneo" (produ
 |---|---|---|
 | Telas da empresa: publicar carga, minhas cargas, propostas da carga (aceitar/recusar), meus fretes e pagar | Mergeadas em `front` (cards 019, 020, 021, 028) | Usáveis |
 | Telas do motorista: cadastro, minhas disponibilidades, publicar disponibilidade, cargas próximas, fazer proposta/contraproposta, meus fretes e status | Mergeadas (cards 017, 022, 023, 024, 025, 027) | Usáveis |
-| **Minhas propostas** (card 026) | **Em andamento: sem PR.** A rota `/motorista/propostas` não existe, mas o item "Minhas propostas" aparece na navegação do motorista (`app/src/components/organisms/itensDaArea.ts:16`) e leva à página "não encontrada" | **Não clicar nesse item.** Os passos 4 e 7 do PRD que citam "Minhas propostas" foram trocados por "Proposta enviada" no cartão e por "Meus fretes" |
+| **Minhas propostas** (card 026) | **Fora do MVP.** A rota `/motorista/propostas` não existe e o item foi **removido do menu do motorista** (`app/src/components/organisms/itensDaArea.ts`, PR #90); o menu tem 3 itens: Cargas próximas, Disponibilidade e Meus fretes | Nada a evitar no menu. Os passos 4 e 7 do PRD que citam "Minhas propostas" foram trocados por "Proposta enviada" no cartão e por "Meus fretes" |
 | `GET /propostas/minhas` e `GET /disponibilidades/minhas` em produção | **Não existem** (404 HTML em 23/10) | O app usa o plano B no aparelho (seção 6, linha "Rotas faltando") |
 | Seed de demo (senhas reais, 1 empresa, motorista com MOPP, motorista sem MOPP, cargas com e sem exigência) | **A definir com o Diogo (seed de demo).** O `database/seed.sql` do repositório tem `hash_fake_*`: ninguém entra com ele | Sem seed não há como ensaiar o fluxo completo |
 | `CORS_ORIGIN` da API aceita `https://backhaul-front.vercel.app`? | **Não** em 23/10 (a pré-requisição `OPTIONS /login` com essa origem volta sem `access-control-allow-origin`; `http://localhost:8081` volta liberado) | O site publicado **não consegue falar com a API** até o Diogo incluir a origem |
@@ -94,7 +94,6 @@ Sugestão, não fato do seed: cargas e cidades precisam estar na lista de `app/s
 | **Rede do local** (Wi-Fi do campus) | Lentidão, queda | Hotspot do celular como reserva (teste no ensaio); vídeo de backup; abra tudo antes. O app não funciona offline (o service worker só guarda arquivos do site, não a API) |
 | **Cadastro ao vivo falha** (409 por e-mail/CPF repetido, 400 de validação) | Mensagem junto do campo ou no resumo de erros | Tenha outro e-mail e CPF na lista. Plano B: conta "motorista sem MOPP" do quadro |
 | **Proposta não aparece em 10 s** | Tela de propostas sem novidade | Botão **Atualizar**. Verifique se a aba está visível: com a aba oculta o polling para (ADR 0010) |
-| **Navegação "Minhas propostas"** | Página não encontrada (card 026 não entregue) | Não clicar. Se clicarem, volte por "Cargas próximas" |
 | **Recarregou depois de pagar** | Comissão some da tela | Explique que a lista de fretes não traz a comissão (decisão registrada, Q3). Se precisar, a comissão fica visível no pagamento de outro frete |
 | **Projetor** | Texto pequeno ou cores lavadas | Zoom do navegador a 125–150% (o layout reflui até 320 px sem rolagem horizontal); alterne o tema claro/escuro no cabeçalho e escolha o mais legível na sala |
 
@@ -168,7 +167,7 @@ A distribuição das tarefas "sem código" entre Mateus, Gustavo e Guilherme é 
 
 - Seed de demo e quadro de contas: Diogo.
 - CORS da origem da Vercel e novo deploy de produção: Diogo e Pedro.
-- Card 026 (Minhas propostas): em andamento, sem PR; ajustar os passos 4 e 7 quando entrar.
+- Card 026 (Minhas propostas): fora do MVP; o item foi removido do menu do motorista. Se o card entrar, devolver o item a `itensDaArea.ts` e rever os passos 4 e 7.
 - `GET /propostas/minhas` e `GET /disponibilidades/minhas`: se saírem em produção, rever as seções 1 e 6.
 - Script de verificação de contas e registro dos ensaios: depois do seed.
 - Os caminhos `docs/front/demo/roteiro.md` e `docs/front/demo/checklist-ensaio.md` do card 029 foram unificados neste arquivo, a pedido do orquestrador.
