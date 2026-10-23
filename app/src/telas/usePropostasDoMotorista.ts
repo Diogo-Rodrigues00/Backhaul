@@ -56,13 +56,19 @@ export function usePropostasDoMotorista({
   const criar = useFazerProposta();
 
   const [guardadas, setGuardadas] = useState<readonly PropostaEnviada[]>([]);
+  // Só depois da primeira leitura do aparelho dá para saber se a carga já recebeu proposta: antes
+  // disso, sem a rota 4a, um cartão já proposto mostraria os botões por alguns milissegundos.
+  const [guardadasLidas, setGuardadasLidas] = useState(false);
   const lerGuardadas = useCallback(async () => {
     setGuardadas(await lerPropostasEnviadas());
+    setGuardadasLidas(true);
   }, []);
   useEffect(() => {
     let cancelado = false;
     void lerPropostasEnviadas().then((lista) => {
-      if (!cancelado) setGuardadas(lista);
+      if (cancelado) return;
+      setGuardadas(lista);
+      setGuardadasLidas(true);
     });
     return () => {
       cancelado = true;
@@ -210,5 +216,6 @@ export function usePropostasDoMotorista({
     abrir,
     dialogo,
     lerGuardadas,
+    guardadasLidas,
   };
 }

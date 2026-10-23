@@ -88,6 +88,7 @@ export default function CorpoCargasProximas() {
     abrir,
     dialogo,
     lerGuardadas,
+    guardadasLidas,
   } = usePropostasDoMotorista({
     daApi: propostas.data,
     disponibilidadeId: ativa?.id,
@@ -196,9 +197,9 @@ export default function CorpoCargasProximas() {
                   propostaEnviada={pendentes.has(carga.id)}
                   refPropostaEnviada={(no) => registrarMarcador(carga.id, no)}
                   acoes={
-                    // Só com a lista de propostas conhecida: antes disso uma proposta pendente ainda
+                    // Só com a lista de propostas (da API ou do aparelho) conhecida: antes disso uma proposta pendente ainda
                     // não apareceria como "Proposta enviada" e daria para mandar um aceite duplicado.
-                    propostas.isPending ? undefined : (
+                    propostas.isPending || !guardadasLidas ? undefined : (
                       <AcoesProposta
                         descricaoDaCarga={descricao}
                         valorOferecido={carga.valor_oferecido}
