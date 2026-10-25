@@ -5,7 +5,7 @@ import { useRef } from 'react';
 import { Platform, type TextInput } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 
-import { useCadastrarMotorista } from '@/api/sessao';
+import { cadastrarMotorista } from '@/api/sessao';
 import { Botao } from '@/components/atoms/Botao';
 import { CampoNumero } from '@/components/molecules/CampoNumero';
 import { CampoSenha } from '@/components/molecules/CampoSenha';
@@ -87,7 +87,6 @@ export default function CadastroMotorista() {
   useRedirecionarSeAutenticado();
   const router = useRouter();
   const { entrar } = useSessao();
-  const cadastrar = useCadastrarMotorista();
 
   const {
     control,
@@ -110,7 +109,7 @@ export default function CadastroMotorista() {
   async function aoValido(dados: DadosCadastroMotorista) {
     resumo.limpar();
     try {
-      await cadastrar.mutateAsync(paraCorpoCadastroMotorista(dados));
+      await cadastrarMotorista(paraCorpoCadastroMotorista(dados));
     } catch (erro) {
       const erroApi =
         erro instanceof ErroApi
