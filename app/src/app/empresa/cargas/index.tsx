@@ -1,5 +1,3 @@
-import { lazy } from 'react';
-
 import { Link } from '@/components/atoms/Link';
 import { useCasca } from '@/components/organisms/useCasca';
 import { ConteudoLista } from '@/components/templates/TemplateLista';
@@ -10,7 +8,6 @@ import { CorpoSobDemanda } from '@/telas/CorpoSobDemanda';
 // Minhas cargas da empresa (MVP-09). Só a casca (h1, cabeçalho, abas, "Publicar carga") fica no JS
 // inicial da rota: a consulta e a lista carregam por React.lazy logo depois, junto com o cliente de
 // dados (ADR 0011 e ADR 0004, adendo).
-const Corpo = lazy(carregarCorpoMinhasCargas);
 
 export default function MinhasCargas() {
   const { cabecalho, abas } = useCasca();
@@ -27,10 +24,9 @@ export default function MinhasCargas() {
       }
     >
       <CorpoSobDemanda
+        carregar={carregarCorpoMinhasCargas}
         carregando={<ConteudoLista estado="carregando" textoCarregando="Carregando cargas…" />}
-      >
-        <Corpo />
-      </CorpoSobDemanda>
+      />
     </TemplateTela>
   );
 }

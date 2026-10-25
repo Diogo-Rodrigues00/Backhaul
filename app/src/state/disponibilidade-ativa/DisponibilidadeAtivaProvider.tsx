@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 
+import { LimiteDeErro } from '@/components/molecules/LimiteDeErro';
 import { useCasca } from '@/components/organisms/useCasca';
 import { useMontado } from '@/hooks/useMontado';
 import { CHAVES, gravar, ler } from '@/lib/armazenamento';
@@ -32,8 +33,6 @@ import {
 const ATRASO_MAXIMO_MS = 2_147_000_000;
 // Folga para o relógio já estar além do prazo quando o aviso disparar.
 const FOLGA_MS = 50;
-
-const ConsultaDasDisponibilidades = lazy(carregarConsultaDasDisponibilidades);
 
 const LISTA_VAZIA: readonly Disponibilidade[] = [];
 
@@ -62,6 +61,26 @@ export function DisponibilidadeAtivaProvider({ children }: { children: ReactNode
   // O `lazy` da consulta só entra depois da hidratação: o HTML estático e o primeiro render não o têm.
   const montado = useMontado();
   const [consulta, setConsulta] = useState<ResultadoConsulta>(SEM_CONSULTA);
+  // Chunk da consulta que não baixou (sem conexão): a área continua de pé, a lista mostra o erro de
+  // sempre com "Tentar de novo", e cada tentativa abre um `lazy` novo (o `lazy` memoriza a falha).
+  const [tentativaDaConsulta, setTentativaDaConsulta] = useState(0);
+  const [ConsultaDasDisponibilidades, setConsultaLazy] = useState(() =>
+    lazy(carregarConsultaDasDisponibilidades),
+  );
+  const aoFalharConsulta = useCallback(() => {
+    setConsulta({
+      data: undefined,
+      error: ErroApi.falha(),
+      isError: true,
+      isPending: false,
+      isFetching: false,
+      refetch: async () => {
+        setConsulta(SEM_CONSULTA);
+        setConsultaLazy(() => lazy(carregarConsultaDasDisponibilidades));
+        setTentativaDaConsulta((n) => n + 1);
+      },
+    });
+  }, []);
 
   const [salva, setSalva] = useState<EscolhaSalva | null>(null);
   const [lida, setLida] = useState(false);
@@ -159,9 +178,11 @@ export function DisponibilidadeAtivaProvider({ children }: { children: ReactNode
   return (
     <DisponibilidadeAtivaContext.Provider value={valor}>
       {habilitado && montado ? (
-        <Suspense fallback={null}>
-          <ConsultaDasDisponibilidades aoMudar={setConsulta} />
-        </Suspense>
+        <LimiteDeErro key={tentativaDaConsulta} fallback={null} aoFalhar={aoFalharConsulta}>
+          <Suspense fallback={null}>
+            <ConsultaDasDisponibilidades aoMudar={setConsulta} />
+          </Suspense>
+        </LimiteDeErro>
       ) : null}
       {children}
     </DisponibilidadeAtivaContext.Provider>

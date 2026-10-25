@@ -112,6 +112,24 @@ for (const arquivo of js) {
   }
 }
 
+// TanStack Query só no chunk sob demanda `consultas-*.js` (ADR 0004, adendo). Controle positivo: o
+// marcador PRECISA estar lá (se o pacote mudar o texto, o teste acima passaria sem provar nada).
+// Qualquer outro .js (entry, __common, runtime, chunk de rota) com o marcador é falha.
+const comTanstack = js.filter((a) => readFileSync(a, 'utf8').includes(TANSTACK_NO_JS));
+if (!comTanstack.some((a) => basename(a).startsWith('consultas-'))) {
+  console.log(`FALHA controle positivo: "${TANSTACK_NO_JS}" não está em nenhum consultas-*.js`);
+  falhas.push('Controle positivo do TanStack');
+}
+for (const arquivo of comTanstack.filter((a) => !basename(a).startsWith('consultas-'))) {
+  console.log(
+    `FALHA o TanStack Query está em ${nomeRel(arquivo)}; deveria estar só em consultas-*.js`,
+  );
+  falhas.push(`TanStack em ${nomeRel(arquivo)}`);
+}
+if (comTanstack.length > 0 && falhas.length === 0) {
+  console.log(`ok    TanStack Query só em ${comTanstack.map(nomeRel).join(', ')}`);
+}
+
 if (falhas.length > 0) {
   console.error(`\nOrçamento estourado em ${falhas.length} item(ns).`);
   process.exit(1);

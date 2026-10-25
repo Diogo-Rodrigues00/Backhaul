@@ -13,6 +13,7 @@ import { TemplateTela } from '@/components/templates/TemplateTela';
 import { apagar, CHAVES, gravar, ler } from '@/lib/armazenamento';
 import { ErroApi } from '@/lib/erros';
 import { liberarPaginaInicial } from '@/lib/paginaInicial';
+import { clienteDeConsultas } from '@/state/consultas/consultas';
 import { registrarLimpezaDaSessao } from '@/state/sessao/limpezas';
 import { SessaoProvider } from '@/state/sessao/SessaoProvider';
 import { useSessao } from '@/state/sessao/useSessao';
@@ -323,6 +324,31 @@ describe('sair', () => {
         .getAll()
         .filter((q) => q.state.data !== undefined),
     ).toHaveLength(0);
+  });
+
+  it('com o módulo real das consultas, sair e entrar esvaziam o cache único (nada de A visível para B)', async () => {
+    await gravar(CHAVES.token, 'mock-motorista');
+    await abrir('/motorista/cargas');
+    await waitFor(() => expect(sonda()).toContain('autenticado'));
+    const dadosNoCache = () =>
+      clienteDeConsultas()
+        .getQueryCache()
+        .getAll()
+        .filter((q) => q.state.data !== undefined);
+    clienteDeConsultas().setQueryData(['cargas', 'minhas'], { cargas: ['da conta A'] });
+    expect(dadosNoCache()).toHaveLength(1);
+
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Sair' })));
+    await waitFor(() => expect(caminho()).toBe('/entrar'));
+    expect(dadosNoCache()).toHaveLength(0);
+
+    // Dado que sobrou de uma sessão que acabou sem `sair` (queda de rede): `entrar` também esvazia.
+    clienteDeConsultas().setQueryData(['fretes', 'meus'], { fretes: ['da conta A'] });
+    await act(async () =>
+      fireEvent.press(screen.getByRole('button', { name: 'Entrar como empresa' })),
+    );
+    await waitFor(() => expect(caminho()).toBe('/empresa/cargas'));
+    expect(dadosNoCache()).toHaveLength(0);
   });
 
   it('voltar a uma área protegida depois de sair não mostra dados nem mantém a sessão', async () => {
