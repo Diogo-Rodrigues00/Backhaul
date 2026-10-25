@@ -1,5 +1,5 @@
 // Minhas cargas da empresa (MVP-09, CT-01 a CT-10). Sem atualização automática (Q5): só "Atualizar".
-import { useMinhasCargas } from '@/api/cargas';
+import { useMinhasCargas } from '@/api/cargas.hooks';
 import { Link } from '@/components/atoms/Link';
 import { Lista } from '@/components/molecules/Lista';
 import { CartaoCargaEmpresa } from '@/components/organisms/CartaoCargaEmpresa';

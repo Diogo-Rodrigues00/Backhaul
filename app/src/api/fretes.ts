@@ -1,9 +1,6 @@
 // Fretes: GET /fretes/meus (duas formas), PATCH /fretes/:id/status e POST /fretes/:id/pagamento.
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-
+// Só as chamadas (sem TanStack Query); os hooks ficam em `fretes.hooks.ts` (ADR 0004, adendo 2).
 import { requisitar } from './cliente';
-import { chaves } from './chaves';
-import { opcoesDeLeitura, type OpcoesLeitura } from './consulta';
 import type {
   CorpoStatusFrete,
   Frete,
@@ -39,36 +36,4 @@ export function atualizarStatusFrete(
 
 export function pagarFrete(freteId: string): Promise<RespostaPagamento> {
   return requisitar<RespostaPagamento>('POST', `/fretes/${encodeURIComponent(freteId)}/pagamento`);
-}
-
-export function useMeusFretes(opcoes?: OpcoesLeitura) {
-  return useQuery({
-    queryKey: chaves.fretes.meus(),
-    queryFn: listarMeusFretes,
-    ...opcoesDeLeitura(opcoes),
-  });
-}
-
-/** Invalida: fretes.meus. */
-export function useAtualizarStatusFrete() {
-  const cliente = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      freteId,
-      status,
-    }: {
-      freteId: string;
-      status: CorpoStatusFrete['status_entrega'];
-    }) => atualizarStatusFrete(freteId, status),
-    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.fretes.meus() }),
-  });
-}
-
-/** Invalida: fretes.meus. */
-export function usePagarFrete() {
-  const cliente = useQueryClient();
-  return useMutation({
-    mutationFn: pagarFrete,
-    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.fretes.meus() }),
-  });
 }

@@ -27,25 +27,20 @@ import {
 } from '../../mocks/utils-teste';
 import { ErroApi } from '@/lib/erros';
 
-import { useCargasProximas, useMinhasCargas, usePublicarCarga } from './cargas';
-import { useCertificacoes } from './certificacoes';
+import { useCargasProximas, useMinhasCargas, usePublicarCarga } from './cargas.hooks';
+import { useCertificacoes } from './certificacoes.hooks';
 import { chaves } from './chaves';
-import { useMinhasDisponibilidades } from './disponibilidades';
-import { usePublicarDisponibilidade } from './publicarDisponibilidade';
-import {
-  eFreteDaEmpresa,
-  eFreteDoMotorista,
-  useAtualizarStatusFrete,
-  useMeusFretes,
-  usePagarFrete,
-} from './fretes';
+import { useMinhasDisponibilidades } from './disponibilidades.hooks';
+import { usePublicarDisponibilidade } from './publicarDisponibilidade.hooks';
+import { eFreteDaEmpresa, eFreteDoMotorista } from './fretes';
+import { useAtualizarStatusFrete, useMeusFretes, usePagarFrete } from './fretes.hooks';
 import {
   useFazerProposta,
   useMinhasPropostas,
   usePropostasDaCarga,
   useResponderProposta,
-} from './propostas';
-import { useCadastrarEmpresa, useCadastrarMotorista, useEntrar, useEu } from './sessao';
+} from './propostas.hooks';
+import { useCadastrarEmpresa, useCadastrarMotorista, useEntrar, useEu } from './sessao.hooks';
 
 const amanha = () => new Date(Date.now() + 24 * 3_600_000).toISOString();
 

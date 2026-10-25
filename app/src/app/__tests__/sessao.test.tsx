@@ -7,7 +7,7 @@ import { http, HttpResponse } from 'msw';
 import { useState, type ReactElement } from 'react';
 import { Platform, Text } from 'react-native';
 
-import { useMinhasCargas } from '@/api/cargas';
+import { useMinhasCargas } from '@/api/cargas.hooks';
 import { useCasca } from '@/components/organisms/useCasca';
 import { TemplateTela } from '@/components/templates/TemplateTela';
 import { apagar, CHAVES, gravar, ler } from '@/lib/armazenamento';

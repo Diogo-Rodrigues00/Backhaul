@@ -2,8 +2,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
-import { useMinhasCargas } from '@/api/cargas';
-import { usePropostasDaCarga, useResponderProposta } from '@/api/propostas';
+import { useMinhasCargas } from '@/api/cargas.hooks';
+import { usePropostasDaCarga, useResponderProposta } from '@/api/propostas.hooks';
 import type { AcaoResposta } from '@/api/tipos';
 import { Link } from '@/components/atoms/Link';
 import { Titulo } from '@/components/atoms/Titulo';

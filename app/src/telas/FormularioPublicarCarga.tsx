@@ -3,8 +3,8 @@ import { lazy, Suspense, useEffect, useMemo, useSyncExternalStore } from 'react'
 import { Controller, useForm, useWatch, type Control } from 'react-hook-form';
 import { View, type ViewStyle } from 'react-native';
 
-import { useCertificacoes } from '@/api/certificacoes';
-import { usePublicarCarga } from '@/api/cargas';
+import { useCertificacoes } from '@/api/certificacoes.hooks';
+import { usePublicarCarga } from '@/api/cargas.hooks';
 import type { Certificacao, CorpoPublicarCarga } from '@/api/tipos';
 import { Botao } from '@/components/atoms/Botao';
 import { Link } from '@/components/atoms/Link';

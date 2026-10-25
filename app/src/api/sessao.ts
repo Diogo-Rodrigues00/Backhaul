@@ -1,10 +1,7 @@
-// Sessão e cadastro (POST /login, GET /eu, POST /cadastro/*). O token e o estado da
-// sessão ficam em src/state/sessao (card 013); aqui só há as chamadas e os hooks.
-import { useMutation, useQuery } from '@tanstack/react-query';
-
+// Sessão e cadastro (POST /login, GET /eu, POST /cadastro/*). Só as chamadas, sem TanStack Query:
+// este módulo entra no JS inicial (sessão e telas públicas). Os hooks ficam em `sessao.hooks.ts`
+// (ADR 0004, adendo 2). O token e o estado da sessão ficam em src/state/sessao (card 013).
 import { requisitar } from './cliente';
-import { chaves } from './chaves';
-import { opcoesDeLeitura, type OpcoesLeitura } from './consulta';
 import type {
   CorpoCadastroEmpresa,
   CorpoCadastroMotorista,
@@ -36,26 +33,4 @@ export function cadastrarMotorista(dados: CorpoCadastroMotorista): Promise<Respo
     corpo: dados,
     autenticado: false,
   });
-}
-
-export function useEu(opcoes?: OpcoesLeitura) {
-  return useQuery({
-    queryKey: chaves.eu(),
-    queryFn: buscarEu,
-    ...opcoesDeLeitura(opcoes),
-  });
-}
-
-export function useEntrar() {
-  return useMutation({
-    mutationFn: ({ email, senha }: CorpoLogin) => entrarNaApi(email, senha),
-  });
-}
-
-export function useCadastrarEmpresa() {
-  return useMutation({ mutationFn: cadastrarEmpresa });
-}
-
-export function useCadastrarMotorista() {
-  return useMutation({ mutationFn: cadastrarMotorista });
 }

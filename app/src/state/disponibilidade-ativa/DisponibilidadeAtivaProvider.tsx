@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
-import { useMinhasDisponibilidades } from '@/api/disponibilidades';
+import { useMinhasDisponibilidades } from '@/api/disponibilidades.hooks';
 import type { RespostaMinhasDisponibilidades } from '@/api/tipos';
 import { useCasca } from '@/components/organisms/useCasca';
 import { CHAVES, gravar, ler } from '@/lib/armazenamento';

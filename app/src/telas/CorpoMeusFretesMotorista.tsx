@@ -5,7 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { View } from 'react-native';
 
-import { eFreteDoMotorista, useAtualizarStatusFrete, useMeusFretes } from '@/api/fretes';
+import { eFreteDoMotorista } from '@/api/fretes';
+import { useAtualizarStatusFrete, useMeusFretes } from '@/api/fretes.hooks';
 import { chaves } from '@/api/chaves';
 import type { RespostaMeusFretes, RespostaStatusFrete } from '@/api/tipos';
 import { Link } from '@/components/atoms/Link';

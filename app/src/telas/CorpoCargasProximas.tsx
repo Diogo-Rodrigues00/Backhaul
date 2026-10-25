@@ -5,8 +5,8 @@
 import { lazy, Suspense, useCallback, useMemo } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
-import { useCargasProximas } from '@/api/cargas';
-import { useMinhasPropostas } from '@/api/propostas';
+import { useCargasProximas } from '@/api/cargas.hooks';
+import { useMinhasPropostas } from '@/api/propostas.hooks';
 import type { ParametrosCargasProximas } from '@/api/tipos';
 import { Link } from '@/components/atoms/Link';
 import { Texto } from '@/components/atoms/Texto';

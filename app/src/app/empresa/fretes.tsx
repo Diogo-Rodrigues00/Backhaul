@@ -3,7 +3,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
-import { eFreteDaEmpresa, useMeusFretes, usePagarFrete } from '@/api/fretes';
+import { eFreteDaEmpresa } from '@/api/fretes';
+import { useMeusFretes, usePagarFrete } from '@/api/fretes.hooks';
 import type { RespostaMeusFretes } from '@/api/tipos';
 import { Link } from '@/components/atoms/Link';
 import { Banner } from '@/components/molecules/Banner';
