@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
@@ -9,10 +8,13 @@ import { rotaDeEntrada, rotaInicial, type AvisoSessao } from '@/lib/areas';
 import { apagar, CHAVES, gravar, ler } from '@/lib/armazenamento';
 import { ErroApi } from '@/lib/erros';
 
+import { executarLimpezasDaSessao } from './limpezas';
 import { SessaoContext, type EstadoSessao, type ValorSessao } from './SessaoContext';
 
 /**
- * Sessão do app (ADR 0006). Vai dentro do `QueryClientProvider` (ela limpa o cache ao sair).
+ * Sessão do app (ADR 0006). Vive no layout raiz, que não carrega o TanStack Query (ADR 0004, adendo):
+ * ao entrar e ao sair ela só roda as limpezas registradas (`limpezas.ts`), e é assim que o cliente
+ * de consultas, carregado só nas áreas logadas, esvazia o cache.
  *
  * O primeiro render é sempre `restaurando`, igual ao HTML estático: nenhum `localStorage` é lido
  * durante a renderização. Em efeito ela lê o token e chama `GET /eu`:
@@ -33,7 +35,6 @@ export function SessaoProvider({
   children: ReactNode;
   servidorPronto?: boolean;
 }) {
-  const queryClient = useQueryClient();
   const router = useRouter();
   const [estado, setEstado] = useState<EstadoSessao>('restaurando');
   const [usuario, setUsuario] = useState<Usuario | null>(null);
@@ -52,13 +53,13 @@ export function SessaoProvider({
         apagar(CHAVES.disponibilidadeAtiva),
         apagar(CHAVES.propostasEnviadas),
       ]);
-      queryClient.clear();
+      executarLimpezasDaSessao();
       setUsuario(null);
       setAviso(motivo ?? null);
       setEstado('anonimo');
       router.replace(rotaDeEntrada(motivo));
     },
-    [queryClient, router],
+    [router],
   );
 
   // Os efeitos abaixo rodam uma vez e chamam sempre o `sair` mais recente.
@@ -83,14 +84,14 @@ export function SessaoProvider({
       // A disponibilidade ativa pertence a quem a escolheu: outra conta no mesmo aparelho não a herda
       // (cobre também a sessão que acabou sem `sair`, como a queda de rede ao restaurar).
       await Promise.all([apagar(CHAVES.disponibilidadeAtiva), apagar(CHAVES.propostasEnviadas)]);
-      // Nada da conta anterior (ou de uma tentativa sem sair) pode aparecer na nova.
-      queryClient.clear();
+      // Nada da conta anterior (ou de uma tentativa sem sair) pode aparecer na nova: limpa o cache.
+      executarLimpezasDaSessao();
       setUsuario(dados);
       setAviso(null);
       setEstado('autenticado');
       router.replace(rotaInicial(dados.tipo));
     },
-    [queryClient, router],
+    [router],
   );
 
   // Registra a sessão no cliente HTTP (evita import circular entre api e state, ADR 0005).

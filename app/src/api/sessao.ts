@@ -1,6 +1,6 @@
 // Sessão e cadastro (POST /login, GET /eu, POST /cadastro/*). Só as chamadas, sem TanStack Query:
 // este módulo entra no JS inicial (sessão e telas públicas). Os hooks ficam em `sessao.hooks.ts`
-// (ADR 0004, adendo 2). O token e o estado da sessão ficam em src/state/sessao (card 013).
+// (ADR 0004, adendo). O token e o estado da sessão ficam em src/state/sessao (card 013).
 import { requisitar } from './cliente';
 import type {
   CorpoCadastroEmpresa,

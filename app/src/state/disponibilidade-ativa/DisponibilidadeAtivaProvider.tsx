@@ -1,8 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
-import { useMinhasDisponibilidades } from '@/api/disponibilidades.hooks';
-import type { RespostaMinhasDisponibilidades } from '@/api/tipos';
 import { useCasca } from '@/components/organisms/useCasca';
+import { useMontado } from '@/hooks/useMontado';
 import { CHAVES, gravar, ler } from '@/lib/armazenamento';
 import {
   escolherAtiva,
@@ -13,6 +21,8 @@ import {
 } from '@/lib/disponibilidadeAtiva';
 import { ErroApi } from '@/lib/erros';
 
+import { carregarConsultaDasDisponibilidades } from './ConsultaDasDisponibilidades.carregar';
+import { SEM_CONSULTA, type ResultadoConsulta } from './resultadoConsulta';
 import {
   DisponibilidadeAtivaContext,
   type ValorDisponibilidadeAtiva,
@@ -23,51 +33,13 @@ const ATRASO_MAXIMO_MS = 2_147_000_000;
 // Folga para o relógio já estar além do prazo quando o aviso disparar.
 const FOLGA_MS = 50;
 
+const ConsultaDasDisponibilidades = lazy(carregarConsultaDasDisponibilidades);
+
 const LISTA_VAZIA: readonly Disponibilidade[] = [];
-
-/** O que o provider precisa saber da consulta `GET /disponibilidades/minhas`. */
-interface ResultadoConsulta {
-  data: RespostaMinhasDisponibilidades | undefined;
-  error: unknown;
-  isError: boolean;
-  isPending: boolean;
-  isFetching: boolean;
-  refetch: () => Promise<unknown>;
-}
-
-// Sem consulta (sessão ainda não autenticada como motorista): nada foi lido.
-const SEM_CONSULTA: ResultadoConsulta = {
-  data: undefined,
-  error: null,
-  isError: false,
-  isPending: true,
-  isFetching: false,
-  refetch: () => Promise.resolve(),
-};
 
 /** A rota `GET /disponibilidades/minhas` ainda não existe no backend: 404 liga o plano B. */
 function rotaInexistente(erro: unknown): boolean {
   return erro instanceof ErroApi && erro.status === 404;
-}
-
-/**
- * Faz a consulta e entrega o resultado ao provider. Só existe montado com o motorista autenticado
- * (ADR 0004): fora disso nenhuma consulta é criada, e ao sair o cache limpo continua vazio.
- */
-function ConsultaDasDisponibilidades({
-  aoMudar,
-}: {
-  aoMudar: (resultado: ResultadoConsulta) => void;
-}) {
-  const { data, error, isError, isPending, isFetching, refetch } = useMinhasDisponibilidades();
-
-  useEffect(() => {
-    aoMudar({ data, error, isError, isPending, isFetching, refetch });
-  }, [aoMudar, data, error, isError, isPending, isFetching, refetch]);
-
-  useEffect(() => () => aoMudar(SEM_CONSULTA), [aoMudar]);
-
-  return null;
 }
 
 /**
@@ -87,6 +59,8 @@ function ConsultaDasDisponibilidades({
  */
 export function DisponibilidadeAtivaProvider({ children }: { children: ReactNode }) {
   const { habilitado } = useCasca();
+  // O `lazy` da consulta só entra depois da hidratação: o HTML estático e o primeiro render não o têm.
+  const montado = useMontado();
   const [consulta, setConsulta] = useState<ResultadoConsulta>(SEM_CONSULTA);
 
   const [salva, setSalva] = useState<EscolhaSalva | null>(null);
@@ -184,7 +158,11 @@ export function DisponibilidadeAtivaProvider({ children }: { children: ReactNode
 
   return (
     <DisponibilidadeAtivaContext.Provider value={valor}>
-      {habilitado ? <ConsultaDasDisponibilidades aoMudar={setConsulta} /> : null}
+      {habilitado && montado ? (
+        <Suspense fallback={null}>
+          <ConsultaDasDisponibilidades aoMudar={setConsulta} />
+        </Suspense>
+      ) : null}
       {children}
     </DisponibilidadeAtivaContext.Provider>
   );

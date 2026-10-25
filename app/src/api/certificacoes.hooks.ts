@@ -1,9 +1,9 @@
 // Hook de certificações (TanStack Query). A chamada fica em `certificacoes.ts`.
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from './tanstack';
 
 import { listarCertificacoes } from './certificacoes';
 import { chaves } from './chaves';
-import { opcoesDeLeitura, type OpcoesLeitura } from './consulta';
+import { opcoesDeLeitura, type OpcoesLeitura } from './leitura';
 
 export function useCertificacoes(opcoes?: OpcoesLeitura) {
   return useQuery({

@@ -1,5 +1,5 @@
 // Cargas: POST /cargas, GET /cargas/minhas (empresa) e GET /cargas/proximas (motorista).
-// Só as chamadas (sem TanStack Query); os hooks ficam em `cargas.hooks.ts` (ADR 0004, adendo 2).
+// Só as chamadas (sem TanStack Query); os hooks ficam em `cargas.hooks.ts` (ADR 0004, adendo).
 import { requisitar, montarConsulta } from './cliente';
 import type {
   CorpoPublicarCarga,

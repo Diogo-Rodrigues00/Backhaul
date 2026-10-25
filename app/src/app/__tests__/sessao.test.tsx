@@ -13,6 +13,7 @@ import { TemplateTela } from '@/components/templates/TemplateTela';
 import { apagar, CHAVES, gravar, ler } from '@/lib/armazenamento';
 import { ErroApi } from '@/lib/erros';
 import { liberarPaginaInicial } from '@/lib/paginaInicial';
+import { registrarLimpezaDaSessao } from '@/state/sessao/limpezas';
 import { SessaoProvider } from '@/state/sessao/SessaoProvider';
 import { useSessao } from '@/state/sessao/useSessao';
 import { TemaContext } from '@/state/tema/TemaProvider';
@@ -100,12 +101,17 @@ function MinhasCargasComDados() {
   );
 }
 
+let desfazerLimpeza: (() => void) | undefined;
+afterEach(() => desfazerLimpeza?.());
+
 interface Opcoes {
   telaDaEmpresa?: () => ReactElement;
 }
 
 async function abrir(url: string, { telaDaEmpresa = MinhasCargas }: Opcoes = {}) {
   const cliente: QueryClient = criarClienteDeTeste();
+  // No app quem registra é `state/consultas/consultas.tsx`, aberto sob demanda; aqui o teste faz o mesmo.
+  desfazerLimpeza = registrarLimpezaDaSessao(() => cliente.clear());
   function LayoutRaiz() {
     return (
       <TemaContext.Provider value={valorDoTema('light')}>

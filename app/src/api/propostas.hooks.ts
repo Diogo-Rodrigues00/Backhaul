@@ -1,8 +1,8 @@
 // Hooks de propostas (TanStack Query). As chamadas ficam em `propostas.ts`.
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from './tanstack';
 
 import { chaves } from './chaves';
-import { opcoesDeLeitura, type OpcoesLeitura } from './consulta';
+import { opcoesDeLeitura, type OpcoesLeitura } from './leitura';
 import {
   fazerProposta,
   listarMinhasPropostas,

@@ -2,6 +2,8 @@
 // da rota. Em arquivo próprio porque o Jest não executa `import()` dinâmico; os testes trocam este
 // módulo por um que devolve o componente na hora.
 /* istanbul ignore file */
+import { carregarComConsultas } from '@/state/consultas/carregarComConsultas';
+
 export function carregarCorpoMeusFretesMotorista() {
-  return import('./CorpoMeusFretesMotorista');
+  return carregarComConsultas(() => import('./CorpoMeusFretesMotorista'));
 }

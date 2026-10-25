@@ -1,5 +1,5 @@
 // Fretes: GET /fretes/meus (duas formas), PATCH /fretes/:id/status e POST /fretes/:id/pagamento.
-// Só as chamadas (sem TanStack Query); os hooks ficam em `fretes.hooks.ts` (ADR 0004, adendo 2).
+// Só as chamadas (sem TanStack Query); os hooks ficam em `fretes.hooks.ts` (ADR 0004, adendo).
 import { requisitar } from './cliente';
 import type {
   CorpoStatusFrete,

@@ -1,6 +1,7 @@
 // Portão do servidor no layout raiz (card 014, ADR 0005, MVP-02). Layout, rotas e sessão reais;
 // `GET /saude` e `GET /eu` simulados para controlar o tempo (timers falsos).
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 
 import * as cliente from '@/api/cliente';
@@ -11,6 +12,7 @@ import { anunciar } from '@/lib/a11y';
 import { ErroApi } from '@/lib/erros';
 
 import { usuarioEmpresa } from '../../../mocks/fixtures/usuarios';
+import { criarEnvoltorio } from '../../../mocks/utils-teste';
 import LayoutEmpresa from '../empresa/_layout';
 import MinhasCargas from '../empresa/cargas/index';
 import Entrar from '../index';
@@ -60,6 +62,16 @@ async function avancar(ms: number) {
   });
 }
 
+// No app o corpo de "Minhas cargas" abre com o cliente de dados (ADR 0004, adendo); aqui o teste o dá.
+function TelaMinhasCargas() {
+  const [Envoltorio] = useState(() => criarEnvoltorio());
+  return (
+    <Envoltorio>
+      <MinhasCargas />
+    </Envoltorio>
+  );
+}
+
 async function abrir() {
   await renderRouter(
     {
@@ -67,7 +79,7 @@ async function abrir() {
       index: Entrar,
       entrar: Entrar,
       'empresa/_layout': LayoutEmpresa,
-      'empresa/cargas/index': MinhasCargas,
+      'empresa/cargas/index': TelaMinhasCargas,
     },
     { initialUrl: '/' },
   );
@@ -170,7 +182,7 @@ describe('portão do servidor no layout raiz', () => {
         index: Entrar,
         entrar: Entrar,
         'empresa/_layout': LayoutEmpresa,
-        'empresa/cargas/index': MinhasCargas,
+        'empresa/cargas/index': TelaMinhasCargas,
       },
       { initialUrl: '/empresa/cargas' },
     );

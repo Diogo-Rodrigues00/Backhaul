@@ -1,5 +1,5 @@
 // Hook de publicar disponibilidade (TanStack Query). A chamada fica em `publicarDisponibilidade.ts`.
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from './tanstack';
 
 import { chaves } from './chaves';
 import { publicarDisponibilidade } from './publicarDisponibilidade';

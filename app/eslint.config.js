@@ -34,6 +34,24 @@ const proibidas = [
   message: 'Biblioteca proibida pelo ADR 0001. Exceção só por novo ADR.',
 }));
 
+// ADR 0004, adendo: o TanStack Query só entra no JS das áreas logadas, num chunk sob demanda. Os hooks
+// importam de `src/api/tanstack.ts`; só os arquivos listados abaixo importam o pacote (valor).
+const tanstack = {
+  name: '@tanstack/react-query',
+  message:
+    'Importe de @/api/tanstack (ponte): o pacote só carrega em state/consultas/consultas.tsx (ADR 0004, adendo).',
+  allowTypeImports: true,
+};
+const podemImportarTanstack = [
+  'src/state/consultas/consultas.tsx',
+  'src/api/consulta.ts',
+  'src/api/foco.native.ts',
+  '**/*.test.{ts,tsx}',
+  'src/test-utils/**',
+  'mocks/**',
+  'jest.setup.ts',
+];
+
 module.exports = defineConfig([
   expoConfig,
   globalIgnores([
@@ -48,7 +66,7 @@ module.exports = defineConfig([
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
-      'no-restricted-imports': ['error', { paths: proibidas }],
+      'no-restricted-imports': ['error', { paths: [...proibidas, tanstack] }],
     },
   },
   {
@@ -58,7 +76,7 @@ module.exports = defineConfig([
       'no-restricted-imports': [
         'error',
         {
-          paths: proibidas,
+          paths: [...proibidas, tanstack],
           patterns: [
             {
               group: ['@/api', '@/api/*'],
@@ -68,5 +86,9 @@ module.exports = defineConfig([
         },
       ],
     },
+  },
+  {
+    files: podemImportarTanstack,
+    rules: { 'no-restricted-imports': ['error', { paths: proibidas }] },
   },
 ]);

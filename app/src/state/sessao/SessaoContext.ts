@@ -17,7 +17,7 @@ export interface ValorSessao {
    * 401 do login é erro do formulário, D-PO-11): nada muda no estado nem no armazenamento.
    */
   entrar: (email: string, senha: string) => Promise<void>;
-  /** Apaga token e disponibilidade ativa, limpa o cache e abre `/entrar` (com o aviso, se houver). */
+  /** Apaga token e disponibilidade ativa, roda as limpezas registradas (cache) e abre `/entrar` (com o aviso, se houver). */
   sair: (aviso?: AvisoSessao) => Promise<void>;
 }
 

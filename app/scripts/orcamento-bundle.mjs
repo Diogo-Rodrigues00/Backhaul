@@ -22,6 +22,9 @@ const LIMITES = {
 };
 const MAX_ARQUIVOS_FONTE = 2;
 const PROIBIDOS_NO_JS = ['mockServiceWorker', 'setupWorker'];
+// O TanStack Query só carrega nas áreas logadas, num chunk sob demanda (ADR 0004, adendo): este texto
+// vem do pacote e não pode estar em nenhum <script> do HTML de rota alguma (JS inicial).
+const TANSTACK_NO_JS = 'No QueryClient set';
 
 const raiz = join(process.cwd(), 'dist');
 
@@ -60,6 +63,12 @@ for (const html of htmls) {
   for (const src of srcs) {
     const arquivo = join(raiz, src.split('?')[0]);
     total += gzip(arquivo);
+    if (readFileSync(arquivo, 'utf8').includes(TANSTACK_NO_JS)) {
+      console.log(
+        `FALHA ${nomeRel(html)}: o TanStack Query está em ${nomeRel(arquivo)} (JS inicial)`,
+      );
+      falhas.push(`TanStack no JS inicial de ${nomeRel(html)}`);
+    }
   }
   checar(`JS inicial de ${nomeRel(html)}`, total, LIMITES.jsInicial);
   checar(`HTML de ${nomeRel(html)}`, gzip(html), LIMITES.html);

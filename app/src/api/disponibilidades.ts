@@ -1,5 +1,5 @@
 // Disponibilidades do motorista: GET /disponibilidades/minhas (o POST está em publicarDisponibilidade.ts).
-// Só a chamada (sem TanStack Query); o hook fica em `disponibilidades.hooks.ts` (ADR 0004, adendo 2).
+// Só a chamada (sem TanStack Query); o hook fica em `disponibilidades.hooks.ts` (ADR 0004, adendo).
 // PROPOSTA relatório 4b: GET /disponibilidades/minhas ainda não existe no backend; o formato
 // está em tipos.ts. Quando entrar em docs/api.md, conferir.
 import { requisitar } from './cliente';

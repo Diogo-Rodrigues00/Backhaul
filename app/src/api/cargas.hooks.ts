@@ -1,9 +1,9 @@
 // Hooks de cargas (TanStack Query). As chamadas ficam em `cargas.ts`.
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from './tanstack';
 
 import { listarCargasProximas, listarMinhasCargas, publicarCarga } from './cargas';
 import { chaves } from './chaves';
-import { opcoesDeLeitura, type OpcoesLeitura } from './consulta';
+import { opcoesDeLeitura, type OpcoesLeitura } from './leitura';
 import type { ParametrosCargasProximas } from './tipos';
 
 /** Invalida: cargas.minhas. */
