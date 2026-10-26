@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { View } from 'react-native';
 
-import { useFazerProposta } from '@/api/propostas';
+import { useFazerProposta } from '@/api/propostas.hooks';
 import type { RespostaMinhasPropostas } from '@/api/tipos';
 import type { AvisoDaProposta } from '@/components/organisms/AcoesProposta';
 import type { PedidoProposta } from '@/components/organisms/FormularioProposta';

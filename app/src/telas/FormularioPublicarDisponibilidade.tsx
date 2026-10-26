@@ -3,7 +3,7 @@ import { useContext } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { View, type ViewStyle } from 'react-native';
 
-import { usePublicarDisponibilidade } from '@/api/publicarDisponibilidade';
+import { usePublicarDisponibilidade } from '@/api/publicarDisponibilidade.hooks';
 import type { CorpoPublicarDisponibilidade } from '@/api/tipos';
 import { Botao } from '@/components/atoms/Botao';
 import { Link } from '@/components/atoms/Link';

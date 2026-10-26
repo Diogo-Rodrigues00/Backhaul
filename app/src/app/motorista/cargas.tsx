@@ -1,4 +1,3 @@
-import { lazy, Suspense, useSyncExternalStore } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
 import { Carregando } from '@/components/atoms/Carregando';
@@ -8,14 +7,10 @@ import { TemplateTela } from '@/components/templates/TemplateTela';
 import { carregarCorpoCargasProximas } from '@/telas/CorpoCargasProximas.carregar';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
+import { CorpoSobDemanda } from '@/telas/CorpoSobDemanda';
 
 // Cargas próximas (card 024, MVP-12). Só a casca (h1, cabeçalho, abas) fica no JS inicial da rota:
 // a busca, a barra de contexto e os cartões carregam por React.lazy logo depois (ADR 0011).
-const Corpo = lazy(carregarCorpoCargasProximas);
-
-// `false` no HTML estático e na hidratação, `true` depois: o servidor não renderiza o `lazy` (o React
-// acusaria o erro 419 de Suspense no servidor), só o esqueleto.
-const semAssinatura = () => () => undefined;
 
 // Mesma altura do estado "carregando" da lista: o corpo chega sem empurrar o resto da tela.
 const ALTURA_MINIMA = 360;
@@ -42,11 +37,6 @@ function EsqueletoDasCargas() {
 
 export default function CargasProximas() {
   const { cabecalho, abas } = useCasca();
-  const montado = useSyncExternalStore(
-    semAssinatura,
-    () => true,
-    () => false,
-  );
   return (
     <TemplateTela
       titulo="Cargas próximas"
@@ -54,13 +44,7 @@ export default function CargasProximas() {
       cabecalho={cabecalho}
       abas={abas}
     >
-      {montado ? (
-        <Suspense fallback={<EsqueletoDasCargas />}>
-          <Corpo />
-        </Suspense>
-      ) : (
-        <EsqueletoDasCargas />
-      )}
+      <CorpoSobDemanda carregar={carregarCorpoCargasProximas} carregando={<EsqueletoDasCargas />} />
     </TemplateTela>
   );
 }

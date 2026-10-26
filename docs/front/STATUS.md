@@ -29,7 +29,7 @@ Protótipo aprovado: https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP
 Site publicado: https://backhaul-front.vercel.app (último deploy de produção em 2026-10-23, com `front` até o card 023).
 
 ## Limite de JS inicial
-360 KiB (368.640 bytes), medido em bytes, por rota (adendo 3 do ADR 0011). Piso atual de qualquer rota: ~355,5 KiB (pacote comum + entry); rotas mais pesadas a < 4 KiB do limite (`/entrar` com ~0,4 KiB de folga). Telas pesadas usam casca na rota + corpo em `src/telas` via `React.lazy` depois da hidratação (ADR 0003). **Meta de otimização em 25–28/10:** carregar o TanStack Query só nas áreas logadas (fetchers sem TanStack em `api/*.ts`, hooks em `*.hooks.ts`, `QueryClientProvider` dentro de `AreaProtegida`), alias mais enxuto, e voltar a ≤ 340 KiB.
+360 KiB (368.640 bytes), medido em bytes, por rota (adendo 3 do ADR 0011). **Após o PR #93 (TanStack só nas áreas logadas, adendo ao ADR 0004):** log do CI de 339,1 a 342,1 KiB por rota (antes: 355,0 a 357,9); `/entrar` 342,1 (antes 357,9). O TanStack ficou num chunk próprio de 18,0 KiB (`consultas-*.js`), aberto por `import()` junto com o corpo de cada tela de dados. Telas pesadas usam casca na rota + corpo em `src/telas` via `React.lazy` depois da hidratação (ADR 0003). Pendente da meta do adendo 3: alias mais enxuto do TanStack (opcional, o ganho já cumpriu ≤ 345 KiB).
 
 ## Dívida técnica conhecida (detalhes em `auditoria-final.md`)
 - `BarraAbas` sticky sobrepõe alvos da primeira dobra no mobile (`target-size`); contornado na tela de publicar disponibilidade e na fixture da lista. Precisa de folga de rolagem sob a barra no template.
@@ -54,7 +54,7 @@ Site publicado: https://backhaul-front.vercel.app (último deploy de produção 
 - Opcional: GitHub Projects (`gh auth refresh -s read:project,project`).
 
 ## Janela 25–28/10 (só correção, acabamento, a11y e Lighthouse)
-1. Otimização estrutural do JS (TanStack nas áreas).
+1. ~~Otimização estrutural do JS (TanStack nas áreas)~~ feita no PR #93.
 2. Folga de rolagem sob a barra de abas (`target-size`).
 3. Verificar no iPhone (Expo Go) e com leitor de tela.
 4. Ensaio em 28/10 no ambiente hospedado, 2 vezes seguidas, seguindo `roteiro-demo.md`.

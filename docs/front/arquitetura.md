@@ -71,7 +71,7 @@ app/
     ├── app/                      # ROTAS = TELAS (único lugar que usa src/api)
     │   ├── +html.tsx             # <html lang="pt-BR">, meta, manifesto, CSS do tema, script data-tema
     │   ├── +not-found.tsx
-    │   ├── _layout.tsx           # QueryClientProvider, TemaProvider, SessaoProvider, PortaoServidor, RegiaoViva, PWA
+    │   ├── _layout.tsx           # TemaProvider, SessaoProvider, PortaoServidor, RegiaoViva, PWA (sem TanStack: ADR 0004, adendo)
     │   ├── index.tsx             # "/" apresentação; com sessão → área do perfil
     │   ├── entrar.tsx
     │   ├── cadastro/
@@ -114,11 +114,15 @@ app/
     │   ├── cliente.ts            # requisitar(), configurarCliente()
     │   ├── tipos.ts              # tipos do contrato + propostas 4a/4b
     │   ├── chaves.ts             # chaves do TanStack Query
-    │   ├── consulta.ts           # QueryClient, INTERVALO_ATUALIZACAO_MS
+    │   ├── consulta.ts           # criarQueryClient (só o módulo das consultas importa)
+    │   ├── leitura.ts            # INTERVALO_ATUALIZACAO_MS, opcoesDeLeitura (sem TanStack)
+    │   ├── tanstack.ts           # ponte dos hooks para o TanStack, registrada por state/consultas
     │   ├── foco.web.ts / foco.native.ts   # focusManager × AppState
-    │   └── saude.ts, sessao.ts, certificacoes.ts, cargas.ts, disponibilidades.ts, propostas.ts, fretes.ts
+    │   ├── saude.ts, sessao.ts, certificacoes.ts, cargas.ts, disponibilidades.ts, propostas.ts, fretes.ts  # fetchers
+    │   └── *.hooks.ts            # useQuery/useMutation de cada recurso (carregam sob demanda, ADR 0004)
     ├── state/
-    │   ├── sessao/               # SessaoProvider, useSessao
+    │   ├── sessao/               # SessaoProvider, useSessao, limpezas (cache limpo em entrar/sair)
+    │   ├── consultas/            # consultas.tsx (único import do TanStack, chunk sob demanda), carregarComConsultas
     │   ├── tema/                 # TemaProvider, useTema, useEstilos
     │   └── disponibilidade-ativa/ # DisponibilidadeAtivaProvider (D-PO-03)
     ├── hooks/                    # useMovimentoReduzido, useAnunciarNovidades
@@ -162,8 +166,8 @@ Navegação do cabeçalho: empresa → Minhas cargas · Publicar carga · Meus f
 ## 4. Fluxo de dados
 
 ```
-tela (src/app) ──usa──▶ hook de dados (src/api/<recurso>.ts) ──▶ requisitar() ──▶ API (EXPO_PUBLIC_API_URL)
-   │                          │ TanStack Query (cache, polling, invalidação)          │
+tela (src/app) ──usa──▶ hook de dados (src/api/<recurso>.hooks.ts) ─▶ fetcher (<recurso>.ts) ─▶ requisitar() ─▶ API
+   │                          │ TanStack Query (cache, polling, invalidação), só nas áreas logadas    │
    │                          └──────── ErroApi ◀──── normaliza erro/erros/não-JSON ◀──┘
    ├──▶ template ─▶ organisms ─▶ molecules ─▶ atoms   (dados por props; estilo por useTema/useEstilos)
    └──▶ src/state (sessão, tema, disponibilidade ativa) ─▶ src/lib/armazenamento (SecureStore | localStorage)

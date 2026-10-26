@@ -1,4 +1,3 @@
-import { lazy, Suspense, useSyncExternalStore } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
 import { Carregando } from '@/components/atoms/Carregando';
@@ -8,14 +7,10 @@ import { TemplateTela } from '@/components/templates/TemplateTela';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { carregarFormularioPublicarDisponibilidade } from '@/telas/FormularioPublicarDisponibilidade.carregar';
+import { CorpoSobDemanda } from '@/telas/CorpoSobDemanda';
 
 // Publicar disponibilidade (card 023, MVP-10). Só a casca (h1, cabeçalho, abas) fica no JS inicial
 // da rota: o formulário e o seletor de cidades carregam por React.lazy logo depois (ADR 0011).
-const Formulario = lazy(carregarFormularioPublicarDisponibilidade);
-
-// `false` no HTML estático e na hidratação, `true` depois: o servidor não renderiza o `lazy` (o React
-// acusaria o erro 419 de Suspense no servidor), só o esqueleto.
-const semAssinatura = () => () => undefined;
 
 function criarEstilos({ space }: TemaVisual) {
   return {
@@ -38,11 +33,6 @@ function EsqueletoDoFormulario() {
 
 export default function PublicarDisponibilidade() {
   const { cabecalho, abas } = useCasca();
-  const montado = useSyncExternalStore(
-    semAssinatura,
-    () => true,
-    () => false,
-  );
   return (
     <TemplateTela
       titulo="Publicar disponibilidade"
@@ -50,13 +40,10 @@ export default function PublicarDisponibilidade() {
       cabecalho={cabecalho}
       abas={abas}
     >
-      {montado ? (
-        <Suspense fallback={<EsqueletoDoFormulario />}>
-          <Formulario />
-        </Suspense>
-      ) : (
-        <EsqueletoDoFormulario />
-      )}
+      <CorpoSobDemanda
+        carregar={carregarFormularioPublicarDisponibilidade}
+        carregando={<EsqueletoDoFormulario />}
+      />
     </TemplateTela>
   );
 }

@@ -59,3 +59,6 @@ Medições reais depois dos cards 010 e 013: o card 013 (sessão) custou +21,5 K
 - Cards de tela continuam proibidos de aumentar o JS inicial (código da tela no chunk da rota, ≤ 30 KB).
 - Performance mobile < 100 segue aceita com a nota registrada (pode cair para a faixa de 80–90); Acessibilidade, Boas práticas e SEO seguem 100.
 - **Meta de otimização (janela 25–28/10):** carregar o TanStack Query só nas áreas logadas (fetchers sem TanStack em `api/*.ts`, hooks em `*.hooks.ts`, `QueryClientProvider` dentro de `AreaProtegida`; adendo ao ADR 0004), alias mais enxuto do TanStack, teste de carregamento sob demanda dos formulários; objetivo: voltar a ≤ 340 KiB.
+
+## Adendo 4 — 2026-10-25: meta de otimização cumprida
+O TanStack Query saiu do JS inicial (adendo ao ADR 0004). Log do CI do PR #93: 339,1 a 342,1 KiB por rota (antes 355,0 a 357,9); `/entrar` de 357,9 para 342,1. O chunk sob demanda `consultas-*.js` tem 18,0 KiB (limite de chunk, 30). O limite do portão continua em 360 KiB; baixá-lo (sugestão: 350 KiB) para travar o ganho é decisão do Pedro. `npm run orcamento` agora também falha se o TanStack aparecer em algum `<script>` de rota.

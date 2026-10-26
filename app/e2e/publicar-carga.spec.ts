@@ -63,9 +63,10 @@ test.describe('publicar carga', () => {
     expect(new Date(String(corpo.expira_em)).getTime()).toBeGreaterThan(Date.now());
     await expect(page).toHaveURL(/\/empresa\/cargas$/);
     await expect(h1(page)).toHaveText('Minhas cargas');
-    await expect(page.locator('[role="status"][aria-live="polite"]')).toContainText(
-      'Carga publicada',
-    );
+    // Pode haver outro `status` na tela (o "Carregando cargas…" enquanto o corpo da lista abre).
+    await expect(
+      page.locator('[role="status"][aria-live="polite"]').filter({ hasText: 'Carga publicada' }),
+    ).toBeVisible();
   });
 
   test('campos vazios: resumo com o foco, erro em cada campo e nenhuma chamada à API', async ({

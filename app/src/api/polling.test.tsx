@@ -7,8 +7,8 @@ import { criarEnvoltorio } from '../../mocks/utils-teste';
 
 import * as cliente from './cliente';
 import { criarQueryClient, INTERVALO_ATUALIZACAO_MS } from './consulta';
-import { useMeusFretes } from './fretes';
-import { useMinhasPropostas, usePropostasDaCarga } from './propostas';
+import { useMeusFretes } from './fretes.hooks';
+import { useMinhasPropostas, usePropostasDaCarga } from './propostas.hooks';
 
 async function avancar(ms: number) {
   await act(async () => {

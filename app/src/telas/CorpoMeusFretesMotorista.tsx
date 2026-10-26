@@ -1,11 +1,12 @@
 // Corpo de "Meus fretes" do motorista (MVP-16, card 027, D-PO-07 e D-PO-09, CT-09). Atualiza sozinho
 // a cada 10 s com a aba visível: o pagamento feito pela empresa aparece e é anunciado sem mover o
 // foco. Carregado por React.lazy a partir de `app/motorista/fretes.tsx` (ADR 0011).
-import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { View } from 'react-native';
 
-import { eFreteDoMotorista, useAtualizarStatusFrete, useMeusFretes } from '@/api/fretes';
+import { eFreteDoMotorista } from '@/api/fretes';
+import { useAtualizarStatusFrete, useMeusFretes } from '@/api/fretes.hooks';
+import { useQueryClient } from '@/api/tanstack';
 import { chaves } from '@/api/chaves';
 import type { RespostaMeusFretes, RespostaStatusFrete } from '@/api/tipos';
 import { Link } from '@/components/atoms/Link';

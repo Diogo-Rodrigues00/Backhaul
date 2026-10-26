@@ -3,7 +3,7 @@
 import { useRouter, type Href } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 
-import { useCadastrarEmpresa } from '@/api/sessao';
+import { cadastrarEmpresa } from '@/api/sessao';
 import type { CorpoCadastroEmpresa } from '@/api/tipos';
 import { Botao } from '@/components/atoms/Botao';
 import { aplicarErroApi, useEnvioUnico, useResumoErros } from '@/components/molecules/formulario';
@@ -59,7 +59,6 @@ export default function CadastroEmpresa() {
   useRedirecionarSeAutenticado();
   const router = useRouter();
   const { entrar } = useSessao();
-  const cadastro = useCadastrarEmpresa();
 
   const form = useForm<FormularioEmpresa>({
     mode: 'onSubmit',
@@ -85,7 +84,7 @@ export default function CadastroEmpresa() {
     };
 
     try {
-      await cadastro.mutateAsync(corpo);
+      await cadastrarEmpresa(corpo);
     } catch (erro) {
       const erroApi = erro instanceof ErroApi ? erro : ErroApi.falha();
       // 409 (e-mail ou CNPJ já cadastrado): a senha sai do campo; o resto continua preenchido (MVP-05).
@@ -110,7 +109,7 @@ export default function CadastroEmpresa() {
   const enviar: () => Promise<void> = form.handleSubmit(aoValido, resumo.aoInvalidar);
   // Um envio de cada vez: clique duplo, toque + Enter ou Enter repetido geram 1 requisição (CT-01).
   const submeter = useEnvioUnico(() => enviar());
-  const enviando = form.formState.isSubmitting || cadastro.isPending;
+  const enviando = form.formState.isSubmitting;
 
   return (
     <TemplateFormulario

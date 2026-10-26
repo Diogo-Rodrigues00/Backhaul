@@ -140,7 +140,7 @@ app/
 │   ├── app/          rotas = telas (expo-router). Único lugar que usa src/api
 │   ├── components/   atoms → molecules → organisms → templates (atomic design)
 │   ├── telas/        corpo das telas pesadas, carregado sob demanda pela rota
-│   ├── api/          cliente HTTP, tipos do contrato, hooks de dados (TanStack Query)
+│   ├── api/          cliente HTTP, tipos do contrato, fetchers e hooks de dados (TanStack Query, só nas áreas logadas)
 │   ├── state/        sessão, tema e disponibilidade ativa
 │   ├── lib/          funções puras: formatação, validação, rótulos, erros, armazenamento
 │   ├── theme/        tokens do design system, CSS global, tipografia

@@ -7,12 +7,14 @@ import { http, HttpResponse } from 'msw';
 import { useState, type ReactElement } from 'react';
 import { Platform, Text } from 'react-native';
 
-import { useMinhasCargas } from '@/api/cargas';
+import { useMinhasCargas } from '@/api/cargas.hooks';
 import { useCasca } from '@/components/organisms/useCasca';
 import { TemplateTela } from '@/components/templates/TemplateTela';
 import { apagar, CHAVES, gravar, ler } from '@/lib/armazenamento';
 import { ErroApi } from '@/lib/erros';
 import { liberarPaginaInicial } from '@/lib/paginaInicial';
+import { clienteDeConsultas } from '@/state/consultas/consultas';
+import { registrarLimpezaDaSessao } from '@/state/sessao/limpezas';
 import { SessaoProvider } from '@/state/sessao/SessaoProvider';
 import { useSessao } from '@/state/sessao/useSessao';
 import { TemaContext } from '@/state/tema/TemaProvider';
@@ -100,12 +102,17 @@ function MinhasCargasComDados() {
   );
 }
 
+let desfazerLimpeza: (() => void) | undefined;
+afterEach(() => desfazerLimpeza?.());
+
 interface Opcoes {
   telaDaEmpresa?: () => ReactElement;
 }
 
 async function abrir(url: string, { telaDaEmpresa = MinhasCargas }: Opcoes = {}) {
   const cliente: QueryClient = criarClienteDeTeste();
+  // No app quem registra é `state/consultas/consultas.tsx`, aberto sob demanda; aqui o teste faz o mesmo.
+  desfazerLimpeza = registrarLimpezaDaSessao(() => cliente.clear());
   function LayoutRaiz() {
     return (
       <TemaContext.Provider value={valorDoTema('light')}>
@@ -317,6 +324,31 @@ describe('sair', () => {
         .getAll()
         .filter((q) => q.state.data !== undefined),
     ).toHaveLength(0);
+  });
+
+  it('com o módulo real das consultas, sair e entrar esvaziam o cache único (nada de A visível para B)', async () => {
+    await gravar(CHAVES.token, 'mock-motorista');
+    await abrir('/motorista/cargas');
+    await waitFor(() => expect(sonda()).toContain('autenticado'));
+    const dadosNoCache = () =>
+      clienteDeConsultas()
+        .getQueryCache()
+        .getAll()
+        .filter((q) => q.state.data !== undefined);
+    clienteDeConsultas().setQueryData(['cargas', 'minhas'], { cargas: ['da conta A'] });
+    expect(dadosNoCache()).toHaveLength(1);
+
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Sair' })));
+    await waitFor(() => expect(caminho()).toBe('/entrar'));
+    expect(dadosNoCache()).toHaveLength(0);
+
+    // Dado que sobrou de uma sessão que acabou sem `sair` (queda de rede): `entrar` também esvazia.
+    clienteDeConsultas().setQueryData(['fretes', 'meus'], { fretes: ['da conta A'] });
+    await act(async () =>
+      fireEvent.press(screen.getByRole('button', { name: 'Entrar como empresa' })),
+    );
+    await waitFor(() => expect(caminho()).toBe('/empresa/cargas'));
+    expect(dadosNoCache()).toHaveLength(0);
   });
 
   it('voltar a uma área protegida depois de sair não mostra dados nem mantém a sessão', async () => {

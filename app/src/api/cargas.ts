@@ -1,9 +1,6 @@
 // Cargas: POST /cargas, GET /cargas/minhas (empresa) e GET /cargas/proximas (motorista).
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-
+// Só as chamadas (sem TanStack Query); os hooks ficam em `cargas.hooks.ts` (ADR 0004, adendo).
 import { requisitar, montarConsulta } from './cliente';
-import { chaves } from './chaves';
-import { opcoesDeLeitura, type OpcoesLeitura } from './consulta';
 import type {
   CorpoPublicarCarga,
   ParametrosCargasProximas,
@@ -27,40 +24,4 @@ export function listarCargasProximas(
     'GET',
     `/cargas/proximas${montarConsulta({ ...parametros })}`,
   );
-}
-
-/** Invalida: cargas.minhas. */
-export function usePublicarCarga() {
-  const cliente = useQueryClient();
-  return useMutation({
-    mutationFn: publicarCarga,
-    onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.cargas.minhas() }),
-  });
-}
-
-export function useMinhasCargas(opcoes?: OpcoesLeitura) {
-  return useQuery({
-    queryKey: chaves.cargas.minhas(),
-    queryFn: listarMinhasCargas,
-    ...opcoesDeLeitura(opcoes),
-  });
-}
-
-/** Sem `parametros` (ainda sem GPS/disponibilidade ativa) a consulta fica parada. */
-export function useCargasProximas(
-  parametros: ParametrosCargasProximas | null,
-  opcoes?: OpcoesLeitura,
-) {
-  const leitura = opcoesDeLeitura(opcoes);
-  return useQuery({
-    queryKey: chaves.cargas.proximas(parametros ?? undefined),
-    queryFn: () => {
-      if (parametros === null) {
-        throw new Error('useCargasProximas: parâmetros ausentes');
-      }
-      return listarCargasProximas(parametros);
-    },
-    ...leitura,
-    enabled: leitura.enabled && parametros !== null,
-  });
 }

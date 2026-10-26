@@ -1,4 +1,3 @@
-import { lazy, Suspense, useSyncExternalStore } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
 import { Carregando } from '@/components/atoms/Carregando';
@@ -8,15 +7,11 @@ import { TemplateTela } from '@/components/templates/TemplateTela';
 import { carregarCorpoMeusFretesMotorista } from '@/telas/CorpoMeusFretesMotorista.carregar';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
+import { CorpoSobDemanda } from '@/telas/CorpoSobDemanda';
 
 // Meus fretes do motorista (MVP-16, card 027). Só a casca (h1, cabeçalho, abas) fica no JS inicial
 // da rota: a lista, a atualização automática e o diálogo de confirmação carregam por React.lazy logo
 // depois (ADR 0011). Título e frase fixos: estão no HTML estático e são o LCP.
-const Corpo = lazy(carregarCorpoMeusFretesMotorista);
-
-// `false` no HTML estático e na hidratação, `true` depois: o servidor não renderiza o `lazy` (o React
-// acusaria o erro 419 de Suspense no servidor), só o esqueleto.
-const semAssinatura = () => () => undefined;
 
 // Mesma altura do estado "carregando" da lista: o corpo chega sem empurrar o resto da tela.
 const ALTURA_MINIMA = 360;
@@ -43,11 +38,6 @@ function EsqueletoDosFretes() {
 
 export default function MeusFretes() {
   const { cabecalho, abas } = useCasca();
-  const montado = useSyncExternalStore(
-    semAssinatura,
-    () => true,
-    () => false,
-  );
   return (
     <TemplateTela
       titulo="Meus fretes"
@@ -55,13 +45,10 @@ export default function MeusFretes() {
       cabecalho={cabecalho}
       abas={abas}
     >
-      {montado ? (
-        <Suspense fallback={<EsqueletoDosFretes />}>
-          <Corpo />
-        </Suspense>
-      ) : (
-        <EsqueletoDosFretes />
-      )}
+      <CorpoSobDemanda
+        carregar={carregarCorpoMeusFretesMotorista}
+        carregando={<EsqueletoDosFretes />}
+      />
     </TemplateTela>
   );
 }

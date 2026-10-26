@@ -1,8 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
-import { useMinhasDisponibilidades } from '@/api/disponibilidades';
-import type { RespostaMinhasDisponibilidades } from '@/api/tipos';
+import { LimiteDeErro } from '@/components/molecules/LimiteDeErro';
 import { useCasca } from '@/components/organisms/useCasca';
+import { useMontado } from '@/hooks/useMontado';
 import { CHAVES, gravar, ler } from '@/lib/armazenamento';
 import {
   escolherAtiva,
@@ -13,6 +22,8 @@ import {
 } from '@/lib/disponibilidadeAtiva';
 import { ErroApi } from '@/lib/erros';
 
+import { carregarConsultaDasDisponibilidades } from './ConsultaDasDisponibilidades.carregar';
+import { SEM_CONSULTA, type ResultadoConsulta } from './resultadoConsulta';
 import {
   DisponibilidadeAtivaContext,
   type ValorDisponibilidadeAtiva,
@@ -25,49 +36,9 @@ const FOLGA_MS = 50;
 
 const LISTA_VAZIA: readonly Disponibilidade[] = [];
 
-/** O que o provider precisa saber da consulta `GET /disponibilidades/minhas`. */
-interface ResultadoConsulta {
-  data: RespostaMinhasDisponibilidades | undefined;
-  error: unknown;
-  isError: boolean;
-  isPending: boolean;
-  isFetching: boolean;
-  refetch: () => Promise<unknown>;
-}
-
-// Sem consulta (sessão ainda não autenticada como motorista): nada foi lido.
-const SEM_CONSULTA: ResultadoConsulta = {
-  data: undefined,
-  error: null,
-  isError: false,
-  isPending: true,
-  isFetching: false,
-  refetch: () => Promise.resolve(),
-};
-
 /** A rota `GET /disponibilidades/minhas` ainda não existe no backend: 404 liga o plano B. */
 function rotaInexistente(erro: unknown): boolean {
   return erro instanceof ErroApi && erro.status === 404;
-}
-
-/**
- * Faz a consulta e entrega o resultado ao provider. Só existe montado com o motorista autenticado
- * (ADR 0004): fora disso nenhuma consulta é criada, e ao sair o cache limpo continua vazio.
- */
-function ConsultaDasDisponibilidades({
-  aoMudar,
-}: {
-  aoMudar: (resultado: ResultadoConsulta) => void;
-}) {
-  const { data, error, isError, isPending, isFetching, refetch } = useMinhasDisponibilidades();
-
-  useEffect(() => {
-    aoMudar({ data, error, isError, isPending, isFetching, refetch });
-  }, [aoMudar, data, error, isError, isPending, isFetching, refetch]);
-
-  useEffect(() => () => aoMudar(SEM_CONSULTA), [aoMudar]);
-
-  return null;
 }
 
 /**
@@ -87,7 +58,29 @@ function ConsultaDasDisponibilidades({
  */
 export function DisponibilidadeAtivaProvider({ children }: { children: ReactNode }) {
   const { habilitado } = useCasca();
+  // O `lazy` da consulta só entra depois da hidratação: o HTML estático e o primeiro render não o têm.
+  const montado = useMontado();
   const [consulta, setConsulta] = useState<ResultadoConsulta>(SEM_CONSULTA);
+  // Chunk da consulta que não baixou (sem conexão): a área continua de pé, a lista mostra o erro de
+  // sempre com "Tentar de novo", e cada tentativa abre um `lazy` novo (o `lazy` memoriza a falha).
+  const [tentativaDaConsulta, setTentativaDaConsulta] = useState(0);
+  const [ConsultaDasDisponibilidades, setConsultaLazy] = useState(() =>
+    lazy(carregarConsultaDasDisponibilidades),
+  );
+  const aoFalharConsulta = useCallback(() => {
+    setConsulta({
+      data: undefined,
+      error: ErroApi.falha(),
+      isError: true,
+      isPending: false,
+      isFetching: false,
+      refetch: async () => {
+        setConsulta(SEM_CONSULTA);
+        setConsultaLazy(() => lazy(carregarConsultaDasDisponibilidades));
+        setTentativaDaConsulta((n) => n + 1);
+      },
+    });
+  }, []);
 
   const [salva, setSalva] = useState<EscolhaSalva | null>(null);
   const [lida, setLida] = useState(false);
@@ -184,7 +177,13 @@ export function DisponibilidadeAtivaProvider({ children }: { children: ReactNode
 
   return (
     <DisponibilidadeAtivaContext.Provider value={valor}>
-      {habilitado ? <ConsultaDasDisponibilidades aoMudar={setConsulta} /> : null}
+      {habilitado && montado ? (
+        <LimiteDeErro key={tentativaDaConsulta} fallback={null} aoFalhar={aoFalharConsulta}>
+          <Suspense fallback={null}>
+            <ConsultaDasDisponibilidades aoMudar={setConsulta} />
+          </Suspense>
+        </LimiteDeErro>
+      ) : null}
       {children}
     </DisponibilidadeAtivaContext.Provider>
   );

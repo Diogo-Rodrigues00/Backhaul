@@ -34,6 +34,32 @@ const proibidas = [
   message: 'Biblioteca proibida pelo ADR 0001. Exceção só por novo ADR.',
 }));
 
+// ADR 0004, adendo: o TanStack Query só entra no JS das áreas logadas, num chunk sob demanda. Os hooks
+// importam de `src/api/tanstack.ts`; só os arquivos listados abaixo importam o pacote (valor).
+const tanstack = {
+  name: '@tanstack/react-query',
+  message:
+    'Importe de @/api/tanstack (ponte): o pacote só carrega em state/consultas/consultas.tsx (ADR 0004, adendo).',
+  allowTypeImports: true,
+};
+const podemImportarTanstack = [
+  'src/state/consultas/consultas.tsx',
+  'src/api/consulta.ts',
+  'src/api/foco.native.ts',
+  '**/*.test.{ts,tsx}',
+  'src/test-utils/**',
+  'mocks/**',
+  'jest.setup.ts',
+];
+
+// ADR 0003: componentes recebem dados por props; só as telas usam src/api.
+const patternsDeComponentes = [
+  {
+    group: ['@/api', '@/api/*'],
+    message: 'Componentes não importam src/api (ADR 0003): os dados chegam por props.',
+  },
+];
+
 module.exports = defineConfig([
   expoConfig,
   globalIgnores([
@@ -48,25 +74,27 @@ module.exports = defineConfig([
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
-      'no-restricted-imports': ['error', { paths: proibidas }],
+      'no-restricted-imports': ['error', { paths: [...proibidas, tanstack] }],
     },
   },
   {
-    // ADR 0003: componentes recebem dados por props; só as telas usam src/api.
     files: ['src/components/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
-        {
-          paths: proibidas,
-          patterns: [
-            {
-              group: ['@/api', '@/api/*'],
-              message: 'Componentes não importam src/api (ADR 0003): os dados chegam por props.',
-            },
-          ],
-        },
+        { paths: [...proibidas, tanstack], patterns: patternsDeComponentes },
       ],
+    },
+  },
+  {
+    files: podemImportarTanstack,
+    rules: { 'no-restricted-imports': ['error', { paths: proibidas }] },
+  },
+  {
+    // Os testes de componentes podem importar o TanStack, mas continuam sem src/api (ADR 0003).
+    files: ['src/components/**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', { paths: proibidas, patterns: patternsDeComponentes }],
     },
   },
 ]);

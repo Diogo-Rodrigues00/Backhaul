@@ -22,6 +22,9 @@ const LIMITES = {
 };
 const MAX_ARQUIVOS_FONTE = 2;
 const PROIBIDOS_NO_JS = ['mockServiceWorker', 'setupWorker'];
+// O TanStack Query só carrega nas áreas logadas, num chunk sob demanda (ADR 0004, adendo): este texto
+// vem do pacote e não pode estar em nenhum <script> do HTML de rota alguma (JS inicial).
+const TANSTACK_NO_JS = 'No QueryClient set';
 
 const raiz = join(process.cwd(), 'dist');
 
@@ -60,6 +63,12 @@ for (const html of htmls) {
   for (const src of srcs) {
     const arquivo = join(raiz, src.split('?')[0]);
     total += gzip(arquivo);
+    if (readFileSync(arquivo, 'utf8').includes(TANSTACK_NO_JS)) {
+      console.log(
+        `FALHA ${nomeRel(html)}: o TanStack Query está em ${nomeRel(arquivo)} (JS inicial)`,
+      );
+      falhas.push(`TanStack no JS inicial de ${nomeRel(html)}`);
+    }
   }
   checar(`JS inicial de ${nomeRel(html)}`, total, LIMITES.jsInicial);
   checar(`HTML de ${nomeRel(html)}`, gzip(html), LIMITES.html);
@@ -101,6 +110,24 @@ for (const arquivo of js) {
       falhas.push(`${termo} em ${nomeRel(arquivo)}`);
     }
   }
+}
+
+// TanStack Query só no chunk sob demanda `consultas-*.js` (ADR 0004, adendo). Controle positivo: o
+// marcador PRECISA estar lá (se o pacote mudar o texto, o teste acima passaria sem provar nada).
+// Qualquer outro .js (entry, __common, runtime, chunk de rota) com o marcador é falha.
+const comTanstack = js.filter((a) => readFileSync(a, 'utf8').includes(TANSTACK_NO_JS));
+if (!comTanstack.some((a) => basename(a).startsWith('consultas-'))) {
+  console.log(`FALHA controle positivo: "${TANSTACK_NO_JS}" não está em nenhum consultas-*.js`);
+  falhas.push('Controle positivo do TanStack');
+}
+for (const arquivo of comTanstack.filter((a) => !basename(a).startsWith('consultas-'))) {
+  console.log(
+    `FALHA o TanStack Query está em ${nomeRel(arquivo)}; deveria estar só em consultas-*.js`,
+  );
+  falhas.push(`TanStack em ${nomeRel(arquivo)}`);
+}
+if (comTanstack.length > 0 && falhas.length === 0) {
+  console.log(`ok    TanStack Query só em ${comTanstack.map(nomeRel).join(', ')}`);
 }
 
 if (falhas.length > 0) {
