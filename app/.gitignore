@@ -1,0 +1,50 @@
+# dependências
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# ambiente (só o exemplo é versionado)
+.env
+.env.*
+!.env.example
+
+# testes e auditorias
+coverage/
+.lighthouseci/
+playwright-report/
+test-results/
+
+# nativo gerado (Continuous Native Generation)
+/ios
+/android
+.kotlin/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Metro
+.metro-health-check*
+
+# depuração
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# TypeScript
+*.tsbuildinfo
+
+# macOS
+.DS_Store
+
+# Vercel (vínculo local com o projeto)
+.vercel/
+
+# build alternativo de teste
+dist-*/

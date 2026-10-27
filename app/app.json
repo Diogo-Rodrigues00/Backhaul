@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Backhaul",
+    "slug": "backhaul",
+    "scheme": "backhaul",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "sitemap": false,
+          "asyncRoutes": {
+            "web": "production",
+            "default": false
+          }
+        }
+      ],
+      "expo-font",
+      "expo-secure-store",
+      "expo-asset",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O Backhaul usa sua localização para mostrar as cargas perto de você. Ela só é lida quando você toca em \"Usar minha localização\"."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
