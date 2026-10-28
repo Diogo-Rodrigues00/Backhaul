@@ -40,7 +40,14 @@ Site publicado: https://backhaul-front.vercel.app (último deploy de produção 
 
 ## Backend (dependências do Diogo)
 - **CORS:** `https://backhaul-front.vercel.app` NÃO está no `CORS_ORIGIN` do Render (só `localhost:8081`): o site publicado não loga. **Bloqueia a demo real.**
-- **Seed de demo:** `database/seed.sql` tem `hash_fake_*`; falta 1 empresa e 2 motoristas (um com MOPP aprovado e válido, outro sem) com senha real, e cargas com e sem MOPP perto de Uberlândia.
+- **Seed de demo:** escrito em `database/seed-demo.sql` (branch `feat/seed-demo`): 1 empresa, 1 motorista com MOPP aprovado e válido, 1 motorista sem MOPP (nenhuma linha em `motorista_certificacoes`) e 4 cargas (2 com MOPP, 2 sem) com origem em Uberlândia, Araguari e Tupaciguara. E-mail e senha não estão no arquivo: entram como variáveis do psql e o hash bcrypt é gerado no banco (pgcrypto). Pode rodar de novo, porque apaga as contas demo e o que veio delas antes de recriar. **Falta rodar no Neon** antes do ensaio de 28/10:
+  ```sh
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
+    -v email_empresa=... -v senha_empresa=... \
+    -v email_mopp=... -v senha_mopp=... \
+    -v email_sem_mopp=... -v senha_sem_mopp=... \
+    -f database/seed-demo.sql
+  ```
 - **Rotas ausentes:** `GET /propostas/minhas` e `GET /disponibilidades/minhas` (404 em produção). O front usa plano B local no aparelho (cada login do motorista exige publicar a disponibilidade de novo).
 - Desejável: `percentual_comissao`/`valor_comissao` em `GET /fretes/meus`; 409 para disponibilidade não aberta; ping em `/saude` em 28/10, 29/10 e 12/11.
 
