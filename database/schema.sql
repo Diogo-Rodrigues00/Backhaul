@@ -157,9 +157,10 @@ CREATE TABLE propostas (
 -- MENSAGENS: chat de apoio operacional entre as partes, liberado a partir do
 -- momento em que existe uma proposta em andamento (não antes — protege contra
 -- contato prematuro). Preço é negociado via PROPOSTAS, não pelo chat.
--- sinalizado_moderacao: marcado automaticamente quando o filtro de conteúdo
--- detecta possível tentativa de compartilhar contato (telefone/e-mail/link)
--- ou combinar algo fora da plataforma — fica disponível para revisão do admin.
+-- Filtro de contato: a API RECUSA (400) mensagens com telefone, e-mail ou link,
+-- então elas nunca chegam a esta tabela.
+-- sinalizado_moderacao / revisado_por_admin: reservadas para moderação manual pelo
+-- admin (ex.: contato escrito por extenso, que o filtro não pega). Ainda sem rota.
 CREATE TABLE mensagens (
     id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     proposta_id             UUID NOT NULL REFERENCES propostas(id) ON DELETE CASCADE,

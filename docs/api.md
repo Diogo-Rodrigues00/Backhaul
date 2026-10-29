@@ -18,7 +18,7 @@ Este arquivo é o combinado entre o backend e as telas. **Quem quiser mudar uma 
 | 401 | Sem token, token inválido/expirado ou login errado | `{ "erro": "token ausente" }` |
 | 403 | Usuário logado, mas o tipo dele não pode usar a rota | `{ "erro": "..." }` |
 | 404 | Item não encontrado | `{ "erro": "..." }` |
-| 409 | Valor repetido (e-mail, CPF ou CNPJ) ou conflito de estado (carga fechada, proposta já respondida, contraproposta repetida, transição de status de frete inválida, frete já pago) | `{ "erro": "cnpj já cadastrado" }` |
+| 409 | Valor repetido (e-mail, CPF ou CNPJ) ou conflito de estado (carga fechada, proposta já respondida, contraproposta repetida, transição de status de frete inválida, frete já pago, mensagem em proposta recusada/expirada) | `{ "erro": "cnpj já cadastrado" }` |
 | 500 | Falha interna (o detalhe fica só no log do servidor) | `{ "erro": "erro interno" }` |
 
 ---
@@ -216,6 +216,30 @@ Corpo: `{ "acao": "aceitar" }` ou `{ "acao": "recusar" }`
 - `valor_final` = `valor_proposto` da proposta aceita.
 - **400** id ou `acao` inválidos · **401** · **403** usuário não é empresa · **404** proposta não existe ou é de carga de outra empresa
 - **409** `"proposta já está aceita"` / `"... recusada"` (já respondida) · `"carga não está mais aberta"`. Duas aceitações ao mesmo tempo nunca criam dois fretes: a segunda espera a primeira terminar e recebe 409.
+
+### GET /propostas/:id/mensagens 🔒 *(só a empresa dona da carga e o motorista da proposta)*
+Histórico do chat da proposta, em **ordem cronológica** (mais antiga primeiro). Continua disponível em qualquer status, inclusive `recusada` e `expirada`.
+- **200:**
+```json
+{ "mensagens": [ {
+    "id": "uuid", "remetente_id": "uuid", "texto": "Chego na coleta às 14h",
+    "criado_em": "2026-10-29T10:59:18.137Z"
+} ] }
+```
+- `remetente_id` é o id do **usuário** (o mesmo do token), não o id do perfil de empresa/motorista. Lista vazia: `{ "mensagens": [] }`.
+- **400** id inválido · **401** · **404** proposta não existe **ou** o usuário não é nenhum dos dois lados dela (mesma resposta; vale também para admin).
+
+### POST /propostas/:id/mensagens 🔒 *(só a empresa dona da carga e o motorista da proposta)*
+Corpo: `{ "texto": "Combinado, portão 2." }`. O remetente é sempre o usuário do token (não vai no corpo).
+- **201:**
+```json
+{ "mensagem": { "id": "uuid", "proposta_id": "uuid", "remetente_id": "uuid",
+                "texto": "Combinado, portão 2.", "criado_em": "2026-10-29T10:59:18.214Z" } }
+```
+- `texto` é gravado sem espaços nas pontas e tem limite de **1000 caracteres**.
+- **400** id inválido · `"texto é obrigatório"` (ausente, vazio ou só espaços) · `"texto deve ter no máximo 1000 caracteres"` · `"mensagem não pode conter telefone, e-mail ou link"` (10 ou mais dígitos seguidos, mesmo com espaço/ponto/hífen/parênteses; `@` ou a palavra "arroba"; `http://`, `https://`, `www.` ou domínio `.com`/`.br`/`.me`/`.ly`)
+- **401** · **404** mesma regra do GET
+- **409** `"proposta encerrada: não é possível enviar mensagens"` (proposta `recusada` ou `expirada`). Só participantes recebem 409; os outros recebem 404 antes.
 
 ### GET /fretes/meus 🔒 *(motorista ou empresa)*
 Fretes do usuário logado, **mais recentes primeiro**. Para o motorista: os fretes das propostas dele. Para a empresa: os fretes das cargas dela. Cada lado recebe os dados da **outra parte**.
