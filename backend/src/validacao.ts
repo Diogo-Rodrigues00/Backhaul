@@ -101,6 +101,10 @@ const REGEX_DOCUMENTO = /^[\d.\-\/\s]+$/;
 // mal formatado chegaria no Postgres e daria erro 22P02, que viraria 500.
 const REGEX_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// mensagens.conteudo é TEXT (sem limite no banco). O teto é regra da API, para ninguém
+// gravar megabytes num único POST de chat.
+const MENSAGEM_MAXIMO = 1000;
+
 // Mesmos valores do ENUM nivel_urgencia do schema.sql.
 const URGENCIAS: readonly Urgencia[] = ["normal", "urgente", "critico"];
 
@@ -354,6 +358,34 @@ export function validarStatusEntrega(body: unknown): Resultado<StatusEntrega> {
   return STATUS_ENTREGA.includes(status)
     ? { ok: true, dados: status }
     : { ok: false, erros: [`status_entrega deve ser ${STATUS_ENTREGA.join(", ")}`] };
+}
+
+// Filtro de contato do chat: true se o texto parece trazer telefone, e-mail ou link.
+// O preço e o combinado ficam na plataforma; contato direto permitiria fechar o frete por fora.
+function contemContato(texto: string): boolean {
+  // E-mail: algo@algo.algo, ou a palavra "arroba" escrita por extenso.
+  const temEmail = /[^\s@]+@[^\s@]+\.[^\s@]+|\barroba\b/i.test(texto);
+
+  // Telefone: 10 ou mais dígitos, aceitando espaço, ponto, hífen e parênteses entre eles.
+  const temTelefone = /(?:\d[\s.\-()]*){10,}/.test(texto);
+
+  // Link: http, www. ou domínio terminando em .com/.br/.me/.ly (letras no fim, para não pegar 3500.00).
+  const temLink = /https?:\/\/|www\.|\b[a-z0-9-]+\.(?:com|br|me|ly)\b/i.test(texto);
+
+  return temEmail || temTelefone || temLink;
+}
+
+// Corpo do POST /propostas/:id/mensagens: { texto }. Devolve o texto já sem espaços nas pontas.
+export function validarMensagem(body: unknown): Resultado<string> {
+  const t = texto(corpo(body).texto);
+  if (!t) return { ok: false, erros: ["texto é obrigatório"] };
+  if (t.length > MENSAGEM_MAXIMO) {
+    return { ok: false, erros: [`texto deve ter no máximo ${MENSAGEM_MAXIMO} caracteres`] };
+  }
+  if (contemContato(t)) {
+    return { ok: false, erros: ["mensagem não pode conter telefone, e-mail ou link"] };
+  }
+  return { ok: true, dados: t };
 }
 
 // Recebe req.query. Aqui os três parâmetros são obrigatórios: sem ponto não há "perto de".
