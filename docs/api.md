@@ -84,6 +84,34 @@ Lista as certificações (MOPP/ONU) para preencher formulários. Qualquer usuár
 - **200:** `{ "certificacoes": [ { "id": "uuid", "nome": "MOPP - Classe 3 Inflamáveis", "classificacao_onu": "3" } ] }`
 - `classificacao_onu` pode ser `null`.
 
+### GET /certificacoes/minhas 🔒 *(só motorista)*
+Certificações que o motorista logado enviou, em ordem alfabética.
+- **200:** `{ "certificacoes": [ { "id": "uuid", "certificacao_id": "uuid", "nome": "MOPP - Classe 3 Inflamáveis", "numero_certificado": "123456", "validade": "2027-05-01", "validado_por_admin": false, "situacao": "pendente", "criado_em": "..." } ] }`
+- `situacao`: `pendente` (aguardando o admin) · `aprovada` · `vencida` (aprovada, mas fora da validade). Só `aprovada` libera cargas que exigem certificação.
+- **401** · **403** usuário não é motorista · **404** usuário sem perfil de motorista.
+
+### POST /certificacoes/minhas 🔒 *(só motorista)*
+Envia uma certificação para o admin aprovar.
+```json
+{ "certificacao_id": "uuid (de GET /certificacoes)", "numero_certificado": "123456", "validade": "2027-05-01" }
+```
+- `validade`: data `AAAA-MM-DD`, hoje ou futuro. `numero_certificado`: obrigatório, até 60 caracteres.
+- Reenviar uma certificação **pendente** (ou vencida) atualiza os dados e volta para `pendente`.
+- **201:** `{ "certificacao": { "id", "certificacao_id", "numero_certificado", "validade", "validado_por_admin": false, "criado_em" } }`
+- **400** dados inválidos ou `certificacao_id` inexistente · **401** · **403** · **404** sem perfil de motorista
+- **409** `"certificação já aprovada e dentro da validade"`.
+
+### GET /certificacoes/pendentes 🔒 *(só admin)*
+Fila de certificações aguardando aprovação, mais antigas primeiro.
+- **200:** `{ "certificacoes": [ { "id": "uuid", "certificacao": "MOPP - Classe 3 Inflamáveis", "numero_certificado": "123456", "validade": "2027-05-01", "criado_em": "...", "motorista": { "id", "nome_completo", "cpf", "cnh", "veiculo_placa" } } ] }`
+- **401** · **403** usuário não é admin.
+
+### POST /certificacoes/pendentes/:id/responder 🔒 *(só admin)*
+Corpo: `{ "acao": "aprovar" }` ou `{ "acao": "recusar" }`. O `:id` é o `id` que vem em `GET /certificacoes/pendentes`.
+- **200 (aprovar):** `{ "certificacao": { "id": "uuid", "validado_por_admin": true } }`
+- **200 (recusar):** `{ "certificacao": { "id": "uuid", "recusada": true } }` — o registro é apagado e o motorista pode corrigir e reenviar.
+- **400** id ou `acao` inválidos · **401** · **403** · **404** `"certificação pendente não encontrada"` (não existe ou já foi decidida).
+
 ### POST /cargas 🔒 *(só empresa)*
 A empresa logada publica uma carga. A empresa é descoberta pelo token, não vai no corpo.
 ```json
