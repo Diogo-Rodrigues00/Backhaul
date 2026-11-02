@@ -369,3 +369,42 @@ export function validarBuscaProximas(query: unknown): Resultado<DadosBuscaProxim
 
   return erros.length ? { ok: false, erros } : { ok: true, dados };
 }
+
+export type DadosCertificacao = { certificacao_id: string; numero_certificado: string; validade: string };
+
+// Data de calendário "AAAA-MM-DD". Só o formato não basta ("2026-02-31" passa no regex),
+// por isso a data é reconstruída e comparada: se o dia não existe, o JS "corrige" e não bate.
+function validarDataCalendario(valor: unknown, nome: string, erros: string[]): string {
+  const t = texto(valor);
+  const d = new Date(`${t}T00:00:00.000Z`);
+  const valida = /^\d{4}-\d{2}-\d{2}$/.test(t) && !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === t;
+  if (!valida) erros.push(`${nome} deve ser uma data válida no formato AAAA-MM-DD`);
+  return t;
+}
+
+// Motorista envia a própria certificação (MOPP etc.) para o admin aprovar.
+export function validarEnvioCertificacao(body: unknown): Resultado<DadosCertificacao> {
+  const b = corpo(body);
+  const erros: string[] = [];
+  const dados: DadosCertificacao = {
+    certificacao_id: validarUuidObrigatorio(b.certificacao_id, "certificacao_id", erros),
+    numero_certificado: obrigatorio(b.numero_certificado, "numero_certificado", erros),
+    validade: validarDataCalendario(b.validade, "validade", erros),
+  };
+  if (dados.numero_certificado.length > 60) erros.push("numero_certificado deve ter no máximo 60 caracteres");
+  // Data vencida não tem como ser aprovada: melhor avisar já no envio.
+  if (erros.length === 0 && dados.validade < new Date().toISOString().slice(0, 10)) {
+    erros.push("validade não pode estar no passado");
+  }
+  return erros.length ? { ok: false, erros } : { ok: true, dados };
+}
+
+export type DecisaoCertificacao = "aprovar" | "recusar";
+const DECISOES_CERTIFICACAO: readonly DecisaoCertificacao[] = ["aprovar", "recusar"];
+
+export function validarDecisaoCertificacao(body: unknown): Resultado<DecisaoCertificacao> {
+  const acao = corpo(body).acao as DecisaoCertificacao;
+  return DECISOES_CERTIFICACAO.includes(acao)
+    ? { ok: true, dados: acao }
+    : { ok: false, erros: [`acao deve ser ${DECISOES_CERTIFICACAO.join(" ou ")}`] };
+}
