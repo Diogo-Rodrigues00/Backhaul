@@ -1,0 +1,39 @@
+# CI do backend. PR para main só deve entrar com o TypeScript compilando e os testes passando.
+# Não usa banco: os testes cobrem só funções puras (validação, comissão, transições).
+name: backend
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['backend/**', '.github/workflows/backend.yml']
+  push:
+    branches: [main, 'feat/**', 'fix/**']
+    paths: ['backend/**', '.github/workflows/backend.yml']
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Compila (só checa os tipos)
+        run: npx tsc --noEmit
+      - name: Testes
+        run: npm test --if-present
