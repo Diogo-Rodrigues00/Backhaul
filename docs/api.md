@@ -336,6 +336,28 @@ Respostas:
 - **400** id inválido · **401** · **403** usuário não é empresa · **404** frete não existe **ou é de outra empresa**
 - **409** `"frete já foi pago"` (cada frete só pode ser pago uma vez) · `"frete cancelado não pode ser pago"`
 
+### GET /admin/resumo 🔒 *(só admin)*
+Números gerais da plataforma, para o painel do admin.
+- **200:**
+```json
+{ "resumo": { "motoristas": 2, "empresas": 1, "cargas_abertas": 3, "propostas_pendentes": 1,
+              "fretes_aceitos": 0, "fretes_em_transito": 1, "fretes_entregues": 2,
+              "certificacoes_pendentes": 1,
+              "volume_liberado": 7000, "comissao_total": 350, "comissao_retida": 175 } }
+```
+- `comissao_total` soma só pagamentos já `liberado` (frete entregue); `comissao_retida`, os que ainda aguardam a entrega.
+- **401** · **403** usuário não é admin.
+
+### GET /admin/fretes 🔒 *(só admin)*
+Todos os fretes (até 100), mais recentes primeiro, com empresa, motorista e pagamento.
+- **200:** `{ "fretes": [ { "id", "tipo_carga", "valor_final", "status_entrega", "coleta_em", "entrega_em", "criado_em", "empresa": "Transportes Rápidos LTDA", "motorista": "João da Silva", "veiculo_placa": "ABC1D23", "status_pagamento": "retido", "valor_comissao": 175 } ] }`
+- `status_pagamento` e `valor_comissao` são `null` enquanto a empresa não pagou. **401** · **403**.
+
+### GET /admin/usuarios 🔒 *(só admin)*
+Usuários cadastrados (até 200), mais recentes primeiro. Nunca traz senha, CPF ou CNPJ.
+- **200:** `{ "usuarios": [ { "id", "email", "tipo", "ativo", "criado_em", "nome" } ] }`
+- **401** · **403**.
+
 ---
 
 ## 🔜 Rotas planejadas — semana 2 (contrato proposto)
