@@ -186,7 +186,22 @@ Respostas:
 ```
 - **400** dados inválidos · **401** · **403** usuário não é motorista · **403** `"motorista sem a certificação exigida"`
 - **404** `"disponibilidade não encontrada"` (não existe ou é de outro motorista) · `"carga não encontrada"` · usuário sem perfil de motorista
-- **409** `"carga não está mais aberta para propostas"` (fechada, cancelada ou expirada) · `"você já fez a contraproposta única para esta carga"`
+- **409** `"carga não está mais aberta para propostas"` (fechada, cancelada ou expirada) · `"disponibilidade não está mais aberta"` (já usada num frete ou vencida) · `"você já fez a contraproposta única para esta carga"`
+
+### GET /propostas/minhas 🔒 *(só motorista)*
+Propostas feitas pelo motorista logado, **mais recentes primeiro**. É por aqui que o motorista vê se a empresa aceitou ou recusou.
+- **200:**
+```json
+{ "propostas": [ {
+    "id": "uuid", "tipo": "contraproposta", "valor_proposto": 3200, "status": "recusada",
+    "criado_em": "2026-10-14T19:00:00.000Z",
+    "chamado_carga_id": "uuid", "chamado_disp_id": "uuid",
+    "tipo_carga": "Grãos", "valor_oferecido": 3500, "empresa": "Transportes Rápidos LTDA",
+    "frete_id": null
+} ] }
+```
+- `status`: `pendente | aceita | recusada | expirada`. `frete_id` só vem preenchido quando a proposta foi `aceita` (use com `GET /fretes/meus`). Lista vazia: `{ "propostas": [] }`.
+- **401** · **403** usuário não é motorista · **404** usuário sem perfil de motorista.
 
 ### GET /cargas/:id/propostas 🔒 *(só a empresa dona da carga)*
 Propostas recebidas pela carga, com os dados do motorista. Ordem: pendentes primeiro, depois as mais antigas.

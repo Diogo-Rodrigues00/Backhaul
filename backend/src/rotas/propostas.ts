@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { PoolClient } from "pg";
-import { emTransacao } from "../db";
+import { emTransacao, pool } from "../db";
 import { exigirAutenticacao, exigirTipo } from "../middleware/autenticacao";
 import { buscarEmpresaId, buscarMotoristaId } from "../perfis";
 import { validarId, validarProposta, validarRespostaProposta } from "../validacao";
@@ -93,10 +93,16 @@ rotasPropostas.post("/", exigirAutenticacao, exigirTipo("motorista"), async (req
     // A disponibilidade tem que ser do motorista logado. Se for de outro, a resposta
     // é a mesma de "não existe": não confirmamos que aquele id existe.
     const disp = await client.query(
-      "SELECT 1 FROM chamados_disponibilidade WHERE id = $1 AND motorista_id = $2",
+      `SELECT status, expira_em > now() AS vigente
+         FROM chamados_disponibilidade
+        WHERE id = $1 AND motorista_id = $2`,
       [d.chamado_disp_id, motoristaId],
     );
     if (disp.rowCount === 0) return erro(404, "disponibilidade não encontrada");
+    // Disponibilidade já usada (motorista contratado) ou vencida não pode gerar proposta nova.
+    if (disp.rows[0].status !== "aberto" || !disp.rows[0].vigente) {
+      return erro(409, "disponibilidade não está mais aberta");
+    }
 
     const carga = await travarCarga(client, d.chamado_carga_id);
     if (!carga) return erro(404, "carga não encontrada");
@@ -131,6 +137,34 @@ rotasPropostas.post("/", exigirAutenticacao, exigirTipo("motorista"), async (req
   });
 
   res.status(resposta.status).json(resposta.corpo);
+});
+
+// Propostas do motorista logado, mais recentes primeiro. É por aqui que ele descobre
+// se foi aceito ou recusado (antes só a empresa enxergava o resultado).
+// O motorista vem pela disponibilidade usada na proposta, por isso o JOIN com ela.
+rotasPropostas.get("/minhas", exigirAutenticacao, exigirTipo("motorista"), async (req, res) => {
+  const motoristaId = await buscarMotoristaId(req.usuario!.id);
+  if (!motoristaId) {
+    res.status(404).json({ erro: "perfil de motorista não encontrado" });
+    return;
+  }
+
+  const { rows } = await pool.query(
+    `SELECT p.id, p.tipo, p.valor_proposto::float8 AS valor_proposto, p.status, p.criado_em,
+            p.chamado_carga_id, p.chamado_disp_id,
+            c.tipo_carga, c.valor_oferecido::float8 AS valor_oferecido,
+            e.razao_social AS empresa,
+            f.id AS frete_id
+       FROM propostas p
+       JOIN chamados_disponibilidade d ON d.id = p.chamado_disp_id
+       JOIN chamados_carga c           ON c.id = p.chamado_carga_id
+       JOIN empresas e                 ON e.id = c.empresa_id
+       LEFT JOIN fretes f              ON f.proposta_id = p.id
+      WHERE d.motorista_id = $1
+      ORDER BY p.criado_em DESC`,
+    [motoristaId],
+  );
+  res.json({ propostas: rows });
 });
 
 // Empresa dona da carga aceita ou recusa uma proposta.
