@@ -124,12 +124,52 @@ function validarSenha(valor: unknown, erros: string[]): string {
   return senha;
 }
 
-// Remove a pontuação e confere a quantidade de dígitos (11 para CPF, 14 para CNPJ).
+// Dígito verificador (módulo 11), igual para CPF e CNPJ: soma cada dígito vezes um peso,
+// e o dígito esperado é 0 se o resto da divisão por 11 for menor que 2; senão, 11 - resto.
+function digitoVerificador(digitos: string, pesos: number[]): number {
+  const soma = pesos.reduce((acc, peso, i) => acc + Number(digitos[i]) * peso, 0);
+  const resto = soma % 11;
+  return resto < 2 ? 0 : 11 - resto;
+}
+
+// Recebe só dígitos. Sequências como 111.111.111-11 passam na conta, mas não são CPFs reais.
+export function cpfValido(cpf: string): boolean {
+  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
+  const d1 = digitoVerificador(cpf, [10, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const d2 = digitoVerificador(cpf, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
+  return d1 === Number(cpf[9]) && d2 === Number(cpf[10]);
+}
+
+export function cnpjValido(cnpj: string): boolean {
+  if (!/^\d{14}$/.test(cnpj) || /^(\d)\1{13}$/.test(cnpj)) return false;
+  const d1 = digitoVerificador(cnpj, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const d2 = digitoVerificador(cnpj, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  return d1 === Number(cnpj[12]) && d2 === Number(cnpj[13]);
+}
+
+// Placa padrão antigo (ABC1234) ou Mercosul (ABC1D23). Aceita hífen/espaço e minúsculas
+// na entrada, mas sempre devolve sem pontuação e em maiúsculas.
+const REGEX_PLACA = /^[A-Z]{3}\d[A-Z\d]\d{2}$/;
+
+export function normalizarPlaca(valor: string): string {
+  return valor.replace(/[\s-]/g, "").toUpperCase();
+}
+
+function validarPlaca(valor: unknown, erros: string[]): string {
+  const placa = normalizarPlaca(texto(valor));
+  if (!REGEX_PLACA.test(placa)) erros.push("veiculo_placa inválida (use ABC1234 ou ABC1D23)");
+  return placa;
+}
+
+// Remove a pontuação, confere a quantidade de dígitos (11 para CPF, 14 para CNPJ)
+// e os dígitos verificadores (um CPF/CNPJ digitado errado quase nunca fecha a conta).
 function validarDocumento(valor: unknown, nome: string, digitos: number, erros: string[]): string {
   const bruto = texto(valor);
   const limpo = bruto.replace(/\D/g, "");
   if (!REGEX_DOCUMENTO.test(bruto) || limpo.length !== digitos) {
     erros.push(`${nome} deve ter ${digitos} dígitos`);
+  } else if (!(digitos === 11 ? cpfValido(limpo) : cnpjValido(limpo))) {
+    erros.push(`${nome} inválido`);
   }
   return limpo;
 }
@@ -236,7 +276,7 @@ export function validarCadastroMotorista(body: unknown): Resultado<DadosMotorist
     cpf: validarDocumento(b.cpf, "cpf", 11, erros),
     cnh: obrigatorio(b.cnh, "cnh", erros),
     veiculo_tipo: obrigatorio(b.veiculo_tipo, "veiculo_tipo", erros),
-    veiculo_placa: obrigatorio(b.veiculo_placa, "veiculo_placa", erros).toUpperCase(),
+    veiculo_placa: validarPlaca(b.veiculo_placa, erros),
     capacidade_kg: capacidade,
   };
 

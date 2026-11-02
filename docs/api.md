@@ -39,7 +39,7 @@ Corpo:
   "email": "joao@exemplo.com",
   "senha": "minimo8caracteres",
   "nome_completo": "João da Silva",
-  "cpf": "123.456.789-01",
+  "cpf": "529.982.247-25",
   "cnh": "11122233344",
   "veiculo_tipo": "carreta",
   "veiculo_placa": "ABC1D23",
@@ -48,7 +48,7 @@ Corpo:
 ```
 - **201:** `{ "usuario": { "id": "uuid", "email": "joao@exemplo.com", "tipo": "motorista", "criado_em": "2026-10-14T19:00:00.000Z" } }`
 - **400** dados inválidos · **409** e-mail ou CPF já cadastrado.
-- CPF aceita pontuação (ela é removida antes de salvar). A senha nunca volta na resposta.
+- CPF aceita pontuação (ela é removida antes de salvar) e precisa ter os **dígitos verificadores corretos** (400 `"cpf inválido"` caso contrário). `veiculo_placa` aceita `ABC1234` ou `ABC1D23` (Mercosul), com ou sem hífen, e é salva em maiúsculas sem hífen. A senha nunca volta na resposta.
 
 ### POST /cadastro/empresa
 Cria o usuário (tipo `empresa`) e o perfil de empresa.
@@ -59,11 +59,12 @@ Corpo:
   "email": "contato@transportesrapidos.com",
   "senha": "minimo8caracteres",
   "razao_social": "Transportes Rápidos LTDA",
-  "cnpj": "12.345.678/0001-99"
+  "cnpj": "11.222.333/0001-81"
 }
 ```
 - **201:** `{ "usuario": { "id", "email", "tipo": "empresa", "criado_em" } }`
 - **400** dados inválidos · **409** e-mail ou CNPJ já cadastrado.
+- O CNPJ também precisa ter os dígitos verificadores corretos (400 `"cnpj inválido"`).
 
 ### POST /login
 Corpo: `{ "email": "joao@exemplo.com", "senha": "minimo8caracteres" }`
