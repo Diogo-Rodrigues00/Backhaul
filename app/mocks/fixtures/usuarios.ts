@@ -51,7 +51,7 @@ export const usuarioAdmin: UsuarioMock = {
     tipo: 'admin',
     ativo: true,
     criado_em: '2026-10-14T19:00:00.000Z',
-    nome: 'Administrador',
+    nome: null,
   },
 };
 
