@@ -161,10 +161,12 @@ export function criarHandlersComEstado(baseUrl: string) {
       const erros = validarCadastroMotorista(corpo);
       if (erros.length > 0) return respostaErros(400, erros);
       const cpf = textoOuVazio(corpo.cpf).replace(/\D/g, '');
-      if (
-        estado.usuarios.some((u) => u.email === email || (u.cpf !== undefined && u.cpf === cpf))
-      ) {
-        return respostaErro(409, 'e-mail ou CPF já cadastrado');
+      // Textos reais do backend (rotas/cadastro.ts), na mesma ordem: e-mail primeiro, depois CPF.
+      if (estado.usuarios.some((u) => u.email === email)) {
+        return respostaErro(409, 'email já cadastrado');
+      }
+      if (estado.usuarios.some((u) => u.cpf !== undefined && u.cpf === cpf)) {
+        return respostaErro(409, 'cpf já cadastrado');
       }
       const criado = registrarMotorista({
         email,
