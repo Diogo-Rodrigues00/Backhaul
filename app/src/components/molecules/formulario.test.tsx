@@ -266,7 +266,7 @@ function alertas() {
 async function preencherValido() {
   await fireEvent.changeText(screen.getByLabelText('E-mail'), 'joao@exemplo.com');
   await fireEvent.changeText(screen.getByLabelText('Senha'), 'senhaSegura8');
-  await fireEvent.changeText(screen.getByLabelText('CPF'), '123.456.789-01');
+  await fireEvent.changeText(screen.getByLabelText('CPF'), '529.982.247-25');
 }
 
 async function montarFormulario(enviar: (dados: Dados) => Promise<unknown>) {
@@ -336,7 +336,7 @@ describe('formulário com react-hook-form', () => {
     expect(enviar).toHaveBeenCalledWith({
       email: 'joao@exemplo.com',
       senha: 'senhaSegura8',
-      cpf: '123.456.789-01',
+      cpf: '529.982.247-25',
     });
     expect(alertas()).toHaveLength(0);
   });
@@ -376,7 +376,7 @@ describe('formulário com react-hook-form', () => {
 
     await waitFor(() => expect(screen.getByText('cpf deve ter 11 dígitos')).toBeOnTheScreen());
     expect(screen.getByLabelText('CPF').props['aria-invalid']).toBe(true);
-    expect(screen.getByLabelText('CPF').props.value).toBe('123.456.789-01');
+    expect(screen.getByLabelText('CPF').props.value).toBe('529.982.247-25');
     expect(screen.getByLabelText('E-mail').props.value).toBe('joao@exemplo.com');
     expect(screen.getByText('erro geral')).toBeOnTheScreen();
     expect(alertas()).toHaveLength(1);
