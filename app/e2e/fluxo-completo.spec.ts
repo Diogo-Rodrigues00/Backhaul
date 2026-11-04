@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 
+import { gerarCpf } from './documentos';
 import { entrarComoPerfil, expect, test } from './fixtures';
 
 // Card 030: o roteiro da demo de ponta a ponta, em DUAS janelas (empresa e motorista), contra o mock
@@ -187,7 +188,7 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       await campo('E-mail').fill(email);
       await campo('Senha').fill(SENHA);
       await campo('Nome completo').fill('Carlos Pereira');
-      await campo('CPF').fill(String(Date.now()).slice(-11).padStart(11, '0'));
+      await campo('CPF').fill(gerarCpf());
       await campo('CNH').fill('55566677788');
       await campo('Tipo de veículo').fill('Truck');
       await campo('Placa').fill('QWE4R56');

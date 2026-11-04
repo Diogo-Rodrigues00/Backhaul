@@ -134,7 +134,7 @@ describe('sessao', () => {
       email: 'nova@empresa.test',
       senha: 'senha12345',
       razao_social: 'Nova LTDA',
-      cnpj: '12.345.678/0001-99',
+      cnpj: '11.222.333/0001-81',
     };
     await act(async () => {
       await result.current.mutateAsync(dados);
@@ -176,7 +176,7 @@ describe('sessao', () => {
         email: 'novo@motorista.test',
         senha: 'senha12345',
         nome_completo: 'Novo Motorista',
-        cpf: '123.456.789-01',
+        cpf: '529.982.247-25',
         cnh: '11122233344',
         veiculo_tipo: 'carreta',
         veiculo_placa: 'ABC1D23',
