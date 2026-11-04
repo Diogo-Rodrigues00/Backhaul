@@ -310,6 +310,33 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       marcar('empresa viu a proposta chegar');
     });
 
+    await test.step('B4b. GET /propostas/minhas responde 200 e a API vence o aparelho: "Proposta enviada" sobrevive sem a lista local', async () => {
+      await janelaM.bringToFront();
+      // Apaga o plano B do aparelho: o que sobra na tela só pode ter vindo da API.
+      await janelaM.evaluate(() => localStorage.removeItem('backhaul.propostasEnviadas'));
+      const minhas = janelaM.waitForResponse(
+        (res) => res.request().method() === 'GET' && res.url().endsWith('/propostas/minhas'),
+      );
+      await janelaM.reload();
+      const resposta = await minhas;
+      expect(resposta.status()).toBe(200);
+      const corpo = (await resposta.json()) as { propostas: Record<string, unknown>[] };
+      expect(corpo.propostas).toHaveLength(1);
+      expect(corpo.propostas[0]).toMatchObject({
+        tipo: 'contraproposta',
+        status: 'pendente',
+        valor_proposto: 3200,
+        tipo_carga: CARGA,
+        empresa: EMPRESA.nome,
+        frete_id: null,
+      });
+      expect(corpo.propostas[0]).not.toHaveProperty('carga');
+      const cartao = janelaM.getByRole('article', { name: CARGA });
+      await expect(cartao.getByText('Proposta enviada', { exact: true })).toBeVisible();
+      await expect(cartao.getByRole('button')).toHaveCount(0);
+      marcar('API devolveu a proposta no formato real');
+    });
+
     // ---------------------------------------------------------------- aceite e frete
     await test.step('A4. empresa aceita a proposta: frete criado', async () => {
       await janelaE

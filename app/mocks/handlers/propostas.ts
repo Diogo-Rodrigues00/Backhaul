@@ -1,5 +1,5 @@
 // POST /propostas (motorista), GET /cargas/:id/propostas e POST /propostas/:id/responder (empresa),
-// GET /propostas/minhas (motorista, PROPOSTA relatório 4a).
+// GET /propostas/minhas (motorista).
 import { http, HttpResponse } from 'msw';
 
 import { CARGA_FECHADA_ID, CARGA_NORMAL_ID, CARGA_URGENTE_ID } from '../fixtures/cargas';
@@ -12,8 +12,6 @@ import {
 } from '../fixtures/propostas';
 import { respostaErro, respostaErros } from '../respostas';
 import { autenticar, eNumeroPositivo, ID_INEXISTENTE_MOCK, lerCorpo } from './comum';
-
-const STATUS_FILTRAVEIS = ['pendente', 'aceita', 'recusada'];
 
 export function criarHandlersPropostas(baseUrl: string) {
   return [
@@ -89,20 +87,11 @@ export function criarHandlersPropostas(baseUrl: string) {
       return HttpResponse.json({ frete: { ...freteCriadoMock, proposta_id: params.id } });
     }),
 
-    // PROPOSTA relatório 4a: rota inexistente no backend.
+    // Formato real (plano); a API ignora qualquer query, inclusive `?status=`.
     http.get(`${baseUrl}/propostas/minhas`, ({ request }) => {
       const { resposta } = autenticar(request, ['motorista']);
       if (resposta) return resposta;
-      const status = new URL(request.url).searchParams.get('status');
-      if (status === null) {
-        return HttpResponse.json({ propostas: minhasPropostasMock });
-      }
-      if (!STATUS_FILTRAVEIS.includes(status)) {
-        return respostaErros(400, [`status deve ser ${STATUS_FILTRAVEIS.join(', ')}`]);
-      }
-      return HttpResponse.json({
-        propostas: minhasPropostasMock.filter((proposta) => proposta.status === status),
-      });
+      return HttpResponse.json({ propostas: minhasPropostasMock });
     }),
   ];
 }

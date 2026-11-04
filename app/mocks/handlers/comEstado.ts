@@ -3,12 +3,13 @@
 // `@fluxo.test`). Para os demais, o resolver devolve `undefined` e o MSW cai no próximo handler:
 // os handlers sem estado que os outros specs usam seguem exatamente como eram.
 //
-// Fiel ao backend de hoje: GET /disponibilidades/minhas e GET /propostas/minhas (propostas 4a/4b do
-// relatório) NÃO existem lá, então respondem 404 como o Express ("Cannot GET"). O app cai no plano B
-// (disponibilidade guardada no aparelho; propostas enviadas guardadas no aparelho).
+// Fiel ao backend de hoje: GET /propostas/minhas existe e responde 200 a partir do estado (formato
+// plano de docs/api.md). GET /disponibilidades/minhas (proposta 4b do relatório) NÃO existe lá, então
+// responde 404 como o Express ("Cannot GET"); o app cai no plano B (disponibilidade guardada no
+// aparelho).
 import { http, HttpResponse } from 'msw';
 
-import type { CargaDaEmpresa, Frete, PropostaRecebida } from '../../src/api/tipos';
+import type { CargaDaEmpresa, Frete, MinhaProposta, PropostaRecebida } from '../../src/api/tipos';
 import { certificacoesMock } from '../fixtures/certificacoes';
 import {
   calcularComissao,
@@ -60,7 +61,7 @@ function autenticarFluxo(request: Request, permitidos?: UsuarioFluxo['tipo'][]):
   return { usuario };
 }
 
-/** Express sem a rota: corpo HTML, como o backend de hoje responde às propostas 4a e 4b. */
+/** Express sem a rota: corpo HTML, como o backend de hoje responde à proposta 4b. */
 function respostaRotaInexistente(metodo: string, caminho: string) {
   return new HttpResponse(
     `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Error</title></head><body><pre>Cannot ${metodo} ${caminho}</pre></body></html>`,
@@ -123,6 +124,24 @@ function freteParaLista(frete: FreteFluxo, ladoMotorista: boolean): Frete {
       veiculo_tipo: motorista?.veiculoTipo ?? '',
       veiculo_placa: motorista?.veiculoPlaca ?? '',
     },
+  };
+}
+
+/** Uma linha de GET /propostas/minhas: plana, com o `frete_id` do frete criado no aceite. */
+function propostaParaLista(proposta: PropostaFluxo): MinhaProposta {
+  const carga = estado.cargas.find((c) => c.id === proposta.cargaId);
+  return {
+    id: proposta.id,
+    tipo: proposta.tipo,
+    valor_proposto: proposta.valor_proposto,
+    status: proposta.status,
+    criado_em: proposta.criado_em,
+    chamado_carga_id: proposta.cargaId,
+    chamado_disp_id: proposta.dispId,
+    tipo_carga: carga?.tipo_carga ?? '',
+    valor_oferecido: carga?.valor_oferecido ?? 0,
+    empresa: usuarioPorId(carga?.empresaId ?? '')?.nome ?? '',
+    frete_id: estado.fretes.find((f) => f.propostaId === proposta.id)?.id ?? null,
   };
 }
 
@@ -380,9 +399,12 @@ export function criarHandlersComEstado(baseUrl: string) {
     }),
 
     http.get(`${baseUrl}/propostas/minhas`, ({ request }) => {
-      const { resposta, deOutro } = autenticarFluxo(request, ['motorista']);
+      const { usuario, resposta, deOutro } = autenticarFluxo(request, ['motorista']);
       if (deOutro) return undefined;
-      return resposta ?? respostaRotaInexistente('GET', '/propostas/minhas');
+      if (resposta) return resposta;
+      // A API ignora query (não há `?status=`). Só as propostas do motorista do token.
+      const minhas = estado.propostas.filter((p) => p.motoristaId === usuario.id);
+      return HttpResponse.json({ propostas: maisRecentesPrimeiro(minhas).map(propostaParaLista) });
     }),
 
     http.get(`${baseUrl}/cargas/:id/propostas`, ({ request, params }) => {

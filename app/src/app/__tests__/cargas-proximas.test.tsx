@@ -1,5 +1,5 @@
 // Cargas próximas do motorista (MVP-12, D-PO-03/05, CT-01/07/10). Tela real na área protegida, com a
-// API de mock (MSW) nos formatos de docs/api.md e da proposta 4a/4b. Estados e erros ficam em
+// API de mock (MSW) nos formatos de docs/api.md e da proposta 4b. Estados e erros ficam em
 // `cargas-proximas-estados.test.tsx`; "Atualizar" em `cargas-proximas-atualizar.test.tsx`.
 import { screen, waitFor, within } from 'expo-router/testing-library';
 import { http, HttpResponse } from 'msw';
@@ -19,6 +19,7 @@ import {
   cargaProximaUrgente,
   cargasProximasMock,
 } from '../../../mocks/fixtures/cargas';
+import { minhaPropostaMock } from '../../../mocks/fixtures/propostas';
 import { servidor, urlMock } from '../../../mocks/node';
 
 jest.mock('@/lib/armazenamento', () => {
@@ -175,7 +176,7 @@ describe('Cargas próximas', () => {
     it('com proposta pendente do motorista (GET /propostas/minhas), marca a carga e só ela', async () => {
       await abrirComLista();
 
-      // A fixture 4a tem pendente para "Produtos inflamáveis"; "Grãos" já foi aceita.
+      // A fixture (formato real) tem pendente para "Produtos inflamáveis"; "Grãos" já foi aceita.
       await waitFor(() => expect(screen.getAllByText('Proposta enviada')).toHaveLength(1));
       const cartao = cartoes().find(
         (el) =>
@@ -185,32 +186,88 @@ describe('Cargas próximas', () => {
       expect(within(cartao!).queryByRole('button', { name: /Aceitar|Contraproposta/ })).toBeNull();
     });
 
-    it('proposta recusada ou aceita não marca a carga', async () => {
+    it('regressão: resposta no formato real (pendente + contraproposta recusada) renderiza e bloqueia nova proposta', async () => {
+      // Antes do card 036 o app lia o formato aninhado da proposta 4a e quebrava com TypeError aqui.
       servidor.use(
         http.get(urlMock('/propostas/minhas'), () =>
           HttpResponse.json({
             propostas: [
-              {
-                id: 'bbbbbbbb-0000-4000-8000-0000000000aa',
+              minhaPropostaMock({
+                id: 'bbbbbbbb-0000-4000-8000-0000000000b1',
                 tipo: 'aceite',
-                valor_proposto: 4200.5,
+                status: 'pendente',
+                chamado_carga_id: cargaProximaUrgente.id,
+                tipo_carga: cargaProximaUrgente.tipo_carga,
+              }),
+              minhaPropostaMock({
+                id: 'bbbbbbbb-0000-4000-8000-0000000000b2',
+                tipo: 'contraproposta',
                 status: 'recusada',
-                criado_em: '2026-10-21T12:00:00.000Z',
-                disponibilidade_id: 'dddddddd-0000-4000-8000-000000000001',
-                carga: {
-                  id: cargaProximaNormal.id,
-                  tipo_carga: cargaProximaNormal.tipo_carga,
-                  empresa: cargaProximaNormal.empresa,
-                  origem: cargaProximaNormal.origem,
-                  destino: cargaProximaNormal.destino,
-                  valor_oferecido: cargaProximaNormal.valor_oferecido,
-                  urgencia: cargaProximaNormal.urgencia,
-                  status: 'aberto',
-                  certificacao_exigida: null,
-                  expira_em: cargaProximaNormal.expira_em,
-                },
-              },
+                valor_proposto: 3900,
+                chamado_carga_id: cargaProximaNormal.id,
+                tipo_carga: cargaProximaNormal.tipo_carga,
+              }),
             ],
+          }),
+        ),
+      );
+      await abrirComLista();
+
+      // A pendente mostra "Proposta enviada", sem botões.
+      await waitFor(() => expect(screen.getAllByText('Proposta enviada')).toHaveLength(1));
+      const pendente = cartoes().find(
+        (el) =>
+          within(el).queryByRole('heading', { name: cargaProximaUrgente.tipo_carga }) !== null,
+      );
+      expect(within(pendente!).getByText('Proposta enviada')).toBeOnTheScreen();
+      expect(within(pendente!).queryByRole('button')).toBeNull();
+
+      // A contraproposta recusada não marca a carga, mas esgota a contraproposta (D-PO-05).
+      const recusada = cartoes().find(
+        (el) => within(el).queryByRole('heading', { name: cargaProximaNormal.tipo_carga }) !== null,
+      );
+      expect(within(recusada!).queryByText('Proposta enviada')).toBeNull();
+      expect(within(recusada!).queryByRole('button', { name: /^Contraproposta/ })).toBeNull();
+      expect(within(recusada!).getByRole('button', { name: /^Aceitar R\$/ })).toBeOnTheScreen();
+    });
+
+    it.each(['pendente', 'aceita', 'recusada', 'expirada'] as const)(
+      'contraproposta %s esgota a contraproposta da carga (D-PO-05)',
+      async (status) => {
+        servidor.use(
+          http.get(urlMock('/propostas/minhas'), () =>
+            HttpResponse.json({
+              propostas: [minhaPropostaMock({ tipo: 'contraproposta', status })],
+            }),
+          ),
+        );
+        await abrirComLista();
+
+        await waitFor(() => expect(titulosDosCartoes()).toHaveLength(10));
+        const cartao = () =>
+          within(
+            cartoes().find(
+              (el) =>
+                within(el).queryByRole('heading', { name: cargaProximaNormal.tipo_carga }) !== null,
+            )!,
+          );
+        if (status === 'pendente') {
+          await waitFor(() => expect(cartao().getByText('Proposta enviada')).toBeOnTheScreen());
+          expect(cartao().queryByRole('button')).toBeNull();
+        } else {
+          await waitFor(() =>
+            expect(cartao().getByRole('button', { name: /^Aceitar R\$/ })).toBeOnTheScreen(),
+          );
+          expect(cartao().queryByRole('button', { name: /^Contraproposta/ })).toBeNull();
+        }
+      },
+    );
+
+    it('proposta recusada ou aceita não marca a carga', async () => {
+      servidor.use(
+        http.get(urlMock('/propostas/minhas'), () =>
+          HttpResponse.json({
+            propostas: [minhaPropostaMock({ status: 'recusada' })],
           }),
         ),
       );
