@@ -96,7 +96,7 @@ describe('POST /cadastro/motorista (mock)', () => {
 
 describe('POST /cadastro/empresa (mock)', () => {
   it('CNPJ com dígito verificador errado ou repetido: 400 "cnpj inválido"', async () => {
-    const errado = await enviar('/cadastro/empresa', { ...EMPRESA, cnpj: '12.345.678/0001-99' });
+    const errado = await enviar('/cadastro/empresa', { ...EMPRESA, cnpj: '12.345.678/0001-96' });
     expect(errado.status).toBe(400);
     expect(errado.corpo.erros).toEqual(['cnpj inválido']);
     const repetido = await enviar('/cadastro/empresa', { ...EMPRESA, cnpj: '00.000.000/0000-00' });
