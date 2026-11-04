@@ -1,8 +1,8 @@
+import { gerarCpf } from './documentos';
 import { expect, test } from './fixtures';
 
 // Card 017 (MVP-06): caminho feliz do cadastro de motorista contra o mock da API (porta 4010).
-// Cada execução usa um e-mail e um CPF novos: o mock recusa repetidos com 409.
-const cpfUnico = () => String(Date.now()).slice(-11).padStart(11, '0');
+// Cada execução usa um e-mail e um CPF novos (válido pelo algoritmo): o mock recusa repetidos com 409.
 
 test.describe('cadastro de motorista', () => {
   test('Enter avança de campo e, no último, envia; 201 abre Cargas próximas', async ({ page }) => {
@@ -20,7 +20,7 @@ test.describe('cadastro de motorista', () => {
 
     await page.getByRole('textbox', { name: 'Nome completo', exact: true }).fill('João da Silva');
     await page.keyboard.press('Enter');
-    await page.getByRole('textbox', { name: 'CPF', exact: true }).fill(cpfUnico());
+    await page.getByRole('textbox', { name: 'CPF', exact: true }).fill(gerarCpf());
     await page.keyboard.press('Enter');
     await page.getByRole('textbox', { name: 'CNH', exact: true }).fill('11122233344');
     await page.keyboard.press('Enter');

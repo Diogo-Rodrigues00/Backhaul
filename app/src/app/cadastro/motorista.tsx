@@ -21,13 +21,14 @@ import {
 } from '@/lib/cadastroMotorista';
 import { ErroApi, MENSAGEM_FALHA } from '@/lib/erros';
 import {
-  digitos,
+  cpf as validarCpf,
   email as emailValido,
   maximo,
   MAX,
   minimo,
   numeroPositivo,
   numeroSemAmbiguidade,
+  placa as validarPlaca,
   obrigatorio,
 } from '@/lib/validacao';
 import { useRedirecionarSeAutenticado } from '@/state/sessao/useRedirecionarSeAutenticado';
@@ -64,10 +65,10 @@ const REGRAS = {
   email: { validate: { obrigatorio, email: emailValido, maximo: maximo(MAX.email) } },
   senha: { validate: { obrigatorio, minimo: minimo(8) } },
   nomeCompleto: { validate: { obrigatorio, maximo: maximo(MAX.nome_completo) } },
-  cpf: { validate: { obrigatorio, digitos: digitos(11) } },
+  cpf: { validate: { obrigatorio, cpf: validarCpf } },
   cnh: { validate: { obrigatorio, maximo: maximo(MAX.cnh) } },
   veiculoTipo: { validate: { obrigatorio, maximo: maximo(MAX.veiculo_tipo) } },
-  veiculoPlaca: { validate: { obrigatorio, maximo: maximo(MAX.veiculo_placa) } },
+  veiculoPlaca: { validate: { obrigatorio, placa: validarPlaca } },
   capacidadeKg: { validate: { obrigatorio, numeroPositivo, numeroSemAmbiguidade } },
 };
 
