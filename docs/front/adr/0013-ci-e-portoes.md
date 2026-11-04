@@ -38,3 +38,6 @@ Workflow único `.github/workflows/front.yml` (raiz do repositório), `defaults.
 - **Executar TypeScript no CI:** `mocks/servidor-http.ts` roda com `tsx` (devDependency só para o CI): os handlers do card 004 importam sem extensão, o que o `--experimental-strip-types` do Node não resolve.
 - **Paths filter e proteção de branch:** como o workflow só dispara com mudança em `app/**`, um PR só de docs para `front` não gera os checks `qualidade` e `web`; com proteção exigindo-os, esse PR fica bloqueado (o Pedro faz o merge como admin ou remove a exigência).
 - **Rotas e orçamento:** `scripts/lhci-rotas.cjs` lê `e2e/rotas.ts` e `servidores-ci.mjs` falha se faltar `dist/<rota>.html` (exceto a marcada `naoEncontrada: true`). O orçamento usa KiB (1024 B) e limites em bytes (`ORCAMENTO_*_BYTES`); o Lighthouse CI avalia a mediana das 3 execuções (`aggregationMethod: 'median'`).
+
+## Adendo — 2026-11-04 (Fase 6.0)
+- **Lighthouse desktop:** por decisão do Pedro na Fase 6.0 (`decisoes.md`), a categoria Performance desktop também passa a `warn` em `lighthouserc.desktop.cjs`, como no mobile: a nota aparece no log e no resumo do job e fica registrada no PR. Acessibilidade, Boas práticas e SEO seguem 100 (`error`) em mobile e desktop. A mudança de configuração entra no card 038; até lá, o portão antigo continua valendo.
