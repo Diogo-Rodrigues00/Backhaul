@@ -297,6 +297,20 @@ describe('validação local (D-PO-14)', () => {
     expect(envios).toHaveLength(0);
   });
 
+  it('peso e valor acima de 99.999.999,99: erro no campo e a API não é chamada', async () => {
+    const envios = capturarEnvios();
+    await abrir();
+    await preencherTudo();
+    await fireEvent.changeText(screen.getByLabelText('Peso (kg)'), '100000000');
+    await fireEvent.changeText(screen.getByLabelText('Valor oferecido (R$)'), '100000000,00');
+    await fireEvent.press(botaoPublicar());
+
+    await waitFor(() =>
+      expect(screen.getAllByText('Informe um valor até 99.999.999,99.')).toHaveLength(2),
+    );
+    expect(envios).toHaveLength(0);
+  });
+
   it('origem igual ao destino avisa antes de enviar e some ao trocar o destino', async () => {
     const envios = capturarEnvios();
     await abrir();
