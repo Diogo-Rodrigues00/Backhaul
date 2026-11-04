@@ -57,7 +57,7 @@ Devolver `expirado` quando `aberto` e `expira_em <= now()`. Hoje carga vencida a
 
 ## E. Operação / ambiente (confirmar, não é código)
 
-1. **CORS** no Render: `CORS_ORIGIN` precisa incluir `https://backhaul-front.vercel.app` (em 23/10 só tinha `http://localhost:8081`). Sem isso o site publicado não loga. Se estiver vazio ou sem a origem, o navegador bloqueia.
+1. ~~**CORS** no Render~~ **resolvido**: em 04/11 o preflight de `https://backhaul-front.vercel.app` já volta liberado. Obrigado!
 2. **Seeds no Neon**: já rodou `database/seed-demo.sql` (empresa, motorista com MOPP, motorista sem MOPP, 4 cargas) e `database/seed-admin.sql`? Me passe as credenciais por fora do repositório. As cargas do seed expiram 30 dias depois da execução: reexecutar na semana da Mostra Tech.
 3. **Seed extra (opcional)**: uma certificação pendente do motorista "sem MOPP", para mostrar a aprovação do admin sem precisar cadastrar ao vivo.
 4. **Seeds com CPF/CNPJ de dígito inválido** (`seed.sql`, `seed-demo.sql`): o login funciona, mas não servem de exemplo no cadastro. Só aviso.
@@ -66,4 +66,4 @@ Devolver `expirado` quando `aberto` e `expira_em <= now()`. Hoje carga vencida a
 
 ## Resumo para colar no grupo
 
-> Diogo, valeu pelas rotas novas. Preciso até 06/11: (A1) cancelar carga, (A2) cancelar disponibilidade, (A3) GET /disponibilidades/minhas, (A4) comissão/proposta_id/origem/destino em GET /fretes/meus, (A5) campos extras em GET /propostas/minhas, (B1) regras no aceite (disponibilidade aberta; recusar as outras propostas do motorista; 409 em proposta repetida) e (E1) CORS do Vercel no Render + (E2) seeds no Neon. Detalhes e erros em `docs/front/pedido-ao-diogo.md`. Contrato congela 09/11.
+> Diogo, valeu pelas rotas novas. Preciso até 06/11: (A1) cancelar carga, (A2) cancelar disponibilidade, (A3) GET /disponibilidades/minhas, (A4) comissão/proposta_id/origem/destino em GET /fretes/meus, (A5) campos extras em GET /propostas/minhas, (B1) regras no aceite (disponibilidade aberta; recusar as outras propostas do motorista; 409 em proposta repetida) e (E2) seeds no Neon (o CORS do Vercel já está ok). Detalhes e erros em `docs/front/pedido-ao-diogo.md`. Contrato congela 09/11.
