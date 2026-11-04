@@ -115,15 +115,8 @@ export function CartaoCertificacao({
           </Etiqueta>
         </View>
       </View>
-      <ListaDeFatos
-        itens={[
-          { rotulo: 'Número do certificado', valor: numero },
-          { rotulo: 'Validade', valor: formatarValidade(validade) },
-        ]}
-      />
-      <Texto nivel="sm" cor="secundario">
-        {orientacaoDaSituacao(situacao, validade)}
-      </Texto>
+      {/* A ação fica logo abaixo da situação (e não no fim do cartão): perto do título, longe da
+          barra inferior fixa, que cobriria o botão em telas baixas e reprovaria o tamanho de alvo. */}
       {podeReenviar ? (
         <View style={estilos.acao}>
           <Botao
@@ -137,6 +130,15 @@ export function CartaoCertificacao({
           </Botao>
         </View>
       ) : null}
+      <ListaDeFatos
+        itens={[
+          { rotulo: 'Número do certificado', valor: numero },
+          { rotulo: 'Validade', valor: formatarValidade(validade) },
+        ]}
+      />
+      <Texto nivel="sm" cor="secundario">
+        {orientacaoDaSituacao(situacao, validade)}
+      </Texto>
     </View>
   );
 }
