@@ -22,7 +22,7 @@ _Atualizado em 2026-11-04 (Fase 6.0, orquestrador)._
 - [x] Lighthouse desktop `warn` → **PR #106 (aguarda merge)**
 - [x] tech-lead: cards 026, 031–035 reescritos, 036–046 criados, ADR 0016 (chat), adendo ADR 0013 → **PR #107 (aguarda merge)**
 - [x] integracao-api: tipos/fetchers/hooks/MSW de certificações, mensagens e admin + `divergencias-api.md` → **PR #108 ("INT"; precisa revisão + auditoria)**
-- [ ] designer: protótipos do 039 (em andamento) → publicar Artifact → aprovação do Pedro
+- [x] designer: protótipos do 039 publicados e **aprovados pelo Pedro** (barra "Mais" no motorista, "Aprovações" no admin, 4 ícones novos)
 - [x] Lista de cards aprovada pelo Pedro; issues #109–#119 criadas; #37, #46–#50 comentadas com a revisão
 - [x] `pedido-ao-diogo.md` sem datas e com divergências novas (seção D2) → **Pedro envia ao Diogo**
 
@@ -31,9 +31,9 @@ _Atualizado em 2026-11-04 (Fase 6.0, orquestrador)._
 |---|---|---|---|---|---|---|
 | 036 | #109 | Minhas propostas no formato real (crítico) | sonnet | — | 0 | em execução |
 | 037 | #110 | Validação de CPF/CNPJ/placa | sonnet | — | 0 | em execução |
-| 038 | #111 | 409 disponibilidade, 404 perfil, tetos, `nome` nulo | haiku | — | 0 | em execução |
-| 039 | #112 | Protótipos | designer | — | 0 | em execução |
-| INT | PR #108 | Contrato das rotas novas | integracao-api | — | 0 | PR aberto |
+| 038 | #111 | 409 disponibilidade, 404 perfil, tetos, `nome` nulo | haiku | — | 0 | PR #121 (CI rodando; falta revisão) |
+| 039 | #112 | Protótipos | designer | — | 0 | aprovado |
+| INT | PR #108 | Contrato das rotas novas | integracao-api | — | 0 | revisado (aprovado com ressalvas), CI verde; aguarda merge |
 | 026 | #37 | Minhas propostas (tela) | haiku | 036, PROTO | 1 | aguardando |
 | 031 | #46 | Certificações do motorista | sonnet | INT, PROTO | 1 | aguardando |
 | 040 | #113 | Admin: casca e resumo | sonnet | INT | 1 | aguardando |
@@ -50,11 +50,12 @@ _Atualizado em 2026-11-04 (Fase 6.0, orquestrador)._
 
 Ordem de merge (arquivos compartilhados): Onda 0: 036 → INT → 037 → 038 · Onda 1: 040 → 026 → 031 → 042 · Onda 2: 041 → 032 → 043 → 035 (+ 033/034/044 se as rotas saírem) · Onda 3: 046 por último.
 
-Protótipo aprovado (Fase 2): https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP · Protótipos da Fase 6: pendente.
+Protótipo aprovado (Fase 2): https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP · Protótipos da Fase 6 (aprovados): https://claude.ai/artifact/DogM2ZsRMyK9k16Q88fUg4
 Site publicado: https://backhaul-front.vercel.app (último deploy de produção em 2026-10-26).
 
 ## Bloqueios e atenção
 - PRs #105–#107 só mergeiam pelo Pedro por enquanto: o modo automático bloqueou `gh pr merge` do orquestrador ("Merge Without Review"). #105 com **merge commit**.
+- Ressalvas não bloqueantes do #108 (para o 031): `chaves.certificacoes.catalogo()` é prefixo das outras chaves; fixtures/testes de certificação com datas absolutas (2030/2031).
 - Teste pré-existente instável: `cadastro/__tests__/empresa.test.tsx:215` falha na suíte completa (passa isolado) e `formulario.test.tsx` estourou timeout na linha de base (relato do integracao-api). Investigar no 037, que mexe nesse teste.
 - `npm run lint` sai com código 2 ("ESLint output (JSON parse failed: EOF...)") na linha de base; `npx expo lint` passa. Conferir o script no CI.
 
