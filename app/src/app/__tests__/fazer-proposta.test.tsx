@@ -21,6 +21,7 @@ import {
 
 import { CARGA_NORMAL_ID, CARGA_URGENTE_ID } from '../../../mocks/fixtures/cargas';
 import { DISPONIBILIDADE_ABERTA_ID } from '../../../mocks/fixtures/disponibilidades';
+import { minhaPropostaMock } from '../../../mocks/fixtures/propostas';
 import { servidor, urlMock } from '../../../mocks/node';
 import { respostaErro, respostaHtml } from '../../../mocks/respostas';
 
@@ -86,26 +87,11 @@ describe('Fazer proposta: botões do cartão', () => {
       http.get(urlMock('/propostas/minhas'), () =>
         HttpResponse.json({
           propostas: [
-            {
-              id: 'bbbbbbbb-0000-4000-8000-0000000000a1',
+            minhaPropostaMock({
               tipo: 'contraproposta',
               valor_proposto: 3900,
               status: 'recusada',
-              criado_em: '2026-10-21T12:00:00.000Z',
-              disponibilidade_id: DISPONIBILIDADE_ABERTA_ID,
-              carga: {
-                id: CARGA_NORMAL_ID,
-                tipo_carga: CARGA,
-                empresa: 'Transportes Rápidos LTDA',
-                origem: { lat: -18.6456, lng: -48.1935 },
-                destino: { lat: -18.9186, lng: -48.2772 },
-                valor_oferecido: 4200.5,
-                urgencia: 'normal',
-                status: 'aberto',
-                certificacao_exigida: null,
-                expira_em: '2030-01-01T00:00:00.000Z',
-              },
-            },
+            }),
           ],
         }),
       ),
@@ -138,7 +124,7 @@ describe('Fazer proposta: botões do cartão', () => {
   });
 });
 
-// Contra a API real a rota 4a (GET /propostas/minhas) ainda não existe: os botões têm de aparecer
+// Plano B: se GET /propostas/minhas falhar (404, 5xx, rede), os botões têm de aparecer
 // mesmo assim, e a carga já proposta neste aparelho continua só com "Proposta enviada".
 describe('Fazer proposta: sem GET /propostas/minhas', () => {
   it.each([
