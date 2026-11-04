@@ -69,7 +69,7 @@ export default function CorpoCargasProximas() {
   );
   const cargas = useCargasProximas(parametros, { habilitado });
 
-  // D-PO-05 e MVP-13: a lista real de propostas (proposta 4a) prevalece; sem ela (404, erro), vale o que
+  // D-PO-05 e MVP-13: a lista real de propostas prevalece; sem ela (404, erro), vale o que
   // este aparelho guardou ao enviar. Falha aqui nunca impede a lista, só deixa de marcar.
   const propostas = useMinhasPropostas({ habilitado });
   const refazerCargas = cargas.refetch;

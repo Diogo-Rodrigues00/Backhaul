@@ -1,10 +1,12 @@
-// Handlers MSW de todas as rotas do MVP (docs/api.md) mais as propostas 4a e 4b do relatório
-// (GET /propostas/minhas e GET /disponibilidades/minhas, ainda inexistentes no backend).
+// Handlers MSW de todas as rotas do MVP (docs/api.md) mais a proposta 4b do relatório
+// (GET /disponibilidades/minhas, ainda inexistente no backend).
 // Cada recurso tem o seu arquivo; `baseUrl` é a EXPO_PUBLIC_API_URL do ambiente.
+import { criarHandlersAdmin } from './admin';
 import { criarHandlersCargas } from './cargas';
 import { criarHandlersCertificacoes } from './certificacoes';
 import { criarHandlersDisponibilidades } from './disponibilidades';
 import { criarHandlersFretes } from './fretes';
+import { criarHandlersMensagens } from './mensagens';
 import { criarHandlersPropostas } from './propostas';
 import { criarHandlersSaude } from './saude';
 import { criarHandlersSessao } from './sessao';
@@ -18,6 +20,8 @@ export function criarHandlers(baseUrl: string) {
     ...criarHandlersCargas(base),
     ...criarHandlersDisponibilidades(base),
     ...criarHandlersPropostas(base),
+    ...criarHandlersMensagens(base),
     ...criarHandlersFretes(base),
+    ...criarHandlersAdmin(base),
   ];
 }

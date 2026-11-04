@@ -84,6 +84,8 @@ Itens que dependem do Diogo e não chegarem em `main` + `docs/api.md` até 07/11
 
 ## 5. Cards da Fase 6
 
+> **Atualizado pelo tech-lead em 2026-11-04.** As specs completas estão em `docs/front/cards/0NN-*.md` e a tabela/ondas vigentes em `docs/front/cards/README.md` (seção "Fase 6"); em caso de diferença, valem os cards. Mudanças em relação a esta seção: 040 e 041 **sem PROTO** (decisão do Pedro); 032 bloqueado por 040, INT e PROTO (o 031 virou desejável); o E2E motorista → admin do 032 e o chat entre duas janelas passaram para o 046; o 026 não usa o plano B local (não dá para montar a lista com ele); o 038 também aplica Performance desktop `warn` e o teto de `valor_proposto`; ondas sem datas (seção 1 substituída pela decisão da 6.0).
+
 Legenda de bloqueio: **PROTO** = protótipo do card 039 aprovado pelo Pedro · **ROTA-xx** = rota em `main` + `docs/api.md`. Todos os cards seguem os portões do ADR 0013 (lint, typecheck, testes, E2E+axe, Lighthouse 100, orçamento de JS 360 KiB) e a regra "rota nova entra em `app/e2e/rotas.ts` no próprio card". Telas: pt-BR, a11y explícita (`role`/`aria-*`), foco gerenciado, estados de vazio/erro/carregando/401/500.
 
 | # | Card | Tipo | Agente / modelo | Bloqueado por | Onda |
