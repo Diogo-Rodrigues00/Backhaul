@@ -73,10 +73,12 @@ export function AcoesProposta({
   return (
     <View style={estilos.raiz}>
       {aviso ? (
-        // Foco programático (volta do diálogo): fora da ordem do Tab. O anúncio sai por `anunciar`.
+        // Foco programático (volta do diálogo): fora da ordem do Tab. O anúncio sai por `anunciar`
+        // (o hook já anunciou a falha); o banner não anuncia de novo, senão o leitor lê duas vezes.
         <View ref={refAviso} tabIndex={-1}>
           <Banner
             variante="aviso"
+            anunciar={false}
             acao={link ? <Link href={link.href}>{link.texto}</Link> : undefined}
           >
             {aviso.mensagem}
