@@ -31,6 +31,18 @@ describe('BotaoAtualizar', () => {
     expect(anunciar).not.toHaveBeenCalled();
   });
 
+  it('anuncia o texto próprio quando a tela passa `anuncio`', async () => {
+    const tela = await renderizar(
+      <BotaoAtualizar aoAtualizar={() => {}} atualizando anuncio="Resumo atualizado" />,
+    );
+    await tela.rerender(
+      comTema(
+        <BotaoAtualizar aoAtualizar={() => {}} atualizando={false} anuncio="Resumo atualizado" />,
+      ),
+    );
+    expect(anunciar).toHaveBeenCalledWith('Resumo atualizado');
+  });
+
   it('anuncia "Lista atualizada" quando a busca termina', async () => {
     const tela = await renderizar(<BotaoAtualizar aoAtualizar={() => {}} atualizando />);
     expect(anunciar).not.toHaveBeenCalled();
