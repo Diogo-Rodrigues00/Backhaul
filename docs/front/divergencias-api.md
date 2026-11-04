@@ -48,6 +48,8 @@ Legenda: **OK** = contrato, backend e front batem · **DIVERGE** = algo não bat
 | Regras no aceite: disponibilidade vigente, recusar as outras propostas do motorista, 409 em proposta repetida | card 042 e demo | **NÃO EXISTE** | nenhum | nenhum; na demo não aceitar duas propostas do mesmo motorista. Pedido B1 |
 | Status `expirado` em `GET /cargas/minhas` | cards 024 e 035 | **NÃO EXISTE** (o backend devolve `aberto` com `expira_em` vencido) | nenhum | "expirada" calculada no app pela data. Pedido B2 |
 
+**Atenção ao pedido A3.** Os campos que `pedido-ao-diogo.md` propõe para `GET /disponibilidades/minhas` (`origem`, `raio_km`, `capacidade_kg`) não são os que o front já tipa em `DisponibilidadeDoMotorista` (`tipos.ts`). O front espera `local`, `raio_busca_km`, `urgencia`, `status`, `expira_em`, `criado_em` e `propostas_pendentes`: o formato de `POST /disponibilidades` com um campo a mais. Recomendação: propor o formato do front, para não refazer o mock e as telas.
+
 ### 4. Sugestões de texto para o contrato (não aplicadas: `docs/api.md` é do backend)
 
 - Em `GET /admin/usuarios` e `GET /eu`: `nome` é `string | null` (null para o admin).
