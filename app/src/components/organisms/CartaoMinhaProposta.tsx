@@ -1,7 +1,7 @@
 // Cartão de proposta do motorista (PropostaCard motorista, DS 5.2, card 026): tipo da carga, empresa,
 // tipo e status em texto, os dois valores e, só quando aceita e com frete, o link "Ver frete". Não busca
 // nem recebe nada além de props: a tela entrega os dados (ADR 0003).
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
 import type { NomeIcone } from '@/components/atoms/icones';
@@ -12,12 +12,7 @@ import { Texto } from '@/components/atoms/Texto';
 import { Titulo } from '@/components/atoms/Titulo';
 import { formatarDataHora, formatarMoeda, type NumeroEntrada } from '@/lib/formatacao';
 import { paraNumero } from '@/lib/numeros';
-import {
-  rotuloStatusProposta,
-  rotuloTipoProposta,
-  type StatusProposta,
-  type TipoProposta,
-} from '@/lib/rotulos';
+import { rotuloStatusProposta, type StatusProposta, type TipoProposta } from '@/lib/rotulos';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
@@ -34,6 +29,8 @@ export interface PropsCartaoMinhaProposta {
   criadoEm: string;
   /** Só vem preenchido quando a proposta foi aceita (contrato de `GET /propostas/minhas`). */
   freteId: string | null;
+  /** Slot do rodapé, ao lado de "Ver frete" (o card 043 põe aqui o botão da conversa). */
+  children?: ReactNode;
 }
 
 // Cor do selo por status (DS: status vai em texto + ícone, a cor só reforça).
@@ -47,6 +44,14 @@ const VARIANTE_STATUS: Record<StatusProposta, VarianteEtiqueta> = {
 const ICONE_STATUS: Partial<Record<StatusProposta, NomeIcone>> = { pendente: 'hourglass' };
 
 const ICONE_TIPO: Record<TipoProposta, NomeIcone> = { aceite: 'send', contraproposta: 'refresh' };
+
+// Rótulo do tipo neste cartão (protótipo: "Proposta" = aceitou o valor oferecido). Local, e não em
+// `rotulos.ts`, porque "Aceita o valor" ao lado do status "Aceita" confundia. Outras telas seguem com o
+// rótulo de `rotulos.ts`.
+const ROTULO_TIPO: Record<TipoProposta, string> = {
+  aceite: 'Proposta',
+  contraproposta: 'Contraproposta',
+};
 
 function criarEstilos({ border, radius, space }: TemaVisual) {
   return {
@@ -101,6 +106,7 @@ export function CartaoMinhaProposta({
   valorProposto,
   criadoEm,
   freteId,
+  children,
 }: PropsCartaoMinhaProposta) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
@@ -122,7 +128,7 @@ export function CartaoMinhaProposta({
       </Titulo>
       <Texto cor="secundario">{`Empresa: ${empresa}`}</Texto>
       <View style={estilos.linha}>
-        <Etiqueta icone={ICONE_TIPO[tipo]}>{rotuloTipoProposta(tipo)}</Etiqueta>
+        <Etiqueta icone={ICONE_TIPO[tipo]}>{ROTULO_TIPO[tipo]}</Etiqueta>
         <Etiqueta variante={VARIANTE_STATUS[status]} icone={ICONE_STATUS[status]}>
           {rotuloStatusProposta(status)}
         </Etiqueta>
@@ -141,6 +147,7 @@ export function CartaoMinhaProposta({
             {`Ver frete de ${tipoCarga}`}
           </Link>
         ) : null}
+        {children}
       </View>
     </View>
   );

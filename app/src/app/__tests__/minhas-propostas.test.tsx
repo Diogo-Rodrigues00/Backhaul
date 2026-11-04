@@ -19,7 +19,7 @@ import { anunciar, moverFoco } from '@/lib/a11y';
 import { TemaContext } from '@/state/tema/TemaProvider';
 import { valorDoTema } from '@/test-utils/renderComTema';
 
-import { minhasPropostasMock } from '../../../mocks/fixtures/propostas';
+import { minhaPropostaMock, minhasPropostasMock } from '../../../mocks/fixtures/propostas';
 import { servidor, urlMock } from '../../../mocks/node';
 import { respostaErro } from '../../../mocks/respostas';
 import { criarClienteDeTeste, entrarComoMock, sairDoMock } from '../../../mocks/utils-teste';
@@ -139,6 +139,20 @@ describe('minhas propostas do motorista: leitura (MVP-15)', () => {
     await esperarCartoes();
     expect(screen.getByText(/Esta tela atualiza sozinha a cada 10 s/)).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Atualizar' })).toBeOnTheScreen();
+  });
+
+  it('aceita sem frete_id ainda: o cartão sai sem o link "Ver frete" (não inventa frete)', async () => {
+    servidor.use(
+      http.get(urlMock('/propostas/minhas'), () =>
+        HttpResponse.json({
+          propostas: [minhaPropostaMock({ status: 'aceita', tipo: 'aceite', frete_id: null })],
+        }),
+      ),
+    );
+    await abrir();
+    await waitFor(() => expect(comPapel('article')).toHaveLength(1));
+    expect(screen.getByText('Aceita')).toBeOnTheScreen();
+    expect(screen.queryByRole('link', { name: /Ver frete/ })).toBeNull();
   });
 
   it('CT-02: sem propostas mostra "Você ainda não fez propostas" e "Ver cargas próximas"', async () => {

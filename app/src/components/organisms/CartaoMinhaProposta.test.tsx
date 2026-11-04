@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react-native';
 
+import { Texto } from '@/components/atoms/Texto';
 import { renderizarComRota } from '@/test-utils/renderComRota';
 
 import {
@@ -44,6 +45,23 @@ describe('CartaoMinhaProposta', () => {
     expect(screen.getByText('R$ 3.500,00')).toBeOnTheScreen();
     expect(screen.getByText('Seu valor')).toBeOnTheScreen();
     expect(screen.getByText('R$ 3.200,00')).toBeOnTheScreen();
+  });
+
+  it('o tipo aceite aparece como "Proposta", sem o rótulo "Aceita o valor" (confundia com o status)', async () => {
+    await renderizar({ tipo: 'aceite', status: 'aceita', valorProposto: 3500 });
+    expect(screen.getByText('Proposta')).toBeOnTheScreen();
+    expect(screen.queryByText('Aceita o valor')).toBeNull();
+    expect(screen.getByText('Aceita')).toBeOnTheScreen();
+  });
+
+  it('o slot do rodapé (children) aparece ao lado da data, para o botão do card 043', async () => {
+    await renderizarComRota(
+      <CartaoMinhaProposta {...base}>
+        <Texto>Conversa com a empresa</Texto>
+      </CartaoMinhaProposta>,
+    );
+    expect(screen.getByText('Conversa com a empresa')).toBeOnTheScreen();
+    expect(screen.getByText('Enviada em 03/11/2026, 17:30')).toBeOnTheScreen();
   });
 
   it('mostra a data de envio no fuso de São Paulo', async () => {
