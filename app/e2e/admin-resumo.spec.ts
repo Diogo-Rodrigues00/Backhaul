@@ -77,6 +77,16 @@ test.describe('admin: resumo da plataforma', () => {
     await expect(atualizar).toBeFocused();
   });
 
+  test('em 320 px não há rolagem horizontal, com os quatro grupos na tela', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { level: 2, name: 'Dinheiro' })).toBeVisible();
+    const largura = await page.evaluate(
+      () => (document.scrollingElement ?? document.documentElement).scrollWidth,
+    );
+    expect(largura).toBeLessThanOrEqual(320);
+  });
+
   test('sem atualização automática: nenhuma nova leitura enquanto ninguém toca', async ({
     page,
   }) => {
