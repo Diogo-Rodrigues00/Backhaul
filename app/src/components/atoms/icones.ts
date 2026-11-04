@@ -166,6 +166,22 @@ export const icones = {
     ['path', { d: 'M16 13H8' }],
     ['path', { d: 'M16 17H8' }],
   ],
+  // Card 031: `award` (item "Certificações" do menu) e `hourglass` (situação "Aguardando aprovação").
+  award: [
+    [
+      'path',
+      {
+        d: 'm15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526',
+      },
+    ],
+    ['circle', { cx: 12, cy: 8, r: 6 }],
+  ],
+  hourglass: [
+    ['path', { d: 'M5 22h14' }],
+    ['path', { d: 'M5 2h14' }],
+    ['path', { d: 'M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22' }],
+    ['path', { d: 'M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2' }],
+  ],
   flask: [
     [
       'path',

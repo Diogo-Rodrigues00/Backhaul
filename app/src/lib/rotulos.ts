@@ -105,3 +105,17 @@ export function proximoPassoFrete(status: StatusEntrega): ProximoPassoFrete | nu
   const passo = PROXIMO_PASSO_FRETE[status];
   return passo ? { ...passo } : null;
 }
+
+/** Mesmos valores de `SituacaoCertificacao` do contrato (`src/api/tipos.ts`); lib não importa api. */
+export type SituacaoCertificacao = 'pendente' | 'aprovada' | 'vencida';
+
+// Card 031: a situação sempre em texto (o ícone e a cor só reforçam).
+const ROTULOS_SITUACAO_CERTIFICACAO: Record<SituacaoCertificacao, string> = {
+  pendente: 'Aguardando aprovação',
+  aprovada: 'Aprovada',
+  vencida: 'Vencida',
+};
+
+export function rotuloSituacaoCertificacao(situacao: SituacaoCertificacao): string {
+  return ROTULOS_SITUACAO_CERTIFICACAO[situacao] ?? SEM_ROTULO;
+}

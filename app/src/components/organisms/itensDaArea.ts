@@ -16,6 +16,9 @@ const ITENS: Record<TipoPerfil, readonly ItemNavegacao[]> = {
     { href: '/motorista/cargas', rotulo: 'Cargas próximas', icone: 'map-pin' },
     { href: '/motorista/disponibilidades', rotulo: 'Disponibilidade', icone: 'locate' },
     { href: '/motorista/fretes', rotulo: 'Meus fretes', icone: 'truck' },
+    // Card 031. Decisão de 2026-11-04: "Certificações" fica dentro de "Mais" (com Disponibilidade) na
+    // barra inferior de 4 itens, criada no card 026. Até o "Mais" existir, é um item comum (4 itens).
+    { href: '/motorista/certificacoes', rotulo: 'Certificações', icone: 'award' },
   ],
   admin: [],
 };
