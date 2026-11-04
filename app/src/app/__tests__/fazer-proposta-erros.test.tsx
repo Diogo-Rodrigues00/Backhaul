@@ -4,6 +4,7 @@ import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import { http, HttpResponse } from 'msw';
 
 import { apagar, CHAVES, gravar, ler } from '@/lib/armazenamento';
+import { MENSAGEM_PERFIL_NAO_ENCONTRADO } from '@/lib/fazerProposta';
 import { linkPorNome } from '@/test-utils/cenarioCargasProximas';
 import {
   abrirAceite,
@@ -122,6 +123,50 @@ describe('Fazer proposta: erros', () => {
     await waitFor(() => expect(cartaoDa(CARGA).getByText(mensagem)).toBeOnTheScreen());
     const link = cartaoDa(CARGA).getByRole('link', { name: 'Minhas disponibilidades' });
     expect(link.props.href).toBe('/motorista/disponibilidades');
+  });
+
+  it('409 "disponibilidade não está mais aberta": aviso no cartão com "Publicar nova disponibilidade", sem recarregar a lista', async () => {
+    const mensagem = 'disponibilidade não está mais aberta';
+    espiarPropostas(() => respostaErro(409, mensagem));
+    let leituras = 0;
+    servidor.use(
+      http.get(urlMock('/cargas/proximas'), () => {
+        leituras += 1;
+        return HttpResponse.json({ cargas: cargasProximasMock });
+      }),
+    );
+    await abrirComLista();
+    await abrirAceite(CARGA, ACEITAR);
+    await fireEvent.press(screen.getByRole('button', { name: ACEITAR }));
+
+    await waitFor(() => expect(cartaoDa(CARGA).getByText(mensagem)).toBeOnTheScreen());
+    await waitFor(() => expect(dialogos()).toHaveLength(0));
+    const link = cartaoDa(CARGA).getByRole('link', { name: 'Publicar nova disponibilidade' });
+    expect(link.props.href).toBe('/motorista/disponibilidades/nova');
+    expect(screen.queryByText('Carga indisponível')).toBeNull();
+    expect(leituras).toBe(1);
+  });
+
+  it('404 "perfil de motorista não encontrado": aviso fixo no cartão, sem "carga indisponível" e sem recarregar', async () => {
+    espiarPropostas(() => respostaErro(404, 'perfil de motorista não encontrado'));
+    let leituras = 0;
+    servidor.use(
+      http.get(urlMock('/cargas/proximas'), () => {
+        leituras += 1;
+        return HttpResponse.json({ cargas: cargasProximasMock });
+      }),
+    );
+    await abrirComLista();
+    await abrirAceite(CARGA, ACEITAR);
+    await fireEvent.press(screen.getByRole('button', { name: ACEITAR }));
+
+    await waitFor(() =>
+      expect(cartaoDa(CARGA).getByText(MENSAGEM_PERFIL_NAO_ENCONTRADO)).toBeOnTheScreen(),
+    );
+    await waitFor(() => expect(dialogos()).toHaveLength(0));
+    expect(screen.queryByText('Carga indisponível')).toBeNull();
+    expect(cartaoDa(CARGA).queryByRole('link')).toBeNull();
+    expect(leituras).toBe(1);
   });
 
   it('404 "carga não encontrada": trata como carga indisponível e recarrega a lista', async () => {

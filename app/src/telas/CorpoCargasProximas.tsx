@@ -85,6 +85,7 @@ export default function CorpoCargasProximas() {
     avisoDaCarga,
     refAvisoDaCarga,
     registrarMarcador,
+    registrarAviso,
     abrir,
     dialogo,
     lerGuardadas,
@@ -205,6 +206,7 @@ export default function CorpoCargasProximas() {
                         valorOferecido={carga.valor_oferecido}
                         contrapropostaDisponivel={!comContraproposta.has(carga.id)}
                         aviso={avisos[carga.id]}
+                        refAviso={(no) => registrarAviso(carga.id, no)}
                         aoAceitar={(origem) => abrir({ ...base, tipo: 'aceite' }, origem)}
                         aoContrapropor={(origem) =>
                           abrir({ ...base, tipo: 'contraproposta' }, origem)

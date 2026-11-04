@@ -9,15 +9,15 @@ import { Link } from '@/components/atoms/Link';
 import { Texto } from '@/components/atoms/Texto';
 import { Banner } from '@/components/molecules/Banner';
 import type { NumeroEntrada } from '@/lib/formatacao';
-import { rotuloAceitar } from '@/lib/fazerProposta';
+import { rotuloAceitar, type LinkDoAviso } from '@/lib/fazerProposta';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 
-/** Falha que a API explicou (409 de contraproposta, 403, 404): fica no cartão, junto dos botões. */
+/** Falha que a API explicou (409 de contraproposta ou de disponibilidade, 403, 404): fica no cartão. */
 export interface AvisoDaProposta {
   mensagem: string;
-  /** 404 da disponibilidade: leva a "Minhas disponibilidades". */
-  linkDisponibilidades?: boolean;
+  /** Só o desfecho de disponibilidade tem link: republicar (409) ou ver as disponibilidades (404). */
+  link?: LinkDoAviso;
 }
 
 export interface PropsAcoesProposta {
@@ -27,6 +27,8 @@ export interface PropsAcoesProposta {
   /** `false` depois de uma contraproposta (qualquer status) para a carga (D-PO-05). */
   contrapropostaDisponivel: boolean;
   aviso?: AvisoDaProposta;
+  /** Recebe o aviso: o foco volta a ele quando o diálogo fecha com uma falha explicada. */
+  refAviso?: (no: View | null) => void;
   /** Recebem o botão que abriu o diálogo: o foco volta a ele ao cancelar. */
   aoAceitar: (origem: View | null) => void;
   aoContrapropor: (origem: View | null) => void;
@@ -34,6 +36,12 @@ export interface PropsAcoesProposta {
 
 export const TEXTO_CONTRAPROPOSTA = 'Contraproposta';
 export const DICA_CONTRAPROPOSTA_UNICA = 'Só uma contraproposta por carga.';
+
+/** Nome e destino do link do aviso: o texto diz o que a pessoa vai fazer. */
+const LINK_DO_AVISO: Record<LinkDoAviso, { texto: string; href: string }> = {
+  publicar: { texto: 'Publicar nova disponibilidade', href: '/motorista/disponibilidades/nova' },
+  disponibilidades: { texto: 'Minhas disponibilidades', href: '/motorista/disponibilidades' },
+};
 
 function criarEstilos({ space }: TemaVisual) {
   return {
@@ -52,6 +60,7 @@ export function AcoesProposta({
   valorOferecido,
   contrapropostaDisponivel,
   aviso,
+  refAviso,
   aoAceitar,
   aoContrapropor,
 }: PropsAcoesProposta) {
@@ -59,20 +68,20 @@ export function AcoesProposta({
   const textoAceitar = rotuloAceitar(valorOferecido);
   const refAceitar = useRef<View>(null);
   const refContrapropor = useRef<View>(null);
+  const link = aviso?.link ? LINK_DO_AVISO[aviso.link] : undefined;
 
   return (
     <View style={estilos.raiz}>
       {aviso ? (
-        <Banner
-          variante="aviso"
-          acao={
-            aviso.linkDisponibilidades ? (
-              <Link href="/motorista/disponibilidades">Minhas disponibilidades</Link>
-            ) : undefined
-          }
-        >
-          {aviso.mensagem}
-        </Banner>
+        // Foco programático (volta do diálogo): fora da ordem do Tab. O anúncio sai por `anunciar`.
+        <View ref={refAviso} tabIndex={-1}>
+          <Banner
+            variante="aviso"
+            acao={link ? <Link href={link.href}>{link.texto}</Link> : undefined}
+          >
+            {aviso.mensagem}
+          </Banner>
+        </View>
       ) : null}
       <View style={estilos.botoes}>
         <Botao
