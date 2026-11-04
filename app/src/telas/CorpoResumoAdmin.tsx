@@ -6,7 +6,7 @@ import { View, type ViewStyle } from 'react-native';
 
 import { useResumoAdmin } from '@/api/admin.hooks';
 import { Titulo } from '@/components/atoms/Titulo';
-import { BotaoAtualizar } from '@/components/molecules/BotaoAtualizar';
+import { EstadoErro } from '@/components/molecules/EstadoErro';
 import { ListaDeFatos, type ItemDeFato } from '@/components/molecules/ListaDeFatos';
 import { useCasca } from '@/components/organisms/useCasca';
 import { ConteudoLista } from '@/components/templates/TemplateLista';
@@ -26,7 +26,6 @@ function mensagemDeErro(erro: unknown): string | undefined {
 function criarEstilos({ border, radius, space }: TemaVisual) {
   return {
     bloco: { gap: space[4] } satisfies ViewStyle,
-    topo: { flexDirection: 'row', justifyContent: 'flex-end' } satisfies ViewStyle,
     grupo: {
       gap: space[3],
       padding: space[5],
@@ -42,6 +41,9 @@ export default function CorpoResumoAdmin() {
   const { colors } = useTema();
   const consulta = useResumoAdmin({ habilitado });
   const resumo = consulta.data?.resumo;
+  // Erro no lugar dos números só quando não há o que mostrar. Com números na tela e "Atualizar"
+  // falhando, eles ficam e um aviso de erro aparece acima deles.
+  const falhouComDados = consulta.isError && resumo !== undefined;
 
   const grupos: readonly { titulo: string; itens: readonly ItemDeFato[] }[] = resumo
     ? [
@@ -75,7 +77,7 @@ export default function CorpoResumoAdmin() {
           titulo: 'Dinheiro',
           itens: [
             {
-              rotulo: 'Valor repassado (fretes entregues)',
+              rotulo: 'Volume dos fretes entregues',
               valor: formatarMoeda(resumo.volume_liberado),
             },
             {
@@ -93,21 +95,24 @@ export default function CorpoResumoAdmin() {
 
   return (
     <ConteudoLista
-      estado={consulta.isError ? 'erro' : resumo ? 'pronto' : 'carregando'}
+      estado={resumo ? 'pronto' : consulta.isError ? 'erro' : 'carregando'}
       textoCarregando="Carregando resumo…"
       erro={{
         mensagem: mensagemDeErro(consulta.error),
         aoTentarDeNovo: () => void consulta.refetch(),
       }}
+      aoAtualizar={() => consulta.refetch()}
+      atualizando={consulta.isFetching}
+      anuncioAtualizado={falhouComDados ? '' : ANUNCIO_RESUMO_ATUALIZADO}
     >
       <View style={estilos.bloco}>
-        <View style={estilos.topo}>
-          <BotaoAtualizar
-            aoAtualizar={() => consulta.refetch()}
-            atualizando={consulta.isFetching}
-            anuncio={ANUNCIO_RESUMO_ATUALIZADO}
+        {falhouComDados ? (
+          <EstadoErro
+            mensagem={mensagemDeErro(consulta.error)}
+            aoTentarDeNovo={() => consulta.refetch()}
+            tentando={consulta.isFetching}
           />
-        </View>
+        ) : null}
         {grupos.map((grupo) => (
           <View
             key={grupo.titulo}

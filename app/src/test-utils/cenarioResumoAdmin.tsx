@@ -4,7 +4,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot, usePathname } from 'expo-router';
 import { renderRouter, screen, waitFor } from 'expo-router/testing-library';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { Text } from 'react-native';
 
 import type { ResumoAdmin } from '@/api/tipos';
@@ -65,12 +65,16 @@ export async function aguardarResumo() {
   await screen.findByRole('heading', { name: 'Pessoas' });
 }
 
-/** Responde `GET /admin/resumo` com os valores dados e conta as chamadas. */
-export function responderResumo(resumo: ResumoAdmin = resumoAdminMock) {
+/**
+ * Responde `GET /admin/resumo` com os valores dados e conta as chamadas. `atrasoMs` faz a resposta
+ * demorar, para o teste enxergar o estado "atualizando" (sem atraso, o `act` junta tudo numa renderização só).
+ */
+export function responderResumo(resumo: ResumoAdmin = resumoAdminMock, atrasoMs = 0) {
   const contador = { chamadas: 0 };
   servidor.use(
-    http.get(urlMock('/admin/resumo'), () => {
+    http.get(urlMock('/admin/resumo'), async () => {
       contador.chamadas += 1;
+      if (atrasoMs > 0) await delay(atrasoMs);
       return HttpResponse.json({ resumo });
     }),
   );

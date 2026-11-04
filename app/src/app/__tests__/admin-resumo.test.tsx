@@ -60,9 +60,7 @@ describe('Resumo da plataforma (admin)', () => {
     expect(screen.getByLabelText('Aceitos: 1')).toBeOnTheScreen();
     expect(screen.getByLabelText('Em trânsito: 1')).toBeOnTheScreen();
     expect(screen.getByLabelText('Entregues: 1')).toBeOnTheScreen();
-    expect(
-      screen.getByLabelText('Valor repassado (fretes entregues): R$ 3.500,00'),
-    ).toBeOnTheScreen();
+    expect(screen.getByLabelText('Volume dos fretes entregues: R$ 3.500,00')).toBeOnTheScreen();
     expect(
       screen.getByLabelText('Comissão recebida (fretes entregues): R$ 175,00'),
     ).toBeOnTheScreen();
@@ -123,9 +121,7 @@ describe('Resumo da plataforma (admin)', () => {
     await aguardarSessao();
     await aguardarResumo();
 
-    expect(
-      screen.getByLabelText('Valor repassado (fretes entregues): R$ 12.500,50'),
-    ).toBeOnTheScreen();
+    expect(screen.getByLabelText('Volume dos fretes entregues: R$ 12.500,50')).toBeOnTheScreen();
     expect(
       screen.getByLabelText('Comissão recebida (fretes entregues): R$ 625,03'),
     ).toBeOnTheScreen();

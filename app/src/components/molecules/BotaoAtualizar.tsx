@@ -8,7 +8,10 @@ export interface PropsBotaoAtualizar {
   aoAtualizar: () => void | Promise<unknown>;
   /** Buscando agora (`isFetching`): mostra "Atualizando…" e ignora toques. */
   atualizando: boolean;
-  /** Texto anunciado ao terminar. Padrão: "Lista atualizada"; telas que não são lista dizem o próprio ("Resumo atualizado"). */
+  /**
+   * Texto anunciado ao terminar. Padrão: "Lista atualizada"; telas que não são lista dizem o próprio
+   * ("Resumo atualizado"). Texto vazio = não anuncia (a tela usa isso quando a busca falhou).
+   */
   anuncio?: string;
 }
 
@@ -27,7 +30,7 @@ export function BotaoAtualizar({
   const estavaAtualizando = useRef(atualizando);
 
   useEffect(() => {
-    if (estavaAtualizando.current && !atualizando) anunciar(anuncio);
+    if (estavaAtualizando.current && !atualizando && anuncio !== '') anunciar(anuncio);
     estavaAtualizando.current = atualizando;
   }, [atualizando, anuncio]);
 

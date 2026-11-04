@@ -27,6 +27,8 @@ export interface PropsConteudoLista {
   aoAtualizar?: () => void | Promise<unknown>;
   /** Buscando agora: o botão vira "Atualizando…". */
   atualizando?: boolean;
+  /** Anúncio ao terminar de atualizar (padrão "Lista atualizada"); telas que não são lista dizem o próprio. Vazio = não anuncia. */
+  anuncioAtualizado?: string;
   /** Mostra a barra de novidades (telas com atualização automática). */
   novidade?: PropsBarraNovidades;
   /** A lista, só renderizada em `pronto`. */
@@ -76,6 +78,7 @@ export function ConteudoLista({
   erro,
   aoAtualizar,
   atualizando = false,
+  anuncioAtualizado,
   novidade,
   children,
 }: PropsConteudoLista) {
@@ -93,7 +96,11 @@ export function ConteudoLista({
             </View>
           ) : null}
           {aoAtualizar ? (
-            <BotaoAtualizar aoAtualizar={aoAtualizar} atualizando={atualizando} />
+            <BotaoAtualizar
+              aoAtualizar={aoAtualizar}
+              atualizando={atualizando}
+              anuncio={anuncioAtualizado}
+            />
           ) : null}
         </View>
       ) : null}
@@ -128,8 +135,17 @@ export function ConteudoLista({
 
 /** `TemplateTela` com o `ConteudoLista` dentro: o caso comum, sem carregamento sob demanda. */
 export function TemplateLista({ children, ...props }: PropsTemplateLista) {
-  const { estado, textoCarregando, vazio, erro, aoAtualizar, atualizando, novidade, ...tela } =
-    props;
+  const {
+    estado,
+    textoCarregando,
+    vazio,
+    erro,
+    aoAtualizar,
+    atualizando,
+    anuncioAtualizado,
+    novidade,
+    ...tela
+  } = props;
   return (
     <TemplateTela {...tela}>
       <ConteudoLista
@@ -139,6 +155,7 @@ export function TemplateLista({ children, ...props }: PropsTemplateLista) {
         erro={erro}
         aoAtualizar={aoAtualizar}
         atualizando={atualizando}
+        anuncioAtualizado={anuncioAtualizado}
         novidade={novidade}
       >
         {children}
