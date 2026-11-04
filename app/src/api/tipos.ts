@@ -215,31 +215,21 @@ export type FreteCriado = {
 export type RespostaResponderAceitar = { frete: FreteCriado };
 export type RespostaResponder = RespostaResponderRecusar | RespostaResponderAceitar;
 
-// PROPOSTA relatório 4a: GET /propostas/minhas (ainda não existe no backend; conferir quando
-// entrar em docs/api.md). Só motorista. Ordem criado_em DESC. Query opcional
-// `?status=pendente|aceita|recusada`. Incluir `carga.status` e `carga.expira_em` permite à tela
-// mostrar "carga fechou" sem outra chamada.
+// GET /propostas/minhas (docs/api.md). Só motorista. Formato PLANO, `criado_em` DESC. A API ignora
+// qualquer query (não há filtro `?status=`). `frete_id` só vem preenchido quando `status` é `aceita`.
 // Erros: 401 · 403 não é motorista · 404 `perfil de motorista não encontrado`.
-export type CargaDaMinhaProposta = {
-  id: string;
-  tipo_carga: string;
-  empresa: string;
-  origem: Coordenadas;
-  destino: Coordenadas;
-  valor_oferecido: Numerico;
-  urgencia: Urgencia;
-  status: StatusChamado;
-  certificacao_exigida: string | null;
-  expira_em: string;
-};
 export type MinhaProposta = {
   id: string;
   tipo: TipoProposta;
   valor_proposto: Numerico;
   status: StatusProposta;
   criado_em: string;
-  disponibilidade_id: string;
-  carga: CargaDaMinhaProposta;
+  chamado_carga_id: string;
+  chamado_disp_id: string;
+  tipo_carga: string;
+  valor_oferecido: Numerico;
+  empresa: string;
+  frete_id: string | null;
 };
 export type RespostaMinhasPropostas = { propostas: MinhaProposta[] };
 

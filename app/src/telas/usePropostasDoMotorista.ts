@@ -21,7 +21,7 @@ const adicionar = (conjunto: ReadonlySet<string>, id: string): ReadonlySet<strin
   new Set(conjunto).add(id);
 
 export interface EntradaPropostas {
-  /** `GET /propostas/minhas` (proposta 4a); `undefined` enquanto não chegou ou se a rota falhou. */
+  /** `GET /propostas/minhas`; `undefined` enquanto não chegou ou se a rota falhou. */
   daApi: RespostaMinhasPropostas | undefined;
   /** `chamado_disp_id`: a disponibilidade ativa. */
   disponibilidadeId: string | undefined;
@@ -80,7 +80,7 @@ export function usePropostasDoMotorista({
 
   const pendentes = useMemo(() => {
     const base = daApi
-      ? daApi.propostas.filter((p) => p.status === 'pendente').map((p) => p.carga.id)
+      ? daApi.propostas.filter((p) => p.status === 'pendente').map((p) => p.chamado_carga_id)
       : guardadas.map((p) => p.cargaId);
     return new Set([...base, ...enviadasAgora]);
   }, [daApi, guardadas, enviadasAgora]);
@@ -88,7 +88,7 @@ export function usePropostasDoMotorista({
   // D-PO-05: contraproposta em qualquer status (pendente, aceita, recusada) esgota a única.
   const comContraproposta = useMemo(() => {
     const base = daApi
-      ? daApi.propostas.filter((p) => p.tipo === 'contraproposta').map((p) => p.carga.id)
+      ? daApi.propostas.filter((p) => p.tipo === 'contraproposta').map((p) => p.chamado_carga_id)
       : guardadas.filter((p) => p.tipo === 'contraproposta').map((p) => p.cargaId);
     return new Set([...base, ...contrapropostasAgora]);
   }, [daApi, guardadas, contrapropostasAgora]);
