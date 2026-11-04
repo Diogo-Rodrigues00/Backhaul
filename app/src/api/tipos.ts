@@ -297,3 +297,147 @@ export type Transacao = {
   criado_em: string;
 };
 export type RespostaPagamento = { transacao: Transacao };
+
+// ---------- Certificações do motorista (contrato: GET e POST /certificacoes/minhas) ----------
+/** `pendente` aguarda o admin · `aprovada` libera cargas que exigem certificação · `vencida` passou da validade. */
+export type SituacaoCertificacao = 'pendente' | 'aprovada' | 'vencida';
+
+export type MinhaCertificacao = {
+  id: string;
+  certificacao_id: string;
+  nome: string;
+  numero_certificado: string;
+  /** AAAA-MM-DD. */
+  validade: string;
+  validado_por_admin: boolean;
+  situacao: SituacaoCertificacao;
+  criado_em: string;
+};
+export type RespostaMinhasCertificacoes = { certificacoes: MinhaCertificacao[] };
+
+/** POST /certificacoes/minhas: cadastra e reenvia (201 nos dois casos; 409 se já aprovada e vigente). */
+export type CorpoEnviarCertificacao = {
+  /** Id do catálogo (GET /certificacoes). */
+  certificacao_id: string;
+  /** Obrigatório, até 60 caracteres. */
+  numero_certificado: string;
+  /** AAAA-MM-DD, hoje ou futuro. */
+  validade: string;
+};
+export type CertificacaoEnviada = {
+  /** Id do registro do motorista (não é o id do catálogo). */
+  id: string;
+  certificacao_id: string;
+  numero_certificado: string;
+  validade: string;
+  validado_por_admin: boolean;
+  criado_em: string;
+};
+export type RespostaEnviarCertificacao = { certificacao: CertificacaoEnviada };
+
+// ---------- Certificações: fila do admin (contrato: GET /certificacoes/pendentes) ----------
+/**
+ * Resposta de GET /certificacoes/pendentes como o contrato a documenta. Traz cpf e cnh do motorista.
+ * Só o fetcher (`certificacoes.ts`) recebe este formato; nenhuma tela o recebe (ver CertificacaoPendente).
+ */
+export type CertificacaoPendenteDoContrato = {
+  id: string;
+  /** Nome da certificação (texto). */
+  certificacao: string;
+  numero_certificado: string;
+  validade: string;
+  criado_em: string;
+  motorista: {
+    id: string;
+    nome_completo: string;
+    cpf: string;
+    cnh: string;
+    veiculo_placa: string;
+  };
+};
+
+/** Certificação da fila do admin, como as telas a recebem: sem cpf e sem cnh (card 032). */
+export type CertificacaoPendente = {
+  id: string;
+  certificacao: string;
+  numero_certificado: string;
+  validade: string;
+  criado_em: string;
+  motorista: {
+    id: string;
+    nome_completo: string;
+    veiculo_placa: string;
+  };
+};
+export type RespostaCertificacoesPendentes = { certificacoes: CertificacaoPendente[] };
+
+/** POST /certificacoes/pendentes/:id/responder. `recusar` apaga o registro: o motorista pode reenviar. */
+export type AcaoCertificacao = 'aprovar' | 'recusar';
+export type RespostaResponderCertificacao =
+  | { certificacao: { id: string; validado_por_admin: true } }
+  | { certificacao: { id: string; recusada: true } };
+
+// ---------- Chat da proposta (contrato: GET e POST /propostas/:id/mensagens) ----------
+export type Mensagem = {
+  id: string;
+  /** Id do USUÁRIO que enviou (o mesmo de GET /eu → usuario.id), não o do perfil. */
+  remetente_id: string;
+  texto: string;
+  criado_em: string;
+};
+export type RespostaMensagens = { mensagens: Mensagem[] };
+
+export type CorpoEnviarMensagem = {
+  /** Até 1000 caracteres, sem telefone, e-mail ou link (o backend recusa com 400). */
+  texto: string;
+};
+export type MensagemEnviada = Mensagem & { proposta_id: string };
+export type RespostaEnviarMensagem = { mensagem: MensagemEnviada };
+
+// ---------- Admin (contrato: GET /admin/resumo, /admin/fretes, /admin/usuarios) ----------
+/** Valores em dinheiro vêm da API como estão; o app não recalcula comissão. */
+export type ResumoAdmin = {
+  motoristas: number;
+  empresas: number;
+  cargas_abertas: number;
+  propostas_pendentes: number;
+  fretes_aceitos: number;
+  fretes_em_transito: number;
+  fretes_entregues: number;
+  certificacoes_pendentes: number;
+  volume_liberado: Numerico;
+  /** Soma só as transações liberadas (frete entregue). */
+  comissao_total: Numerico;
+  /** Soma as transações que ainda aguardam a entrega. */
+  comissao_retida: Numerico;
+};
+export type RespostaResumoAdmin = { resumo: ResumoAdmin };
+
+export type FreteAdmin = {
+  id: string;
+  tipo_carga: string;
+  valor_final: Numerico;
+  status_entrega: StatusEntrega;
+  coleta_em: string | null;
+  entrega_em: string | null;
+  criado_em: string;
+  empresa: string;
+  motorista: string;
+  veiculo_placa: string;
+  /** null enquanto a empresa não pagou. */
+  status_pagamento: StatusPagamento | null;
+  /** null enquanto a empresa não pagou. */
+  valor_comissao: Numerico | null;
+};
+export type RespostaFretesAdmin = { fretes: FreteAdmin[] };
+
+export type UsuarioAdmin = {
+  id: string;
+  email: string;
+  tipo: TipoUsuario;
+  ativo: boolean;
+  criado_em: string;
+  /** null para o admin, que não tem perfil de motorista nem de empresa. */
+  nome: string | null;
+};
+export type RespostaUsuariosAdmin = { usuarios: UsuarioAdmin[] };
