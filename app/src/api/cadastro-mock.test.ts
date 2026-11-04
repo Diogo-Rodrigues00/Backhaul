@@ -118,4 +118,29 @@ describe('POST /cadastro/empresa (mock)', () => {
     expect(repetido.status).toBe(409);
     expect(repetido.corpo.erro).toBe('email já cadastrado');
   });
+
+  it('409 "cnpj já cadastrado" para CNPJ repetido (com ou sem pontuação); o e-mail vem primeiro', async () => {
+    const cnpj = '11.222.333/0001-81';
+    const primeira = await enviar('/cadastro/empresa', {
+      ...EMPRESA,
+      email: 'mock.cnpj1@mock.test',
+      cnpj,
+    });
+    expect(primeira.status).toBe(201);
+
+    const repetido = await enviar('/cadastro/empresa', {
+      ...EMPRESA,
+      email: 'mock.cnpj2@mock.test',
+      cnpj: '11222333000181',
+    });
+    expect(repetido.status).toBe(409);
+    expect(repetido.corpo.erro).toBe('cnpj já cadastrado');
+
+    const emailEcnpj = await enviar('/cadastro/empresa', {
+      ...EMPRESA,
+      email: 'existente@mock.test',
+      cnpj,
+    });
+    expect(emailEcnpj.corpo.erro).toBe('email já cadastrado');
+  });
 });

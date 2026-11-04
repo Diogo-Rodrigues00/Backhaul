@@ -99,3 +99,17 @@ export function registrarMotoristaMock(
 export function cpfJaCadastradoMock(cpfDigitos: string): boolean {
   return cadastradosMock.some((u) => u.cpf === cpfDigitos);
 }
+
+// CNPJs (só dígitos) das empresas criadas pelo mock (POST /cadastro/empresa com 201), para barrar
+// CNPJ repetido com 409 como o backend. Ficam só até o processo acabar.
+const cnpjsCadastradosMock: string[] = [];
+
+/** CNPJ (só dígitos) já usado por uma empresa cadastrada pelo mock. */
+export function cnpjJaCadastradoMock(cnpjDigitos: string): boolean {
+  return cnpjsCadastradosMock.includes(cnpjDigitos);
+}
+
+/** Guarda o CNPJ (só dígitos) de uma empresa criada pelo mock. */
+export function registrarCnpjMock(cnpjDigitos: string): void {
+  cnpjsCadastradosMock.push(cnpjDigitos);
+}

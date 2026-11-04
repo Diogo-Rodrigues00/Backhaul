@@ -2,8 +2,10 @@
 import { http, HttpResponse } from 'msw';
 
 import {
+  cnpjJaCadastradoMock,
   cpfJaCadastradoMock,
   EMAIL_JA_CADASTRADO_MOCK,
+  registrarCnpjMock,
   registrarMotoristaMock,
   TAMANHO_MINIMO_SENHA_MOCK,
   todosUsuariosMock,
@@ -103,7 +105,11 @@ export function criarHandlersSessao(baseUrl: string) {
       ];
       if (erros.length > 0) return respostaErros(400, erros);
       const email = textoOuVazio(corpo.email);
+      const cnpj = textoOuVazio(corpo.cnpj).replace(/\D/g, '');
+      // Mesma ordem do backend: e-mail primeiro, depois CNPJ.
       if (emailJaCadastrado(email)) return respostaErro(409, 'email já cadastrado');
+      if (cnpjJaCadastradoMock(cnpj)) return respostaErro(409, 'cnpj já cadastrado');
+      registrarCnpjMock(cnpj);
       return HttpResponse.json(
         {
           usuario: {
