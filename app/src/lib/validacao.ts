@@ -100,6 +100,8 @@ export function placaValida(valor: string): boolean {
 
 // Documento: contagem errada (ou letra) cai na mensagem de `digitos`; contagem certa com conta
 // errada, ou sequência repetida, é "inválido". A tela barra antes do POST; a API segue de fallback.
+// O backend faz `trim` antes de validar, e o regex de `digitos` aceita espaço (também no meio:
+// "529 982 247 25"); a tela envia o valor já com `trim`, então os dois lados concordam.
 function documento(
   quantidade: number,
   nome: string,

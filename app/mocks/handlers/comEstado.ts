@@ -9,6 +9,7 @@
 import { http, HttpResponse } from 'msw';
 
 import type { CargaDaEmpresa, Frete, PropostaRecebida } from '../../src/api/tipos';
+import { normalizarPlaca } from '../../src/lib/validacao';
 import { certificacoesMock } from '../fixtures/certificacoes';
 import {
   calcularComissao,
@@ -173,7 +174,8 @@ export function criarHandlersComEstado(baseUrl: string) {
         nome: textoOuVazio(corpo.nome_completo),
         cpf,
         veiculoTipo: textoOuVazio(corpo.veiculo_tipo),
-        veiculoPlaca: textoOuVazio(corpo.veiculo_placa),
+        // Como o backend grava: sem hífen/espaço e em maiúsculas ("abc-1d23" vira "ABC1D23").
+        veiculoPlaca: normalizarPlaca(textoOuVazio(corpo.veiculo_placa)),
         capacidadeKg: Number(corpo.capacidade_kg),
       });
       return HttpResponse.json(
