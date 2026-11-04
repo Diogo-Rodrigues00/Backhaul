@@ -1,8 +1,9 @@
 // Fazer proposta: erros do POST /propostas (MVP-13, CT-03). Cada resposta da API tem o seu
 // tratamento: 409 de contraproposta, 409 de carga fechada, 403, 404 e falha genérica.
-import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
+import { act, fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import { http, HttpResponse } from 'msw';
 
+import { moverFoco } from '@/lib/a11y';
 import { apagar, CHAVES, gravar, ler } from '@/lib/armazenamento';
 import { MENSAGEM_PERFIL_NAO_ENCONTRADO } from '@/lib/fazerProposta';
 import { linkPorNome } from '@/test-utils/cenarioCargasProximas';
@@ -37,12 +38,76 @@ jest.mock('@/lib/armazenamento', () => {
   };
 });
 
+// moverFoco usa findNodeHandle (sem efeito no renderer de teste): espiado para ver quem recebe o foco.
+jest.mock('@/lib/a11y', () => ({ ...jest.requireActual('@/lib/a11y'), moverFoco: jest.fn() }));
+const moverFocoMock = jest.mocked(moverFoco);
+
 beforeEach(async () => {
   await apagar(CHAVES.token);
   await apagar(CHAVES.disponibilidadeAtiva);
   await apagar(CHAVES.propostasEnviadas);
   await gravar(CHAVES.token, 'mock-motorista');
+  moverFocoMock.mockClear();
 });
+
+/** O ref que `moverFoco` recebeu por último: o `refRetorno` do diálogo, resolvido ao fechar. */
+function refDoUltimoFoco(): { current: unknown } {
+  const chamadas = moverFocoMock.mock.calls;
+  const ultima = chamadas[chamadas.length - 1];
+  if (!ultima) throw new Error('moverFoco não foi chamado');
+  return ultima[0] as { current: unknown };
+}
+
+/** Procura um texto na árvore de elementos React (`props.children`, em profundidade). */
+function contemTexto(no: unknown, texto: string): boolean {
+  if (no === texto) return true;
+  if (Array.isArray(no)) return no.some((filho) => contemTexto(filho, texto));
+  if (no !== null && typeof no === 'object' && 'props' in no) {
+    return contemTexto((no as { props: { children?: unknown } }).props.children, texto);
+  }
+  return false;
+}
+
+/**
+ * O `Modal` do diálogo, com o diálogo aberto. Ele some quando o diálogo fecha (o mock de teste não
+ * mantém a saída), então o nó é guardado antes de enviar.
+ */
+function modalDoDialogo() {
+  const [modal] = screen.container.queryAll((el) => el.type === 'Modal');
+  if (!modal) throw new Error('Modal do diálogo não encontrado');
+  return modal;
+}
+
+/**
+ * Termina a saída como o navegador faz: dispara `dismiss` no `Modal`, que é quando o
+ * `DialogoConfirmacao` devolve o foco a `refRetorno` (o teste do componente faz o mesmo).
+ */
+async function terminarSaidaDoDialogo(modal: ReturnType<typeof modalDoDialogo>) {
+  // Chama o `onDismiss` do nó guardado, que é o que o Modal faz ao terminar a saída (com `fireEvent`
+  // o evento não chegou a esse handler neste teste).
+  await act(async () => {
+    (modal.props as { onDismiss: () => void }).onDismiss();
+  });
+}
+
+/**
+ * Confere que o foco foi ao aviso do cartão: o alvo do último `moverFoco` é o View de foco
+ * programático (`tabIndex={-1}`) que contém a mensagem. O ref é a instância de host, que não é o
+ * mesmo objeto da busca por texto; por isso a checagem é pelo conteúdo. Só booleanos entram na
+ * asserção, para o Jest não serializar a árvore do renderer quando ela falha.
+ */
+async function aguardarFocoNoAviso(texto: string) {
+  await waitFor(() => {
+    const alvo = refDoUltimoFoco().current as {
+      props?: { tabIndex?: number; children?: unknown };
+    } | null;
+    expect({
+      alvoNulo: alvo === null,
+      tabIndexMenosUm: alvo?.props?.tabIndex === -1,
+      contemMensagem: contemTexto(alvo?.props?.children, texto),
+    }).toEqual({ alvoNulo: false, tabIndexMenosUm: true, contemMensagem: true });
+  });
+}
 
 const CARGA = 'Grãos';
 const ACEITAR = 'Aceitar R$ 4.200,50';
@@ -137,6 +202,7 @@ describe('Fazer proposta: erros', () => {
     );
     await abrirComLista();
     await abrirAceite(CARGA, ACEITAR);
+    const modal = modalDoDialogo();
     await fireEvent.press(screen.getByRole('button', { name: ACEITAR }));
 
     await waitFor(() => expect(cartaoDa(CARGA).getByText(mensagem)).toBeOnTheScreen());
@@ -145,6 +211,9 @@ describe('Fazer proposta: erros', () => {
     expect(link.props.href).toBe('/motorista/disponibilidades/nova');
     expect(screen.queryByText('Carga indisponível')).toBeNull();
     expect(leituras).toBe(1);
+    // Ao fechar, o foco vai ao aviso do próprio cartão (não ao botão que abriu o diálogo).
+    await terminarSaidaDoDialogo(modal);
+    await aguardarFocoNoAviso(mensagem);
   });
 
   it('404 "perfil de motorista não encontrado": aviso fixo no cartão, sem "carga indisponível" e sem recarregar', async () => {
@@ -158,6 +227,7 @@ describe('Fazer proposta: erros', () => {
     );
     await abrirComLista();
     await abrirAceite(CARGA, ACEITAR);
+    const modal = modalDoDialogo();
     await fireEvent.press(screen.getByRole('button', { name: ACEITAR }));
 
     await waitFor(() =>
@@ -167,6 +237,8 @@ describe('Fazer proposta: erros', () => {
     expect(screen.queryByText('Carga indisponível')).toBeNull();
     expect(cartaoDa(CARGA).queryByRole('link')).toBeNull();
     expect(leituras).toBe(1);
+    await terminarSaidaDoDialogo(modal);
+    await aguardarFocoNoAviso(MENSAGEM_PERFIL_NAO_ENCONTRADO);
   });
 
   it('404 "carga não encontrada": trata como carga indisponível e recarrega a lista', async () => {
