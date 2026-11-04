@@ -283,17 +283,16 @@ describe('guardas por perfil', () => {
   });
 });
 
-describe('área do administrador (D-PO-10)', () => {
-  it('mostra "sem telas nesta versão", sem navegação, e o botão Sair encerra a sessão', async () => {
+describe('área do administrador (card 040)', () => {
+  it('mostra o resumo, a navegação com "Resumo", e o Sair do cabeçalho encerra a sessão', async () => {
     await gravar(CHAVES.token, 'mock-admin');
     await abrir('/admin');
 
     await waitFor(() => expect(sonda()).toBe('autenticado|Administrador|admin'));
-    expect(titulo('Perfil de administrador sem telas nesta versão')).toBeOnTheScreen();
-    expect(screen.container.queryAll((el) => el.props.role === 'navigation')).toHaveLength(0);
+    expect(titulo('Resumo da plataforma')).toBeOnTheScreen();
+    expect(screen.getAllByRole('link', { name: 'Resumo' }).length).toBeGreaterThan(0);
 
-    const [sairDoCorpo] = screen.getAllByRole('button', { name: 'Sair' }).slice(-1);
-    await act(async () => fireEvent.press(sairDoCorpo!));
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Sair' })));
     await waitFor(() => expect(caminho()).toBe('/entrar'));
     await expect(ler(CHAVES.token)).resolves.toBeNull();
   });
