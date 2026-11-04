@@ -29,9 +29,9 @@ _Atualizado em 2026-11-04 (Fase 6.0, orquestrador)._
 ## Cards da Fase 6
 | # | Issue | Card | Modelo | Bloqueado por | Onda | Estado |
 |---|---|---|---|---|---|---|
-| 036 | #109 | Minhas propostas no formato real (crítico) | sonnet | — | 0 | em execução |
-| 037 | #110 | Validação de CPF/CNPJ/placa | sonnet | — | 0 | em execução |
-| 038 | #111 | 409 disponibilidade, 404 perfil, tetos, `nome` nulo | haiku | — | 0 | PR #121 (CI rodando; falta revisão) |
+| 036 | #109 | Minhas propostas no formato real (crítico) | sonnet | — | 0 | **PR #122 pronto** (revisão + auditoria aprovadas, CI verde) |
+| 037 | #110 | Validação de CPF/CNPJ/placa | sonnet | — | 0 | **PR #123 pronto** (revisão + auditoria aprovadas, CI verde) |
+| 038 | #111 | 409 disponibilidade, 404 perfil, tetos, `nome` nulo | haiku | — | 0 | **PR #121 pronto** (revisão + auditoria aprovadas, CI verde); rebase sobre o 037 (conflito em `cadastro/motorista.tsx`, `lib/validacao.test.ts`) |
 | 039 | #112 | Protótipos | designer | — | 0 | aprovado |
 | INT | PR #108 | Contrato das rotas novas | integracao-api | — | 0 | revisado (aprovado com ressalvas), CI verde; aguarda merge |
 | 026 | #37 | Minhas propostas (tela) | haiku | 036, PROTO | 1 | aguardando |
@@ -54,10 +54,19 @@ Protótipo aprovado (Fase 2): https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP 
 Site publicado: https://backhaul-front.vercel.app (último deploy de produção em 2026-10-26).
 
 ## Bloqueios e atenção
+- **Onda 0 pronta, aguardando merge do Pedro** (ordem): #105 (merge commit) → #106, #107, #120 → #122 (036) + deploy de produção → #108 → #123 → #121 (rebase). Auditoria (CI, runs 41870706725, 41872743440, 41873944556): A11y/BP/SEO 100 em 15 rotas mobile+desktop; Performance desktop 100; axe 0 falhas; JS máx. 342,8 KiB.
+- Playwright usa portas fixas (4173, 4010) compartilhadas entre worktrees: agentes em paralelo não rodam E2E/Lighthouse local; CI é a fonte.
 - PRs #105–#107 só mergeiam pelo Pedro por enquanto: o modo automático bloqueou `gh pr merge` do orquestrador ("Merge Without Review"). #105 com **merge commit**.
 - Ressalvas não bloqueantes do #108 (para o 031): `chaves.certificacoes.catalogo()` é prefixo das outras chaves; fixtures/testes de certificação com datas absolutas (2030/2031).
 - Teste pré-existente instável: `cadastro/__tests__/empresa.test.tsx:215` falha na suíte completa (passa isolado) e `formulario.test.tsx` estourou timeout na linha de base (relato do integracao-api). Investigar no 037, que mexe nesse teste.
 - `npm run lint` sai com código 2 ("ESLint output (JSON parse failed: EOF...)") na linha de base; `npx expo lint` passa. Conferir o script no CI.
+
+## Pendências de baixa severidade da Onda 0 (para 045/046 ou card `fix:` posterior)
+- 036: comentários desatualizados (`usePropostasDoMotorista.ts:60`, `tipos.ts:1-2`); título do teste "recusada ou aceita" só testa recusada; `comEstado` de `/propostas/minhas` sem teste direto; docs (`arquitetura.md`, `mvp.md`, `mapa-do-codigo.md`, ADR 0005) ainda chamam a rota de "4a / 404".
+- 037: campo Placa sem `ajuda` com o formato antes do erro.
+- 038: aviso de perfil não indica o que fazer (3.3.3); `refAviso` como função nova a cada render (`CorpoCargasProximas.tsx:209`).
+- E2E de axe não cobre os estados de erro novos (aviso 409/404 no cartão, CPF/CNPJ/placa inválidos) → card 046.
+- Ressalvas do #108: `chaves.certificacoes.catalogo()` é prefixo das outras; datas absolutas em fixtures de certificação → card 031.
 
 ## Limite de JS inicial
 360 KiB (368.640 bytes), medido em bytes, por rota (adendo 3 do ADR 0011). **Após o PR #93 (TanStack só nas áreas logadas, adendo ao ADR 0004):** log do CI de 339,1 a 342,1 KiB por rota (antes: 355,0 a 357,9); `/entrar` 342,1 (antes 357,9). O TanStack ficou num chunk próprio de 18,0 KiB (`consultas-*.js`), aberto por `import()` junto com o corpo de cada tela de dados. Telas pesadas usam casca na rota + corpo em `src/telas` via `React.lazy` depois da hidratação (ADR 0003). Pendente da meta do adendo 3: alias mais enxuto do TanStack (opcional, o ganho já cumpriu ≤ 345 KiB).
