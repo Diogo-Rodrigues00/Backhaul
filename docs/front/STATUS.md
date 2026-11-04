@@ -3,6 +3,10 @@
 _Atualizado em 2026-10-23, véspera do congelamento de funcionalidades (24/10)._
 
 ## Fase atual
+**Fase 6 — Backend novo (planejada em 2026-11-04, ainda não iniciada).** O backend subiu rotas novas (propostas/minhas, certificações, chat, admin, CPF/CNPJ com dígito). Spec do orquestrador: `spec-fase-backend-novo.md`. Pedido ao Diogo: `pedido-ao-diogo.md`. **Bug crítico conhecido:** `usePropostasDoMotorista.ts:83,91` lê `p.carga.id`, mas a API devolve `chamado_carga_id` (Cargas próximas quebra com proposta pendente) → card 036.
+
+(Abaixo: estado da Fase 5, de 2026-10-23.)
+
 **Fase 5 — Fechamento.** O fluxo principal do MVP está completo e mergeado em `front`. Resta: PR #90 (home e menu), janela de correção 25–28/10, ensaio em 28/10, apresentação em 29/10 e Mostra Tech em 12/11.
 
 ## Fases
