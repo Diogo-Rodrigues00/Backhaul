@@ -1,6 +1,8 @@
 # Cards do front-end — visão geral
 
-_Versão 1.0 · 2026-10-20 · Autor: tech-lead · Status: proposto (aguarda aprovação do Pedro antes de virar issue)._
+_Versão 1.0 · 2026-10-20 · Autor: tech-lead · Status: aprovado (Fase 2). Versão 2.0 · 2026-11-04: seção "Fase 6" (cards 026 e 031–046), proposta, aguarda aprovação do Pedro._
+
+As seções abaixo até "Caminho crítico" são o plano da Fase 2 (histórico, com as datas da época). O plano vigente é a seção **Fase 6**.
 
 Specs em `NNN-slug.md`. Arquitetura em `../arquitetura.md`; decisões em `../adr/`. Cada card = 1 PR para `front`, a partir de `front`, com todos os portões (ADR 0013).
 
@@ -83,6 +85,75 @@ Cobertura: MVP-01 (001, 003, 005, 010) · 02 (014) · 03 (013, 015) · 04 (013) 
 - Janela disponível: 20/10 18 h → 24/10 23 h ≈ 4,2 dias. Folga real depende de quantas horas por dia o orquestrador consegue rodar e de quão rápido os PRs são mergeados; com 12 h/dia, a folga é de ~3 h. **Plano se atrasar:** dividir o 010 em dois PRs (casca: `Cabecalho`, `BarraAbas`, `TemplateTela`; depois: estados, `TemplateLista`, `BarraNovidades`) e liberar o 013 após o primeiro.
 - Caminhos quase críticos: 004 (6 h) precisa terminar antes de 013 (sobra ~8 h); 010 → 009 → 018 → 019 (12 h) corre em paralelo ao trecho 010 → 013 → 022 → 024 → 025 (22 h).
 - Pontos externos no caminho: **aprovação do DS até 21/10 meio-dia** (trava 005 e 008) e **PROTO aprovado até 22/10 manhã** (trava 013 em diante). Cada hora de atraso neles atrasa o congelamento na mesma medida.
+
+## Fase 6 — backend novo (2026-11-04)
+
+Spec de origem: `../spec-fase-backend-novo.md` (seção 5). Contrato: `../../api.md` (vence a spec). Decisões da 6.0 em `../decisoes.md`: **sem cronograma com datas** (ondas em ordem, até onde der antes da Mostra Tech em 12/11); **admin 040 e 041 sem protótipo**; Performance desktop `warn` (aplicado no 038); CORS do Vercel resolvido. ADR novo: [0016 — chat da proposta](../adr/0016-chat-da-proposta.md).
+
+### Legenda de bloqueios da Fase 6
+| Sigla | Significa |
+|---|---|
+| **6.0** | PR #105 (`chore/trazer-main`: `front` + `origin/main`) mergeado em `front` |
+| **INT** | PR do `integracao-api` (`feat/contrato-fase6`) mergeado em `front`: tipos, fetchers, hooks, chaves e MSW das rotas **novas** (certificações, mensagens, admin). Os cards 031, 032, 040, 041, 042 **consomem** essas peças, não recriam. `MinhaProposta` plano é do 036; validação de CPF/CNPJ/placa é do 037 |
+| **PROTO** | Protótipo do card 039 aprovado pelo Pedro (vale para 026, 031, 032, 035, 042, 043; **não** para 040 e 041) |
+| **ROTA-P1/P2/P4** | Rota do `pedido-ao-diogo.md` (A1, A2, A4) em `main` **e** em `docs/api.md`. Sem ela, o card não executa e fica "bloqueado externo" |
+
+### Tabela de cards
+
+| # | Card | Tipo | Agente / modelo | Est. | Bloqueado por | Onda |
+|---|---|---|---|---|---|---|
+| 036 | [Minhas propostas no formato real (**crítico**)](036-minhas-propostas-formato-real.md) | fix | dev-front / sonnet | M 4 h | 6.0 | 0 |
+| 037 | [Validação de CPF/CNPJ/placa + fixtures, MSW e E2E válidos](037-validacao-cpf-cnpj-placa.md) | fix | dev-front / sonnet | M 4 h | 6.0 | 0 |
+| 038 | [409 de disponibilidade, 404 de perfil, tetos, `nome` nulo, Lighthouse desktop `warn`](038-conflitos-perfil-tetos.md) | fix | dev-front / haiku | P 2 h | 6.0 | 0 |
+| 039 | [Protótipos: minhas propostas, chat, certificações, fila do admin, mapa](039-prototipos-fase6.md) | design | designer / sonnet | M 4 h | — | 0 |
+| — | Contrato novo: tipos, fetchers, hooks, MSW (certificações, mensagens, admin) | base | integracao-api / sonnet | — | 6.0 | 0 |
+| 026 | [Minhas propostas (tela) — **reescrito**](026-minhas-propostas.md) | feature | dev-front / haiku | M 3 h | 036, PROTO | 1 |
+| 031 | [Certificações do motorista — **reescrito**](031-certificacoes-motorista.md) | feature | dev-front / sonnet | M 4 h | INT, PROTO | 1 |
+| 040 | [Admin: casca e resumo](040-admin-casca-resumo.md) | feature | dev-front / sonnet | M 3 h | INT | 1 |
+| 042 | [Chat em "Propostas da carga" (empresa)](042-chat-empresa.md) | feature | dev-front / sonnet | G 6 h | INT, PROTO | 1 |
+| 032 | [Admin aprova certificações — **reescrito**](032-admin-certificacoes.md) | feature | dev-front / haiku | M 3 h | 040, INT, PROTO (031 desejável) | 2 |
+| 041 | [Admin: fretes e usuários](041-admin-fretes-usuarios.md) | feature | dev-front / haiku | M 3 h | 040, INT | 2 |
+| 043 | [Chat do motorista (em Minhas propostas)](043-chat-motorista.md) | feature | dev-front / haiku | P 2 h | 026, 042 | 2 |
+| 035 | [Mapa sob demanda (cargas próximas e minhas cargas) — **atualizado**](035-mapa.md) | feature | dev-front / sonnet | G 6 h | PROTO | 2 |
+| 033 | [Cancelar carga — **atualizado**](033-cancelar-carga.md) | feature | dev-front / haiku | P 2 h | **ROTA-P1** | 2 (se rota) |
+| 034 | [Cancelar disponibilidade — **atualizado**](034-cancelar-disponibilidade.md) | feature | dev-front / haiku | P 2 h | **ROTA-P2** | 2 (se rota) |
+| 044 | [Comissão, `proposta_id`, origem e destino em Meus fretes](044-fretes-comissao-origem-destino.md) | feature | dev-front / haiku | M 3 h | **ROTA-P4** | 2 (se rota) |
+| 045 | [Roteiro, contas e ensaio (atualiza o 029)](045-roteiro-contas-ensaio.md) | docs | documentador + devops / haiku | P 2 h + ensaios | 026, 031, 032, 037, 040, 042; ensaio: seeds no Neon | 3 |
+| 046 | [E2E do fluxo + auditoria das rotas novas (atualiza o 030)](046-e2e-auditoria-fase6.md) | qa | dev-front / sonnet | G 6 h | cards de feature que entrarem | 3 |
+
+Total: 17 cards (3 fix, 1 design, 11 feature, 1 docs, 1 qa) + o PR do `integracao-api`. Modelos: 7 sonnet e 9 haiku nos cards de execução, mais o 039 (designer, sonnet). Já em `front` e por isso fora dos bloqueios: 007, 009, 011, 012, 013, 020, 021, 022, 024, 027, 028. Qualquer card pode subir de haiku para sonnet pela regra das retentativas.
+
+### Ondas (em ordem, sem datas)
+
+| Onda | Cards em paralelo | Condição para começar |
+|---|---|---|
+| 0 | 036, 037, 038, 039, INT | 6.0 em `front` (039 não depende de nada). **036 primeiro a mergear** e deploy de produção logo depois (bug em produção) |
+| 1 | 026, 031, 040, 042 | 036 em `front` (026); INT em `front` (031, 040, 042); **PROTO** aprovado (026, 031, 042). O 040 não espera protótipo |
+| 2 | 032, 041, 043, 035 e, se a rota existir, 033, 034, 044 | 040 em `front` (032, 041); 026 e 042 em `front` (043); PROTO (032, 035); ROTA-P1/P2/P4 em `main` + `docs/api.md` (033, 034, 044) |
+| 3 | 045, 046 | cards de feature que vão para a Mostra em `front` |
+
+O `integracao-api` confere contrato × backend de novo no fim de cada onda (`git fetch`), porque o Diogo pode mudar a `main`.
+
+### Arquivos compartilhados e ordem de merge
+Cards da mesma onda que mexem nos mesmos arquivos conflitam; o segundo a mergear rebaseia em `front` e roda os portões de novo.
+
+| Arquivo | Cards que mexem |
+|---|---|
+| `app/src/components/organisms/itensDaArea.ts` | 026 (motorista: Minhas propostas), 031 (motorista: Certificações, posição pelo 039), 040 (admin: Resumo), 041 (admin: Fretes, Usuários), 032 (admin: Certificações) |
+| `app/e2e/rotas.ts` | 026, 031, 041 (2 rotas), 032; 040 só confere `/admin` |
+| `app/mocks/handlers/comEstado.ts` + `app/mocks/estado.ts` | 036 (`/propostas/minhas` 200), 037 (validação de cadastro), 046 (admin, certificações, mensagens); 033/034/044 se a rota existir |
+| `app/mocks/handlers/*.ts` sem estado + `mocks/fixtures/*` | INT (certificações, mensagens, admin), 036 (`propostas.ts`), 037 (`sessao.ts`), 038 (`fixtures/usuarios.ts`), 044 (`fretes.ts`) |
+| `app/src/api/tipos.ts` | INT, 036, 038, 044 (e 033/034 se a rota existir) |
+| `app/src/lib/validacao.ts` | 037, 038 |
+| `app/src/telas/CorpoPropostasDaCarga.tsx` + `CartaoProposta.tsx` | 042, 033 |
+| `app/src/telas/CorpoMinhasPropostas.tsx` + `CartaoMinhaProposta.tsx` | 026 (cria), 043 |
+| `CartaoCargaProxima.tsx`, `CorpoCargasProximas.tsx`, `usePropostasDoMotorista.ts`, `AcoesProposta.tsx` | 036, 038, 035 |
+
+Ordem de merge sugerida:
+- **Onda 0:** 036 → INT → 037 → 038 (039 é Artifact, sem conflito).
+- **Onda 1:** 040 → 026 → 031 → 042 (040 e 026/031 mexem em listas diferentes de `itensDaArea`, mas no mesmo arquivo).
+- **Onda 2:** 041 → 032 (menu do admin na ordem Resumo, Fretes, Usuários, Certificações) → 043 → 035; 033/034/044 quando a rota sair, depois do 042 (033) e antes do 046.
+- **Onda 3:** 045 (documento) em paralelo com 046; 046 por último.
 
 ## Regras de execução
 - Branch `feat/<slug>` (a base usa `feat/app-base`), sempre a partir de `front` atualizada; PR para `front` com `Closes #<issue>`.

@@ -3,12 +3,13 @@
 // `@fluxo.test`). Para os demais, o resolver devolve `undefined` e o MSW cai no próximo handler:
 // os handlers sem estado que os outros specs usam seguem exatamente como eram.
 //
-// Fiel ao backend de hoje: GET /disponibilidades/minhas e GET /propostas/minhas (propostas 4a/4b do
-// relatório) NÃO existem lá, então respondem 404 como o Express ("Cannot GET"). O app cai no plano B
-// (disponibilidade guardada no aparelho; propostas enviadas guardadas no aparelho).
+// Fiel ao backend de hoje: GET /propostas/minhas existe e responde 200 a partir do estado (formato
+// plano de docs/api.md). GET /disponibilidades/minhas (proposta 4b do relatório) NÃO existe lá, então
+// responde 404 como o Express ("Cannot GET"); o app cai no plano B (disponibilidade guardada no
+// aparelho).
 import { http, HttpResponse } from 'msw';
 
-import type { CargaDaEmpresa, Frete, PropostaRecebida } from '../../src/api/tipos';
+import type { CargaDaEmpresa, Frete, MinhaProposta, PropostaRecebida } from '../../src/api/tipos';
 import { normalizarPlaca } from '../../src/lib/validacao';
 import { certificacoesMock } from '../fixtures/certificacoes';
 import {
@@ -24,19 +25,24 @@ import {
   PREFIXO_TOKEN_FLUXO,
   registrarMotorista,
   reiniciarEstado,
+  situacaoDaCertificacao,
   usuarioPorEmail,
   usuarioPorId,
   usuarioPorToken,
   agoraIso,
   type CargaFluxo,
+  type CertificacaoFluxo,
   type FreteFluxo,
+  type MensagemFluxo,
   type PropostaFluxo,
   type UsuarioFluxo,
 } from '../estado';
 import { respostaErro, respostaErros } from '../respostas';
-import { lerCorpo, textoOuVazio, eNumeroPositivo } from './comum';
+import { eUuid, lerCorpo, textoDoParametro, textoOuVazio, eNumeroPositivo } from './comum';
 import { validarCarga } from './cargas';
 import { validarDisponibilidade } from './disponibilidades';
+import { validarEnvioCertificacaoMock } from './certificacoes';
+import { validarTextoMensagem } from './mensagens';
 import { validarCadastroMotorista } from './sessao';
 
 const TAMANHO_MINIMO_SENHA = 8;
@@ -61,7 +67,7 @@ function autenticarFluxo(request: Request, permitidos?: UsuarioFluxo['tipo'][]):
   return { usuario };
 }
 
-/** Express sem a rota: corpo HTML, como o backend de hoje responde às propostas 4a e 4b. */
+/** Express sem a rota: corpo HTML, como o backend de hoje responde à proposta 4b. */
 function respostaRotaInexistente(metodo: string, caminho: string) {
   return new HttpResponse(
     `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Error</title></head><body><pre>Cannot ${metodo} ${caminho}</pre></body></html>`,
@@ -127,12 +133,171 @@ function freteParaLista(frete: FreteFluxo, ladoMotorista: boolean): Frete {
   };
 }
 
+/** Uma linha de GET /propostas/minhas: plana, com o `frete_id` do frete criado no aceite. */
+function propostaParaLista(proposta: PropostaFluxo): MinhaProposta {
+  const carga = estado.cargas.find((c) => c.id === proposta.cargaId);
+  return {
+    id: proposta.id,
+    tipo: proposta.tipo,
+    valor_proposto: proposta.valor_proposto,
+    status: proposta.status,
+    criado_em: proposta.criado_em,
+    chamado_carga_id: proposta.cargaId,
+    chamado_disp_id: proposta.dispId,
+    tipo_carga: carga?.tipo_carga ?? '',
+    valor_oferecido: carga?.valor_oferecido ?? 0,
+    empresa: usuarioPorId(carga?.empresaId ?? '')?.nome ?? '',
+    frete_id: estado.fretes.find((f) => f.propostaId === proposta.id)?.id ?? null,
+  };
+}
+
 function maisRecentesPrimeiro<T extends { criado_em: string }>(itens: readonly T[]): T[] {
   // `slice().reverse()` desempata criados no mesmo milissegundo: o último inserido vem antes.
   return itens
     .slice()
     .reverse()
     .sort((a, b) => Date.parse(b.criado_em) - Date.parse(a.criado_em));
+}
+
+/** Como GET /certificacoes/minhas mostra cada certificação (campos do contrato). */
+function minhaCertificacao(certificacao: CertificacaoFluxo) {
+  return {
+    id: certificacao.id,
+    certificacao_id: certificacao.certificacaoId,
+    nome: certificacao.nome,
+    numero_certificado: certificacao.numero_certificado,
+    validade: certificacao.validade,
+    validado_por_admin: certificacao.aprovada,
+    situacao: situacaoDaCertificacao(certificacao),
+    criado_em: certificacao.criado_em,
+  };
+}
+
+/** Resposta do POST /certificacoes/minhas (201), como a API devolve. */
+function certificacaoEnviada(certificacao: CertificacaoFluxo) {
+  return {
+    id: certificacao.id,
+    certificacao_id: certificacao.certificacaoId,
+    numero_certificado: certificacao.numero_certificado,
+    validade: certificacao.validade,
+    validado_por_admin: certificacao.aprovada,
+    criado_em: certificacao.criado_em,
+  };
+}
+
+/** Fila do admin: certificações ainda não aprovadas, mais antigas primeiro. Traz cpf e cnh, como a API hoje. */
+function filaDePendentes() {
+  const pendentes: { motorista: UsuarioFluxo; certificacao: CertificacaoFluxo }[] = [];
+  for (const motorista of estado.usuarios) {
+    for (const certificacao of motorista.certificacoes ?? []) {
+      if (!certificacao.aprovada) pendentes.push({ motorista, certificacao });
+    }
+  }
+  return pendentes
+    .sort((a, b) => Date.parse(a.certificacao.criado_em) - Date.parse(b.certificacao.criado_em))
+    .map(({ motorista, certificacao }) => ({
+      id: certificacao.id,
+      certificacao: certificacao.nome,
+      numero_certificado: certificacao.numero_certificado,
+      validade: certificacao.validade,
+      criado_em: certificacao.criado_em,
+      motorista: {
+        id: motorista.id,
+        nome_completo: motorista.nome ?? '',
+        cpf: motorista.cpf ?? '',
+        cnh: motorista.cnh ?? '',
+        veiculo_placa: motorista.veiculoPlaca ?? '',
+      },
+    }));
+}
+
+/** Acha um registro ainda pendente pelo id. */
+function acharPendente(id: string) {
+  for (const motorista of estado.usuarios) {
+    const certificacao = (motorista.certificacoes ?? []).find((c) => c.id === id && !c.aprovada);
+    if (certificacao !== undefined) return { motorista, certificacao };
+  }
+  return undefined;
+}
+
+/** A proposta, se o usuário é um dos dois lados (empresa dona da carga ou motorista da proposta). */
+function propostaDoChat(propostaId: string, usuarioId: string): PropostaFluxo | undefined {
+  const proposta = estado.propostas.find((p) => p.id === propostaId);
+  if (proposta === undefined) return undefined;
+  const carga = estado.cargas.find((c) => c.id === proposta.cargaId);
+  const participa = carga?.empresaId === usuarioId || proposta.motoristaId === usuarioId;
+  return participa ? proposta : undefined;
+}
+
+function mensagemPublica(mensagem: MensagemFluxo) {
+  return {
+    id: mensagem.id,
+    remetente_id: mensagem.remetenteId,
+    texto: mensagem.texto,
+    criado_em: mensagem.criado_em,
+  };
+}
+
+/** Resumo do admin, calculado do estado. Soma em centavos inteiros, sem erro de ponto flutuante. */
+function resumoFluxo() {
+  const somar = (status: string, campo: 'valor_frete' | 'valor_comissao') =>
+    estado.transacoes
+      .filter((t) => t.status_pagamento === status)
+      .reduce((total, t) => total + Math.round(t[campo] * 100), 0) / 100;
+  return {
+    motoristas: estado.usuarios.filter((u) => u.tipo === 'motorista').length,
+    empresas: estado.usuarios.filter((u) => u.tipo === 'empresa').length,
+    cargas_abertas: estado.cargas.filter(cargaAbertaENaoVencida).length,
+    propostas_pendentes: estado.propostas.filter((p) => p.status === 'pendente').length,
+    fretes_aceitos: estado.fretes.filter((f) => f.status_entrega === 'aceito').length,
+    fretes_em_transito: estado.fretes.filter((f) => f.status_entrega === 'em_transito').length,
+    fretes_entregues: estado.fretes.filter((f) => f.status_entrega === 'entregue').length,
+    certificacoes_pendentes: filaDePendentes().length,
+    volume_liberado: somar('liberado', 'valor_frete'),
+    comissao_total: somar('liberado', 'valor_comissao'),
+    comissao_retida: somar('retido', 'valor_comissao'),
+  };
+}
+
+/** GET /admin/fretes: até 100, mais recentes primeiro; comissão só depois do pagamento. */
+function fretesDoAdmin() {
+  return maisRecentesPrimeiro(estado.fretes)
+    .slice(0, 100)
+    .map((frete) => {
+      const transacao = estado.transacoes.find((t) => t.freteId === frete.id);
+      const carga = estado.cargas.find((c) => c.id === frete.cargaId);
+      const motorista = usuarioPorId(frete.motoristaId);
+      return {
+        id: frete.id,
+        tipo_carga: carga?.tipo_carga ?? '',
+        valor_final: frete.valor_final,
+        status_entrega: frete.status_entrega,
+        coleta_em: frete.coleta_em,
+        entrega_em: frete.entrega_em,
+        criado_em: frete.criado_em,
+        empresa: usuarioPorId(frete.empresaId)?.nome ?? '',
+        motorista: motorista?.nome ?? '',
+        veiculo_placa: motorista?.veiculoPlaca ?? '',
+        status_pagamento: transacao?.status_pagamento ?? null,
+        valor_comissao: transacao?.valor_comissao ?? null,
+      };
+    });
+}
+
+/** GET /admin/usuarios: até 200, mais recentes primeiro. Sem senha, CPF ou CNPJ. */
+function usuariosDoAdmin() {
+  return estado.usuarios
+    .slice()
+    .sort((a, b) => Date.parse(b.criadoEm) - Date.parse(a.criadoEm))
+    .slice(0, 200)
+    .map((u) => ({
+      id: u.id,
+      email: u.email,
+      tipo: u.tipo,
+      ativo: true,
+      criado_em: u.criadoEm,
+      nome: u.nome,
+    }));
 }
 
 export function criarHandlersComEstado(baseUrl: string) {
@@ -173,6 +338,7 @@ export function criarHandlersComEstado(baseUrl: string) {
         email,
         nome: textoOuVazio(corpo.nome_completo),
         cpf,
+        cnh: textoOuVazio(corpo.cnh),
         veiculoTipo: textoOuVazio(corpo.veiculo_tipo),
         // Como o backend grava: sem hífen/espaço e em maiúsculas ("abc-1d23" vira "ABC1D23").
         veiculoPlaca: normalizarPlaca(textoOuVazio(corpo.veiculo_placa)),
@@ -201,6 +367,89 @@ export function criarHandlersComEstado(baseUrl: string) {
       const { resposta, deOutro } = autenticarFluxo(request);
       if (deOutro) return undefined;
       return resposta ?? HttpResponse.json({ certificacoes: certificacoesMock });
+    }),
+
+    // ---- Certificações do motorista (cadastra e reenvia) e fila do admin ----
+    http.get(`${baseUrl}/certificacoes/minhas`, ({ request }) => {
+      const { usuario, resposta, deOutro } = autenticarFluxo(request, ['motorista']);
+      if (deOutro) return undefined;
+      if (resposta) return resposta;
+      const minhas = (usuario.certificacoes ?? [])
+        .slice()
+        .sort((a, b) => a.nome.localeCompare(b.nome))
+        .map(minhaCertificacao);
+      return HttpResponse.json({ certificacoes: minhas });
+    }),
+
+    http.post(`${baseUrl}/certificacoes/minhas`, async ({ request }) => {
+      const { usuario, resposta, deOutro } = autenticarFluxo(request, ['motorista']);
+      if (deOutro) return undefined;
+      if (resposta) return resposta;
+      const corpo = await lerCorpo(request);
+      const erros = validarEnvioCertificacaoMock(corpo);
+      if (erros.length > 0) return respostaErros(400, erros);
+      const certificacaoId = textoOuVazio(corpo.certificacao_id);
+      const catalogo = certificacoesMock.find((c) => c.id === certificacaoId);
+      if (catalogo === undefined) {
+        return respostaErros(400, ['certificacao_id não corresponde a nenhuma certificação']);
+      }
+      const numero = textoOuVazio(corpo.numero_certificado);
+      const validade = textoOuVazio(corpo.validade);
+      const existente = (usuario.certificacoes ?? []).find(
+        (c) => c.certificacaoId === certificacaoId,
+      );
+      if (existente !== undefined && situacaoDaCertificacao(existente) === 'aprovada') {
+        return respostaErro(409, 'certificação já aprovada e dentro da validade');
+      }
+      if (existente !== undefined) {
+        // Reenvio (pendente ou vencida): atualiza os dados e volta para pendente, no mesmo registro.
+        existente.numero_certificado = numero;
+        existente.validade = validade;
+        existente.aprovada = false;
+        return HttpResponse.json({ certificacao: certificacaoEnviada(existente) }, { status: 201 });
+      }
+      const nova: CertificacaoFluxo = {
+        id: novoId(),
+        certificacaoId,
+        nome: catalogo.nome,
+        numero_certificado: numero,
+        validade,
+        aprovada: false,
+        criado_em: agoraIso(),
+      };
+      usuario.certificacoes = [...(usuario.certificacoes ?? []), nova];
+      return HttpResponse.json({ certificacao: certificacaoEnviada(nova) }, { status: 201 });
+    }),
+
+    http.get(`${baseUrl}/certificacoes/pendentes`, ({ request }) => {
+      const { resposta, deOutro } = autenticarFluxo(request, ['admin']);
+      if (deOutro) return undefined;
+      return resposta ?? HttpResponse.json({ certificacoes: filaDePendentes() });
+    }),
+
+    http.post(`${baseUrl}/certificacoes/pendentes/:id/responder`, async ({ request, params }) => {
+      const { resposta, deOutro } = autenticarFluxo(request, ['admin']);
+      if (deOutro) return undefined;
+      if (resposta) return resposta;
+      const corpo = await lerCorpo(request);
+      const id = textoDoParametro(params.id);
+      const erros: string[] = [];
+      if (!eUuid(id)) erros.push('id deve ser um UUID válido');
+      if (corpo.acao !== 'aprovar' && corpo.acao !== 'recusar') {
+        erros.push('acao deve ser aprovar ou recusar');
+      }
+      if (erros.length > 0) return respostaErros(400, erros);
+      const achado = acharPendente(id);
+      if (achado === undefined) return respostaErro(404, 'certificação pendente não encontrada');
+      if (corpo.acao === 'recusar') {
+        // Recusar apaga o registro: o motorista pode corrigir e reenviar.
+        achado.motorista.certificacoes = (achado.motorista.certificacoes ?? []).filter(
+          (c) => c.id !== id,
+        );
+        return HttpResponse.json({ certificacao: { id, recusada: true } });
+      }
+      achado.certificacao.aprovada = true;
+      return HttpResponse.json({ certificacao: { id, validado_por_admin: true } });
     }),
 
     // ---- Cargas ----
@@ -384,9 +633,12 @@ export function criarHandlersComEstado(baseUrl: string) {
     }),
 
     http.get(`${baseUrl}/propostas/minhas`, ({ request }) => {
-      const { resposta, deOutro } = autenticarFluxo(request, ['motorista']);
+      const { usuario, resposta, deOutro } = autenticarFluxo(request, ['motorista']);
       if (deOutro) return undefined;
-      return resposta ?? respostaRotaInexistente('GET', '/propostas/minhas');
+      if (resposta) return resposta;
+      // A API ignora query (não há `?status=`). Só as propostas do motorista do token.
+      const minhas = estado.propostas.filter((p) => p.motoristaId === usuario.id);
+      return HttpResponse.json({ propostas: maisRecentesPrimeiro(minhas).map(propostaParaLista) });
     }),
 
     http.get(`${baseUrl}/cargas/:id/propostas`, ({ request, params }) => {
@@ -482,6 +734,70 @@ export function criarHandlersComEstado(baseUrl: string) {
           criado_em: frete.criado_em,
         },
       });
+    }),
+
+    // ---- Chat da proposta (empresa dona e motorista da proposta) ----
+    http.get(`${baseUrl}/propostas/:id/mensagens`, ({ request, params }) => {
+      const { usuario, resposta, deOutro } = autenticarFluxo(request);
+      if (deOutro) return undefined;
+      if (resposta) return resposta;
+      const id = textoDoParametro(params.id);
+      if (!eUuid(id)) return respostaErros(400, ['id deve ser um UUID válido']);
+      // Quem não participa (inclusive o admin) recebe o mesmo 404 de "não existe".
+      if (propostaDoChat(id, usuario.id) === undefined) {
+        return respostaErro(404, 'proposta não encontrada');
+      }
+      const mensagens = estado.mensagens.filter((m) => m.propostaId === id).map(mensagemPublica);
+      return HttpResponse.json({ mensagens });
+    }),
+
+    http.post(`${baseUrl}/propostas/:id/mensagens`, async ({ request, params }) => {
+      const { usuario, resposta, deOutro } = autenticarFluxo(request);
+      if (deOutro) return undefined;
+      if (resposta) return resposta;
+      const corpo = await lerCorpo(request);
+      const id = textoDoParametro(params.id);
+      const texto = validarTextoMensagem(corpo.texto);
+      const erros: string[] = [];
+      if (!eUuid(id)) erros.push('id deve ser um UUID válido');
+      if (!texto.ok) erros.push(...texto.erros);
+      if (erros.length > 0 || !texto.ok) return respostaErros(400, erros);
+      const proposta = propostaDoChat(id, usuario.id);
+      if (proposta === undefined) return respostaErro(404, 'proposta não encontrada');
+      if (proposta.status === 'recusada' || proposta.status === 'expirada') {
+        return respostaErro(409, 'proposta encerrada: não é possível enviar mensagens');
+      }
+      const mensagem: MensagemFluxo = {
+        id: novoId(),
+        propostaId: id,
+        remetenteId: usuario.id,
+        texto: texto.texto,
+        criado_em: agoraIso(),
+      };
+      estado.mensagens.push(mensagem);
+      return HttpResponse.json(
+        { mensagem: { ...mensagemPublica(mensagem), proposta_id: id } },
+        { status: 201 },
+      );
+    }),
+
+    // ---- Admin (só leitura; só o admin do fluxo) ----
+    http.get(`${baseUrl}/admin/resumo`, ({ request }) => {
+      const { resposta, deOutro } = autenticarFluxo(request, ['admin']);
+      if (deOutro) return undefined;
+      return resposta ?? HttpResponse.json({ resumo: resumoFluxo() });
+    }),
+
+    http.get(`${baseUrl}/admin/fretes`, ({ request }) => {
+      const { resposta, deOutro } = autenticarFluxo(request, ['admin']);
+      if (deOutro) return undefined;
+      return resposta ?? HttpResponse.json({ fretes: fretesDoAdmin() });
+    }),
+
+    http.get(`${baseUrl}/admin/usuarios`, ({ request }) => {
+      const { resposta, deOutro } = autenticarFluxo(request, ['admin']);
+      if (deOutro) return undefined;
+      return resposta ?? HttpResponse.json({ usuarios: usuariosDoAdmin() });
     }),
 
     // ---- Fretes ----

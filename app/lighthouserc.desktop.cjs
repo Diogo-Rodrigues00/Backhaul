@@ -1,4 +1,8 @@
-// Lighthouse CI, desktop. As quatro categorias exigem 100 (ADR 0011/0012/0013).
+// Lighthouse CI, desktop. ADR 0011/0012/0013.
+// Decisão do Pedro (2026-11-04, Fase 6.0): Performance de desktop oscila no CI (0,88–1,00)
+// e já reprovou PR sem relação com a mudança. Por isso ela é `warn`, como no mobile (a nota
+// aparece no log e no resumo do job, mas não reprova o PR).
+// Acessibilidade, Boas práticas e SEO continuam exigindo 100.
 const { urls } = require('./scripts/lhci-rotas.cjs');
 
 module.exports = {
@@ -19,7 +23,7 @@ module.exports = {
     },
     assert: {
       assertions: {
-        'categories:performance': ['error', { minScore: 1, aggregationMethod: 'median' }],
+        'categories:performance': ['warn', { minScore: 1, aggregationMethod: 'median' }],
         'categories:accessibility': ['error', { minScore: 1, aggregationMethod: 'median' }],
         'categories:best-practices': ['error', { minScore: 1, aggregationMethod: 'median' }],
         'categories:seo': ['error', { minScore: 1, aggregationMethod: 'median' }],

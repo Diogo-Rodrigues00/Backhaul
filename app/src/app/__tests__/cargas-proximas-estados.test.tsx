@@ -1,5 +1,5 @@
 // Cargas próximas: estados da tela (CT-01 a CT-04), D-PO-04 (sem ativa) e o plano B de D-PO-05
-// (`GET /propostas/minhas` ainda não existe). Tela real + API de mock (MSW).
+// (`GET /propostas/minhas` falhando: plano B do aparelho). Tela real + API de mock (MSW).
 import { screen, waitFor, within } from 'expo-router/testing-library';
 import { delay, http, HttpResponse } from 'msw';
 
@@ -216,7 +216,7 @@ describe('Cargas próximas: estados', () => {
     expect(screen.getByText(/Buscando perto de Uberlândia - MG/)).toBeOnTheScreen();
   });
 
-  describe('D-PO-05: plano B enquanto GET /propostas/minhas não existe', () => {
+  describe('D-PO-05: plano B quando GET /propostas/minhas falha', () => {
     it('404 (rota inexistente): a lista aparece e vale o que este aparelho guardou', async () => {
       servidor.use(http.get(urlMock('/propostas/minhas'), () => respostaHtml(404)));
       await registrarPropostaEnviada(cargaProximaNormal.id, 'contraproposta');
@@ -232,7 +232,7 @@ describe('Cargas próximas: estados', () => {
       expect(screen.queryByText('Algo deu errado. Tente de novo.')).toBeNull();
     });
 
-    it('erro 500 na rota 4a não impede a lista: ela só deixa de marcar', async () => {
+    it('erro 500 na rota não impede a lista: ela só deixa de marcar', async () => {
       servidor.use(http.get(urlMock('/propostas/minhas'), () => respostaErro(500, 'erro interno')));
       await abrirCargasProximas();
       await aguardarSessao();
@@ -256,6 +256,19 @@ describe('Cargas próximas: estados', () => {
           within(el).queryByRole('heading', { name: cargaProximaUrgente.tipo_carga }) !== null,
       );
       expect(within(cartao!).getByText('Proposta enviada')).toBeOnTheScreen();
+    });
+
+    it('200 vazio da API vale: o que o aparelho guardou não marca a carga', async () => {
+      servidor.use(
+        http.get(urlMock('/propostas/minhas'), () => HttpResponse.json({ propostas: [] })),
+      );
+      await registrarPropostaEnviada(cargaProximaNormal.id, 'contraproposta');
+      await abrirCargasProximas();
+      await aguardarSessao();
+      await aguardarLista();
+
+      expect(cartoes()).toHaveLength(10);
+      expect(screen.queryByText('Proposta enviada')).toBeNull();
     });
 
     it('lista guardada estragada é ignorada sem erro', async () => {

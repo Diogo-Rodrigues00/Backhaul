@@ -492,15 +492,24 @@ describe('propostas', () => {
     });
   });
 
-  it('useMinhasPropostas (proposta 4a) mostra a carga e o status da carga', async () => {
+  it('useMinhasPropostas devolve o formato plano do contrato', async () => {
     entrarComoMock('mock-motorista');
     const { wrapper } = preparar();
     const { result } = await renderHook(() => useMinhasPropostas(), { wrapper });
     await esperarSucesso(result);
     const propostas = result.current.data?.propostas ?? [];
     expect(propostas.map((p) => p.status)).toEqual(['pendente', 'aceita', 'recusada']);
-    expect(propostas[0]?.carga).toMatchObject({ status: 'aberto', empresa: expect.any(String) });
-    expect(propostas[1]?.carga.status).toBe('fechado');
+    expect(propostas[0]).toMatchObject({
+      chamado_carga_id: expect.any(String),
+      chamado_disp_id: expect.any(String),
+      tipo_carga: expect.any(String),
+      valor_oferecido: expect.any(Number),
+      empresa: expect.any(String),
+      frete_id: null,
+    });
+    expect(propostas[0]).not.toHaveProperty('carga');
+    // `frete_id` só vem preenchido na proposta aceita.
+    expect(propostas.map((p) => p.frete_id !== null)).toEqual([false, true, false]);
   });
 
   it('useMinhasPropostas: 401 vira sessão', async () => {

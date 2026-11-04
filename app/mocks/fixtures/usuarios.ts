@@ -100,6 +100,15 @@ export function cpfJaCadastradoMock(cpfDigitos: string): boolean {
   return cadastradosMock.some((u) => u.cpf === cpfDigitos);
 }
 
+/** Ids de USUÁRIO (o que vem em `remetente_id` e no token), para os fixtures de chat e admin. */
+export const EMPRESA_ID_MOCK = usuarioEmpresa.usuario.id;
+export const MOTORISTA_JOAO_ID = usuarioMotorista.usuario.id;
+export const ADMIN_ID_MOCK = usuarioAdmin.usuario.id;
+/** Motorista da fila do admin e de propostas (Maria Souza): não tem token próprio no mock. */
+export const MOTORISTA_MARIA_ID = '44444444-4444-4444-8444-444444444444';
+/** Motorista de uma proposta recusada: o mock-motorista NÃO participa dela. */
+export const MOTORISTA_CARLOS_ID = '55555555-5555-4555-8555-555555555555';
+
 // CNPJs (só dígitos) das empresas criadas pelo mock (POST /cadastro/empresa com 201), para barrar
 // CNPJ repetido com 409 como o backend. Ficam só até o processo acabar.
 const cnpjsCadastradosMock: string[] = [];

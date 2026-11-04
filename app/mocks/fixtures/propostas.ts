@@ -1,18 +1,16 @@
 // POST /propostas, GET /cargas/:id/propostas, POST /propostas/:id/responder (docs/api.md) e
-// GET /propostas/minhas (PROPOSTA relatório 4a: ainda não existe no backend).
+// GET /propostas/minhas.
 import type {
-  CargaDaMinhaProposta,
-  CargaProxima,
   FreteCriado,
   MinhaProposta,
   PropostaCriada,
   PropostaRecebida,
-  StatusChamado,
 } from '../../src/api/tipos';
 
 import { cargaProximaNormal, cargaProximaUrgente, CARGA_URGENTE_ID } from './cargas';
 import { daquiAHoras, dataSemHora } from './datas';
 import { DISPONIBILIDADE_ABERTA_ID } from './disponibilidades';
+import { FRETE_ACEITO_ID } from './fretes';
 
 export const PROPOSTA_PENDENTE_ID = 'bbbbbbbb-0000-4000-8000-000000000001';
 export const PROPOSTA_ACEITE_ID = 'bbbbbbbb-0000-4000-8000-000000000002';
@@ -134,23 +132,26 @@ export const freteCriadoMock: FreteCriado = {
   criado_em: daquiAHoras(0),
 };
 
-function resumoDaCarga(carga: CargaProxima, status: StatusChamado): CargaDaMinhaProposta {
+/** Uma linha de GET /propostas/minhas no formato real, para os testes variarem só o que importa. */
+export function minhaPropostaMock(parcial: Partial<MinhaProposta> = {}): MinhaProposta {
   return {
-    id: carga.id,
-    tipo_carga: carga.tipo_carga,
-    empresa: carga.empresa,
-    origem: carga.origem,
-    destino: carga.destino,
-    valor_oferecido: carga.valor_oferecido,
-    urgencia: carga.urgencia,
-    status,
-    certificacao_exigida: carga.certificacao_exigida,
-    expira_em: carga.expira_em,
+    id: 'bbbbbbbb-0000-4000-8000-0000000000a0',
+    tipo: 'aceite',
+    valor_proposto: cargaProximaNormal.valor_oferecido,
+    status: 'pendente',
+    criado_em: '2026-10-21T12:00:00.000Z',
+    chamado_carga_id: cargaProximaNormal.id,
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: cargaProximaNormal.tipo_carga,
+    valor_oferecido: cargaProximaNormal.valor_oferecido,
+    empresa: cargaProximaNormal.empresa,
+    frete_id: null,
+    ...parcial,
   };
 }
 
-// PROPOSTA relatório 4a. Ordem criado_em DESC. As duas últimas mostram "carga fechou"
-// (carga.status 'fechado') sem outra chamada.
+// Formato real de GET /propostas/minhas (docs/api.md): plano, `criado_em` DESC. A aceita traz o
+// `frete_id` do frete criado no aceite; as demais, `null`.
 export const minhasPropostasMock: MinhaProposta[] = [
   {
     id: PROPOSTA_PENDENTE_ID,
@@ -158,8 +159,12 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_proposto: 3200,
     status: 'pendente',
     criado_em: daquiAHoras(-3),
-    disponibilidade_id: DISPONIBILIDADE_ABERTA_ID,
-    carga: resumoDaCarga(cargaProximaUrgente, 'aberto'),
+    chamado_carga_id: cargaProximaUrgente.id,
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: cargaProximaUrgente.tipo_carga,
+    valor_oferecido: cargaProximaUrgente.valor_oferecido,
+    empresa: cargaProximaUrgente.empresa,
+    frete_id: null,
   },
   {
     id: PROPOSTA_ACEITE_ID,
@@ -167,8 +172,12 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_proposto: 4200.5,
     status: 'aceita',
     criado_em: daquiAHoras(-20),
-    disponibilidade_id: DISPONIBILIDADE_ABERTA_ID,
-    carga: resumoDaCarga(cargaProximaNormal, 'fechado'),
+    chamado_carga_id: cargaProximaNormal.id,
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: cargaProximaNormal.tipo_carga,
+    valor_oferecido: cargaProximaNormal.valor_oferecido,
+    empresa: cargaProximaNormal.empresa,
+    frete_id: FRETE_ACEITO_ID,
   },
   {
     id: PROPOSTA_RECUSADA_ID,
@@ -176,7 +185,11 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_proposto: 2900,
     status: 'recusada',
     criado_em: daquiAHoras(-30),
-    disponibilidade_id: DISPONIBILIDADE_ABERTA_ID,
-    carga: resumoDaCarga(cargaProximaUrgente, 'fechado'),
+    chamado_carga_id: cargaProximaUrgente.id,
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: cargaProximaUrgente.tipo_carga,
+    valor_oferecido: cargaProximaUrgente.valor_oferecido,
+    empresa: cargaProximaUrgente.empresa,
+    frete_id: null,
   },
 ];
