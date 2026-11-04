@@ -42,7 +42,9 @@ describe('validarMensagem', () => {
   });
 
   it('ERRO_CONTATO_NA_MENSAGEM é a frase do card', () => {
-    expect(ERRO_CONTATO_NA_MENSAGEM).toBe('Não envie telefone, e-mail ou link. Combine tudo por aqui.');
+    expect(ERRO_CONTATO_NA_MENSAGEM).toBe(
+      'Não envie telefone, e-mail ou link. Combine tudo por aqui.',
+    );
   });
 
   it('valores e horários com poucos dígitos passam ("3500.00", "14h", "portão 2")', () => {

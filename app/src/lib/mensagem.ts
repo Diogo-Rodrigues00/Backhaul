@@ -7,7 +7,8 @@
 export const MENSAGEM_MAXIMO_CARACTERES = 1000;
 
 /** Frase para a pessoa quando o texto traz contato (a da API é técnica demais para o campo). */
-export const ERRO_CONTATO_NA_MENSAGEM = 'Não envie telefone, e-mail ou link. Combine tudo por aqui.';
+export const ERRO_CONTATO_NA_MENSAGEM =
+  'Não envie telefone, e-mail ou link. Combine tudo por aqui.';
 export const ERRO_MENSAGEM_VAZIA = 'Escreva a mensagem.';
 export const ERRO_MENSAGEM_LONGA = `Use no máximo ${MENSAGEM_MAXIMO_CARACTERES} caracteres.`;
 
