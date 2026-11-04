@@ -14,7 +14,7 @@ export const DADOS_VALIDOS = {
   email: 'motorista.teste@mock.test',
   senha: 'senhaSegura8',
   nome: 'João da Silva',
-  cpf: '123.456.789-01',
+  cpf: '529.982.247-25',
   cnh: '11122233344',
   tipo: 'Carreta',
   placa: 'ABC1D23',
