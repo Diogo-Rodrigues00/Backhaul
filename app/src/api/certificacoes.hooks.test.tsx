@@ -9,6 +9,7 @@ import {
   MINHA_CERT_PENDENTE_ID,
   minhasCertificacoesMock,
 } from '../../mocks/fixtures/certificacoes';
+import { daquiAHoras, dataDaquiADias } from '../../mocks/fixtures/datas';
 import { servidor, urlMock } from '../../mocks/node';
 import { respostaErros } from '../../mocks/respostas';
 import {
@@ -29,6 +30,8 @@ import {
 
 const CPF_DA_FILA = '52998224725';
 const CNH_DA_FILA = '11122233344';
+const VALIDADE_DA_FILA = dataDaquiADias(700);
+const CRIADO_EM_DA_FILA = daquiAHoras(-3);
 const ID_DE_OUTRA_CERTIFICACAO = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
 
 function preparar() {
@@ -83,13 +86,13 @@ describe('certificações do motorista', () => {
       await result.current.mutateAsync({
         certificacao_id: CERT_MOPP_8_ID,
         numero_certificado: '999888',
-        validade: '2031-01-31',
+        validade: dataDaquiADias(800),
       });
     });
     expect(result.current.data?.certificacao).toMatchObject({
       certificacao_id: CERT_MOPP_8_ID,
       numero_certificado: '999888',
-      validade: '2031-01-31',
+      validade: dataDaquiADias(800),
       validado_por_admin: false,
     });
     expect(chavesInvalidadas(invalidar)).toEqual([chaves.certificacoes.minhas()]);
@@ -103,7 +106,7 @@ describe('certificações do motorista', () => {
       result.current.mutate({
         certificacao_id: CERT_MOPP_8_ID,
         numero_certificado: '1',
-        validade: '2020-01-01',
+        validade: dataDaquiADias(-5),
       });
     });
     const erro = await esperarErro(result);
@@ -136,7 +139,7 @@ describe('certificações do motorista', () => {
       result.current.mutate({
         certificacao_id: CERT_MOPP_8_ID,
         numero_certificado: 'x'.repeat(61),
-        validade: '2031-01-31',
+        validade: dataDaquiADias(800),
       });
     });
     expect((await esperarErro(result)).mensagens).toEqual([
@@ -152,7 +155,7 @@ describe('certificações do motorista', () => {
       result.current.mutate({
         certificacao_id: ID_DE_OUTRA_CERTIFICACAO,
         numero_certificado: '1',
-        validade: '2031-01-31',
+        validade: dataDaquiADias(800),
       });
     });
     expect((await esperarErro(result)).mensagens).toEqual([
@@ -168,7 +171,7 @@ describe('certificações do motorista', () => {
       result.current.mutate({
         certificacao_id: CERT_MOPP_3_ID,
         numero_certificado: '123456',
-        validade: '2030-05-01',
+        validade: dataDaquiADias(900),
       });
     });
     expect(await esperarErro(result)).toMatchObject({
@@ -190,8 +193,8 @@ describe('fila do admin de certificações', () => {
               id: MINHA_CERT_PENDENTE_ID,
               certificacao: 'MOPP - Classe 8 Corrosivos',
               numero_certificado: '654321',
-              validade: '2030-11-20',
-              criado_em: '2026-11-03T10:00:00.000Z',
+              validade: VALIDADE_DA_FILA,
+              criado_em: CRIADO_EM_DA_FILA,
               motorista: {
                 id: '22222222-2222-4222-8222-222222222222',
                 nome_completo: 'João da Silva',
@@ -213,8 +216,8 @@ describe('fila do admin de certificações', () => {
       id: MINHA_CERT_PENDENTE_ID,
       certificacao: 'MOPP - Classe 8 Corrosivos',
       numero_certificado: '654321',
-      validade: '2030-11-20',
-      criado_em: '2026-11-03T10:00:00.000Z',
+      validade: VALIDADE_DA_FILA,
+      criado_em: CRIADO_EM_DA_FILA,
       motorista: {
         id: '22222222-2222-4222-8222-222222222222',
         nome_completo: 'João da Silva',
