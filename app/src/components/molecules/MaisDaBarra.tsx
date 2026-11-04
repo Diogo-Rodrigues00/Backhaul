@@ -1,10 +1,11 @@
 // "Mais" da barra inferior (protótipo da Fase 6, card 026): um botão que abre a lista dos destinos que
 // não cabem na barra do celular. Fechado, os links nem existem na página, então o Tab não os alcança.
 import { useId, useRef, useState } from 'react';
-import { Platform, Pressable, View, type ViewStyle } from 'react-native';
+import { Platform, Pressable, useWindowDimensions, View, type ViewStyle } from 'react-native';
 
 import { Icone } from '@/components/atoms/Icone';
 import { Texto } from '@/components/atoms/Texto';
+import { useFecharAoClicarFora } from '@/hooks/useFecharAoClicarFora';
 import { moverFoco } from '@/lib/a11y';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
@@ -31,6 +32,8 @@ const LARGURA_PAINEL = 236;
 function criarEstilos({ radius, space }: TemaVisual) {
   return {
     raiz: { flex: 1, position: 'relative' } satisfies ViewStyle,
+    // Tamanho e posição são definidos no componente (dependem da janela). Só o transparente e o absoluto.
+    fundo: { position: 'absolute', backgroundColor: 'transparent' } satisfies ViewStyle,
     gatilho: {
       flex: 1,
       flexDirection: 'column',
@@ -73,10 +76,15 @@ export function MaisDaBarra({ destinos }: PropsMaisDaBarra) {
   const { colors } = useTema();
   const [aberto, setAberto] = useState(false);
   const idPainel = useId();
+  const refRaiz = useRef<View>(null);
   const refGatilho = useRef<View>(null);
+  const janela = useWindowDimensions();
   const web = Platform.OS === 'web';
   const marcado = aberto || destinos.some((destino) => destino.atual);
   const corDoGatilho = marcado ? brand.amber : colors.text.onInverse;
+
+  // Clique ou toque fora fecha o painel. Na web é um listener no `document`; no iPhone, o fundo abaixo.
+  useFecharAoClicarFora(refRaiz, aberto, () => setAberto(false));
 
   // Só na web: no iPhone não há tecla Esc. O evento sobe do botão e dos links, porque o `onKeyDown`
   // fica no contêiner que tem os dois.
@@ -95,7 +103,27 @@ export function MaisDaBarra({ destinos }: PropsMaisDaBarra) {
   const ligacaoComPainel = web ? { 'aria-controls': idPainel } : {};
 
   return (
-    <View style={estilos.raiz} {...teclado}>
+    <View ref={refRaiz} style={estilos.raiz} {...teclado}>
+      {/* iPhone: fundo transparente, cobre a janela inteira por trás do botão e do painel. Tocar nele
+          fecha o painel. Fica antes do botão na ordem de pintura, então o botão continua tocável. */}
+      {aberto && !web ? (
+        <Pressable
+          testID="mais-fundo"
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          onPress={() => setAberto(false)}
+          style={[
+            estilos.fundo,
+            {
+              left: -janela.width * 2,
+              top: -janela.height * 2,
+              width: janela.width * 4,
+              height: janela.height * 4,
+            },
+          ]}
+        />
+      ) : null}
       <Pressable
         ref={refGatilho}
         role="button"

@@ -97,6 +97,18 @@ describe('MaisDaBarra', () => {
     expect(focoMovido).not.toHaveBeenCalled();
   });
 
+  it('iPhone: tocar fora do painel (no fundo) fecha, e o fundo só existe com o painel aberto', async () => {
+    await renderizarComRota(<MaisDaBarra destinos={destinos} />, { rotas });
+    expect(screen.queryByTestId('mais-fundo')).toBeNull();
+    await act(async () => fireEvent.press(botaoMais()));
+    // O fundo é escondido do leitor de tela (accessibilityElementsHidden): a consulta precisa ver o escondido.
+    const fundo = screen.getByTestId('mais-fundo', { includeHiddenElements: true });
+    await act(async () => fireEvent.press(fundo));
+    expect(expandido()).toBe(false);
+    expect(screen.queryByRole('link', { name: 'Disponibilidade' })).toBeNull();
+    expect(focoMovido).not.toHaveBeenCalled();
+  });
+
   it('o painel é uma lista e cada destino é um item dela', async () => {
     await renderizarComRota(<MaisDaBarra destinos={destinos} />, { rotas });
     await act(async () => fireEvent.press(botaoMais()));
