@@ -101,6 +101,10 @@ const REGEX_DOCUMENTO = /^[\d.\-\/\s]+$/;
 // mal formatado chegaria no Postgres e daria erro 22P02, que viraria 500.
 const REGEX_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// mensagens.conteudo é TEXT (sem limite no banco). O teto é regra da API, para ninguém
+// gravar megabytes num único POST de chat.
+const MENSAGEM_MAXIMO = 1000;
+
 // Mesmos valores do ENUM nivel_urgencia do schema.sql.
 const URGENCIAS: readonly Urgencia[] = ["normal", "urgente", "critico"];
 
@@ -124,12 +128,52 @@ function validarSenha(valor: unknown, erros: string[]): string {
   return senha;
 }
 
-// Remove a pontuação e confere a quantidade de dígitos (11 para CPF, 14 para CNPJ).
+// Dígito verificador (módulo 11), igual para CPF e CNPJ: soma cada dígito vezes um peso,
+// e o dígito esperado é 0 se o resto da divisão por 11 for menor que 2; senão, 11 - resto.
+function digitoVerificador(digitos: string, pesos: number[]): number {
+  const soma = pesos.reduce((acc, peso, i) => acc + Number(digitos[i]) * peso, 0);
+  const resto = soma % 11;
+  return resto < 2 ? 0 : 11 - resto;
+}
+
+// Recebe só dígitos. Sequências como 111.111.111-11 passam na conta, mas não são CPFs reais.
+export function cpfValido(cpf: string): boolean {
+  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
+  const d1 = digitoVerificador(cpf, [10, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const d2 = digitoVerificador(cpf, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
+  return d1 === Number(cpf[9]) && d2 === Number(cpf[10]);
+}
+
+export function cnpjValido(cnpj: string): boolean {
+  if (!/^\d{14}$/.test(cnpj) || /^(\d)\1{13}$/.test(cnpj)) return false;
+  const d1 = digitoVerificador(cnpj, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const d2 = digitoVerificador(cnpj, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  return d1 === Number(cnpj[12]) && d2 === Number(cnpj[13]);
+}
+
+// Placa padrão antigo (ABC1234) ou Mercosul (ABC1D23). Aceita hífen/espaço e minúsculas
+// na entrada, mas sempre devolve sem pontuação e em maiúsculas.
+const REGEX_PLACA = /^[A-Z]{3}\d[A-Z\d]\d{2}$/;
+
+export function normalizarPlaca(valor: string): string {
+  return valor.replace(/[\s-]/g, "").toUpperCase();
+}
+
+function validarPlaca(valor: unknown, erros: string[]): string {
+  const placa = normalizarPlaca(texto(valor));
+  if (!REGEX_PLACA.test(placa)) erros.push("veiculo_placa inválida (use ABC1234 ou ABC1D23)");
+  return placa;
+}
+
+// Remove a pontuação, confere a quantidade de dígitos (11 para CPF, 14 para CNPJ)
+// e os dígitos verificadores (um CPF/CNPJ digitado errado quase nunca fecha a conta).
 function validarDocumento(valor: unknown, nome: string, digitos: number, erros: string[]): string {
   const bruto = texto(valor);
   const limpo = bruto.replace(/\D/g, "");
   if (!REGEX_DOCUMENTO.test(bruto) || limpo.length !== digitos) {
     erros.push(`${nome} deve ter ${digitos} dígitos`);
+  } else if (!(digitos === 11 ? cpfValido(limpo) : cnpjValido(limpo))) {
+    erros.push(`${nome} inválido`);
   }
   return limpo;
 }
@@ -236,7 +280,7 @@ export function validarCadastroMotorista(body: unknown): Resultado<DadosMotorist
     cpf: validarDocumento(b.cpf, "cpf", 11, erros),
     cnh: obrigatorio(b.cnh, "cnh", erros),
     veiculo_tipo: obrigatorio(b.veiculo_tipo, "veiculo_tipo", erros),
-    veiculo_placa: obrigatorio(b.veiculo_placa, "veiculo_placa", erros).toUpperCase(),
+    veiculo_placa: validarPlaca(b.veiculo_placa, erros),
     capacidade_kg: capacidade,
   };
 
@@ -356,6 +400,34 @@ export function validarStatusEntrega(body: unknown): Resultado<StatusEntrega> {
     : { ok: false, erros: [`status_entrega deve ser ${STATUS_ENTREGA.join(", ")}`] };
 }
 
+// Filtro de contato do chat: true se o texto parece trazer telefone, e-mail ou link.
+// O preço e o combinado ficam na plataforma; contato direto permitiria fechar o frete por fora.
+function contemContato(texto: string): boolean {
+  // E-mail: algo@algo.algo, ou a palavra "arroba" escrita por extenso.
+  const temEmail = /[^\s@]+@[^\s@]+\.[^\s@]+|\barroba\b/i.test(texto);
+
+  // Telefone: 10 ou mais dígitos, aceitando espaço, ponto, hífen e parênteses entre eles.
+  const temTelefone = /(?:\d[\s.\-()]*){10,}/.test(texto);
+
+  // Link: http, www. ou domínio terminando em .com/.br/.me/.ly (letras no fim, para não pegar 3500.00).
+  const temLink = /https?:\/\/|www\.|\b[a-z0-9-]+\.(?:com|br|me|ly)\b/i.test(texto);
+
+  return temEmail || temTelefone || temLink;
+}
+
+// Corpo do POST /propostas/:id/mensagens: { texto }. Devolve o texto já sem espaços nas pontas.
+export function validarMensagem(body: unknown): Resultado<string> {
+  const t = texto(corpo(body).texto);
+  if (!t) return { ok: false, erros: ["texto é obrigatório"] };
+  if (t.length > MENSAGEM_MAXIMO) {
+    return { ok: false, erros: [`texto deve ter no máximo ${MENSAGEM_MAXIMO} caracteres`] };
+  }
+  if (contemContato(t)) {
+    return { ok: false, erros: ["mensagem não pode conter telefone, e-mail ou link"] };
+  }
+  return { ok: true, dados: t };
+}
+
 // Recebe req.query. Aqui os três parâmetros são obrigatórios: sem ponto não há "perto de".
 export function validarBuscaProximas(query: unknown): Resultado<DadosBuscaProximas> {
   const q = corpo(query);
@@ -368,4 +440,43 @@ export function validarBuscaProximas(query: unknown): Resultado<DadosBuscaProxim
   };
 
   return erros.length ? { ok: false, erros } : { ok: true, dados };
+}
+
+export type DadosCertificacao = { certificacao_id: string; numero_certificado: string; validade: string };
+
+// Data de calendário "AAAA-MM-DD". Só o formato não basta ("2026-02-31" passa no regex),
+// por isso a data é reconstruída e comparada: se o dia não existe, o JS "corrige" e não bate.
+function validarDataCalendario(valor: unknown, nome: string, erros: string[]): string {
+  const t = texto(valor);
+  const d = new Date(`${t}T00:00:00.000Z`);
+  const valida = /^\d{4}-\d{2}-\d{2}$/.test(t) && !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === t;
+  if (!valida) erros.push(`${nome} deve ser uma data válida no formato AAAA-MM-DD`);
+  return t;
+}
+
+// Motorista envia a própria certificação (MOPP etc.) para o admin aprovar.
+export function validarEnvioCertificacao(body: unknown): Resultado<DadosCertificacao> {
+  const b = corpo(body);
+  const erros: string[] = [];
+  const dados: DadosCertificacao = {
+    certificacao_id: validarUuidObrigatorio(b.certificacao_id, "certificacao_id", erros),
+    numero_certificado: obrigatorio(b.numero_certificado, "numero_certificado", erros),
+    validade: validarDataCalendario(b.validade, "validade", erros),
+  };
+  if (dados.numero_certificado.length > 60) erros.push("numero_certificado deve ter no máximo 60 caracteres");
+  // Data vencida não tem como ser aprovada: melhor avisar já no envio.
+  if (erros.length === 0 && dados.validade < new Date().toISOString().slice(0, 10)) {
+    erros.push("validade não pode estar no passado");
+  }
+  return erros.length ? { ok: false, erros } : { ok: true, dados };
+}
+
+export type DecisaoCertificacao = "aprovar" | "recusar";
+const DECISOES_CERTIFICACAO: readonly DecisaoCertificacao[] = ["aprovar", "recusar"];
+
+export function validarDecisaoCertificacao(body: unknown): Resultado<DecisaoCertificacao> {
+  const acao = corpo(body).acao as DecisaoCertificacao;
+  return DECISOES_CERTIFICACAO.includes(acao)
+    ? { ok: true, dados: acao }
+    : { ok: false, erros: [`acao deve ser ${DECISOES_CERTIFICACAO.join(" ou ")}`] };
 }

@@ -16,7 +16,7 @@ Verificado no código e por `curl` em 23/10/2026. O que é "instantâneo" (produ
 | Telas do motorista: cadastro, minhas disponibilidades, publicar disponibilidade, cargas próximas, fazer proposta/contraproposta, meus fretes e status | Mergeadas (cards 017, 022, 023, 024, 025, 027) | Usáveis |
 | **Minhas propostas** (card 026) | **Fora do MVP.** A rota `/motorista/propostas` não existe e o item foi **removido do menu do motorista** (`app/src/components/organisms/itensDaArea.ts`, PR #90); o menu tem 3 itens: Cargas próximas, Disponibilidade e Meus fretes | Nada a evitar no menu. Os passos 4 e 7 do PRD que citam "Minhas propostas" foram trocados por "Proposta enviada" no cartão e por "Meus fretes" |
 | `GET /propostas/minhas` e `GET /disponibilidades/minhas` em produção | **Não existem** (404 HTML em 23/10) | O app usa o plano B no aparelho (seção 6, linha "Rotas faltando") |
-| Seed de demo (senhas reais, 1 empresa, motorista com MOPP, motorista sem MOPP, cargas com e sem exigência) | **A definir com o Diogo (seed de demo).** O `database/seed.sql` do repositório tem `hash_fake_*`: ninguém entra com ele | Sem seed não há como ensaiar o fluxo completo |
+| Seed de demo (senhas reais, 1 empresa, motorista com MOPP, motorista sem MOPP, cargas com e sem exigência) | **Escrito em `database/seed-demo.sql`, ainda não rodado no Neon.** O `database/seed.sql` continua com `hash_fake_*` (ninguém entra com ele); o de demo recebe e-mail e senha por variável do psql (comando na seção 7) | Sem rodar o seed não há como ensaiar o fluxo completo |
 | `CORS_ORIGIN` da API aceita `https://backhaul-front.vercel.app`? | **Não** em 23/10 (a pré-requisição `OPTIONS /login` com essa origem volta sem `access-control-allow-origin`; `http://localhost:8081` volta liberado) | O site publicado **não consegue falar com a API** até o Diogo incluir a origem |
 | Deploy de produção na Vercel | `https://backhaul-front.vercel.app/entrar` respondia **404** em 23/10: o build publicado é antigo (anterior ao login). Ação do Pedro: `vercel deploy --prod --yes` com `front` atualizado (`STATUS.md`, "Ações do Pedro") | Sem novo deploy a demo hospedada não funciona |
 | Página inicial `/` | Provisória: só título e descrição, **sem botões Entrar/Criar conta** (`app/src/app/index.tsx`) | Abrir direto `/entrar` e `/cadastro` (guarde os dois endereços) |
@@ -81,7 +81,18 @@ Para o público de leitor de tela (se o professor perguntar por acessibilidade):
 
 ## 5. Valores e dados sugeridos
 
-Sugestão, não fato do seed: cargas e cidades precisam estar na lista de `app/src/data/cidades.ts` (63 cidades do Triângulo Mineiro, Alto Paranaíba, sudeste goiano e polos). Origem da carga dentro do raio da disponibilidade. O Mateus, o Gustavo e o Guilherme definem valores e nomes realistas (tarefa de "realismo dos dados").
+Cargas e cidades precisam estar na lista de `app/src/data/cidades.ts` (63 cidades do Triângulo Mineiro, Alto Paranaíba, sudeste goiano e polos). Origem da carga dentro do raio da disponibilidade. O Mateus, o Gustavo e o Guilherme definem valores e nomes realistas (tarefa de "realismo dos dados").
+
+Cargas que o `database/seed-demo.sql` cria (todas da empresa demo, abertas e com prazo de 30 dias a partir da execução do seed):
+
+| Carga | Origem → destino | Urgência | MOPP |
+|---|---|---|---|
+| Combustível (inflamável) | Uberlândia → Uberaba | Crítico | Sim |
+| Solventes industriais | Araguari → Catalão | Urgente | Sim |
+| Grãos ensacados | Uberlândia → Itumbiara | Urgente | Não |
+| Material de construção | Tupaciguara → Araxá | Normal | Não |
+
+Com a disponibilidade em Uberlândia e raio de 80 km, as quatro entram no raio. O motorista sem MOPP vê só as duas sem exigência.
 
 ## 6. Plano B por risco
 
@@ -109,7 +120,15 @@ Marque cada item e anote o horário e o resultado no registro (seção 10).
 - [ ] Rotas do plano B: `GET /propostas/minhas` e `GET /disponibilidades/minhas` continuam 404? Se o Diogo as publicou, repita o roteiro inteiro (muda o comportamento)
 
 **Contas e dados**
-- [ ] Seed de demo no ar (a definir com o Diogo): 1 empresa, 1 motorista com MOPP aprovado e válido, 1 motorista sem MOPP, cargas com e sem exigência na região da lista de cidades
+- [ ] Seed de demo no ar: 1 empresa, 1 motorista com MOPP aprovado e válido, 1 motorista sem MOPP, cargas com e sem exigência na região da lista de cidades. O Diogo roda, da raiz do repositório, com os valores do quadro (seção 8) digitados só no terminal:
+  ```sh
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
+    -v email_empresa=... -v senha_empresa=... \
+    -v email_mopp=... -v senha_mopp=... \
+    -v email_sem_mopp=... -v senha_sem_mopp=... \
+    -f database/seed-demo.sql
+  ```
+  Rodar de novo depois do ensaio volta o cenário ao início (apaga as contas demo, os fretes e as propostas delas e recria).
 - [ ] Cada conta do quadro (seção 8) entra pelo login do site publicado
 - [ ] Lista de e-mails e CPFs novos para o cadastro ao vivo (um por ensaio mais reserva)
 - [ ] Não existe credencial em arquivo do repositório (`npm run verificar:proibidos` em `app/`, com `DEMO_EMAILS` preenchida localmente)
@@ -134,12 +153,12 @@ Não escreva e-mail nem senha aqui. Mantenha este quadro em papel ou em arquivo 
 
 | Conta | E-mail | Senha | Onde guardado | Situação |
 |---|---|---|---|---|
-| Empresa demo | a definir com o Diogo (seed de demo) | (fora do repo) | | |
-| Motorista demo **com** MOPP aprovado e válido | a definir com o Diogo (seed de demo) | (fora do repo) | | |
-| Motorista demo **sem** MOPP (reserva do cadastro ao vivo) | a definir com o Diogo (seed de demo) | (fora do repo) | | |
+| Empresa demo | valor de `email_empresa` no seed | `senha_empresa` (fora do repo) | | |
+| Motorista demo **com** MOPP aprovado e válido | valor de `email_mopp` no seed | `senha_mopp` (fora do repo) | | |
+| Motorista demo **sem** MOPP (reserva do cadastro ao vivo) | valor de `email_sem_mopp` no seed | `senha_sem_mopp` (fora do repo) | | |
 | Cadastro ao vivo: e-mails e CPFs ainda não usados | a definir pelo grupo | (fora do repo) | | |
 
-O card 029 prevê um script `app/scripts/verificar-contas-demo.mjs` (lê as contas de variáveis de ambiente locais e imprime só "ok" ou "falhou"). **Ainda não existe**: depende do seed do Diogo.
+O card 029 prevê um script `app/scripts/verificar-contas-demo.mjs` (lê as contas de variáveis de ambiente locais e imprime só "ok" ou "falhou"). **Ainda não existe**: depende de o `database/seed-demo.sql` rodar no Neon.
 
 ## 9. Divisão do trabalho
 

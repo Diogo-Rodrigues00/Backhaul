@@ -3,6 +3,7 @@ import "./env";
 import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { pool } from "./db";
+import { rotasAdmin } from "./rotas/admin";
 import { rotasCadastro } from "./rotas/cadastro";
 import { rotasCargas } from "./rotas/cargas";
 import { rotasCertificacoes } from "./rotas/certificacoes";
@@ -39,6 +40,7 @@ app.use("/cargas", rotasCargas);
 app.use("/disponibilidades", rotasDisponibilidades);
 app.use("/propostas", rotasPropostas);
 app.use("/fretes", rotasFretes);
+app.use("/admin", rotasAdmin);
 
 app.get("/saude", async (_req, res) => {
   try {
