@@ -511,15 +511,15 @@ describe('cabeçalho e abas da área (web)', () => {
     }
   });
 
-  it('motorista: os 3 destinos (sem "Minhas propostas", rota fora do MVP)', async () => {
+  it('motorista: os 4 destinos (sem "Minhas propostas" até o card 026; Certificações, card 031)', async () => {
     await gravar(CHAVES.token, 'mock-motorista');
     await abrir('/motorista/cargas');
     await waitFor(() => expect(sonda()).toContain('autenticado'));
 
     const [nav] = navegacoes();
-    expect(within(nav!).getAllByRole('link')).toHaveLength(3);
+    expect(within(nav!).getAllByRole('link')).toHaveLength(4);
     expect(within(nav!).queryByRole('link', { name: 'Minhas propostas' })).toBeNull();
-    for (const rotulo of ['Cargas próximas', 'Disponibilidade', 'Meus fretes']) {
+    for (const rotulo of ['Cargas próximas', 'Disponibilidade', 'Meus fretes', 'Certificações']) {
       expect(within(nav!).getByRole('link', { name: rotulo })).toBeOnTheScreen();
     }
     expect(within(nav!).getByRole('link', { name: 'Cargas próximas' }).props['aria-current']).toBe(

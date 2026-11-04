@@ -71,7 +71,8 @@ describe('CampoDataPartes', () => {
     );
     const [grupo] = comPapel('group');
     expect(grupo?.props['aria-describedby']).toBe('v-erro v-ajuda');
-    expect(grupo?.props['aria-invalid']).toBe(true);
+    // aria-invalid não vale para role="group" (ARIA 1.2): o grupo aponta o erro por aria-describedby.
+    expect(grupo?.props['aria-invalid']).toBeUndefined();
     // Uma só mensagem de erro, não uma por parte.
     expect(screen.getAllByText('Informe uma data válida.')).toHaveLength(1);
     expect(screen.getByText('Informe uma data válida.').props.nativeID).toBe('v-erro');

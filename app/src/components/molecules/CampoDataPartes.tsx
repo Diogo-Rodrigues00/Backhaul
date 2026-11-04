@@ -77,7 +77,6 @@ export function CampoDataPartes({
       nativeID={id}
       aria-labelledby={grupo.rotulo.nativeID}
       aria-describedby={grupo.campo['aria-describedby']}
-      aria-invalid={grupo.campo['aria-invalid']}
       aria-disabled={desabilitado || undefined}
       accessibilityLabel={rotulo}
       accessibilityHint={grupo.campo.accessibilityHint}
@@ -98,7 +97,10 @@ export function CampoDataPartes({
           const idParte = `${id}-${parte}`;
           const idRotuloParte = `${idParte}-rotulo`;
           return (
-            <View key={parte} style={[estilos.parte, parte === 'ano' ? estilos.ano : estilos.curta]}>
+            <View
+              key={parte}
+              style={[estilos.parte, parte === 'ano' ? estilos.ano : estilos.curta]}
+            >
               <Texto nativeID={idRotuloParte} peso="bold">
                 {rotuloDaParte}
               </Texto>

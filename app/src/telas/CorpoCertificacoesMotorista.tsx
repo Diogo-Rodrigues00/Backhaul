@@ -111,11 +111,7 @@ export default function CorpoCertificacoesMotorista() {
             descricao:
               'Para ver cargas que exigem MOPP, envie sua certificação e espere o administrador aprovar.',
             acao: (
-              <Botao
-                tamanho="lg"
-                icone="plus"
-                aoPressionar={() => moverFoco(tituloDoFormulario)}
-              >
+              <Botao tamanho="lg" icone="plus" aoPressionar={() => moverFoco(tituloDoFormulario)}>
                 Enviar certificação
               </Botao>
             ),

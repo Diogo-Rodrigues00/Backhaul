@@ -20,7 +20,7 @@ import { CartaoFormulario, CelulaFormulario } from '@/components/organisms/Carta
 import { moverFoco } from '@/lib/a11y';
 import { dataNoPassado, montarData } from '@/lib/datas';
 import { ErroApi } from '@/lib/erros';
-import { maximo, obrigatorio } from '@/lib/validacao';
+import { maximo } from '@/lib/validacao';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 
