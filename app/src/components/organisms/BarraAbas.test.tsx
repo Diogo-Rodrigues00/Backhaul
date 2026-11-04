@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { Platform, StyleSheet } from 'react-native';
 
 import { renderizarComRota } from '@/test-utils/renderComRota';
@@ -67,5 +67,41 @@ describe('BarraAbas', () => {
     await renderizarComRota(<BarraAbas itens={itens} />);
     const [comAnel] = screen.container.queryAll((el) => el.props.dataSet?.anel === 'inverso');
     expect(comAnel).toBeTruthy();
+  });
+
+  describe('itens marcados com noMais vão para o "Mais"', () => {
+    const comMais = [
+      { href: '/motorista/cargas', rotulo: 'Cargas próximas', icone: 'map-pin' },
+      {
+        href: '/motorista/disponibilidades',
+        rotulo: 'Disponibilidade',
+        icone: 'locate',
+        noMais: true,
+      },
+      { href: '/motorista/propostas', rotulo: 'Minhas propostas', icone: 'file' },
+      { href: '/motorista/fretes', rotulo: 'Meus fretes', icone: 'truck' },
+    ] as const;
+
+    it('à vista ficam só os demais, na ordem; o "Mais" aparece no fim', async () => {
+      await renderizarComRota(<BarraAbas itens={comMais} />, { rotas: ['motorista/propostas'] });
+      const [nav] = navegacoes();
+      expect(within(nav!).getAllByRole('link')).toHaveLength(3);
+      for (const rotulo of ['Cargas próximas', 'Minhas propostas', 'Meus fretes']) {
+        expect(within(nav!).getByRole('link', { name: rotulo })).toBeOnTheScreen();
+      }
+      expect(within(nav!).getByRole('button', { name: 'Mais' })).toBeOnTheScreen();
+      expect(within(nav!).queryByRole('link', { name: 'Disponibilidade' })).toBeNull();
+    });
+
+    it('o item do "Mais" aparece ao abrir o botão', async () => {
+      await renderizarComRota(<BarraAbas itens={comMais} />, { rotas: ['motorista/propostas'] });
+      await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Mais' })));
+      expect(screen.getByRole('link', { name: 'Disponibilidade' })).toBeOnTheScreen();
+    });
+
+    it('sem nenhum noMais não há botão "Mais"', async () => {
+      await renderizarComRota(<BarraAbas itens={itens} />);
+      expect(screen.queryByRole('button', { name: 'Mais' })).toBeNull();
+    });
   });
 });
