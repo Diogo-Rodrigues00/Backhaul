@@ -1,9 +1,9 @@
 import { Router } from "express";
 import type { PoolClient } from "pg";
-import { emTransacao } from "../db";
+import { emTransacao, pool } from "../db";
 import { exigirAutenticacao, exigirTipo } from "../middleware/autenticacao";
 import { buscarEmpresaId, buscarMotoristaId } from "../perfis";
-import { validarId, validarProposta, validarRespostaProposta } from "../validacao";
+import { validarId, validarMensagem, validarProposta, validarRespostaProposta } from "../validacao";
 
 export const rotasPropostas = Router();
 
@@ -93,10 +93,16 @@ rotasPropostas.post("/", exigirAutenticacao, exigirTipo("motorista"), async (req
     // A disponibilidade tem que ser do motorista logado. Se for de outro, a resposta
     // é a mesma de "não existe": não confirmamos que aquele id existe.
     const disp = await client.query(
-      "SELECT 1 FROM chamados_disponibilidade WHERE id = $1 AND motorista_id = $2",
+      `SELECT status, expira_em > now() AS vigente
+         FROM chamados_disponibilidade
+        WHERE id = $1 AND motorista_id = $2`,
       [d.chamado_disp_id, motoristaId],
     );
     if (disp.rowCount === 0) return erro(404, "disponibilidade não encontrada");
+    // Disponibilidade já usada (motorista contratado) ou vencida não pode gerar proposta nova.
+    if (disp.rows[0].status !== "aberto" || !disp.rows[0].vigente) {
+      return erro(409, "disponibilidade não está mais aberta");
+    }
 
     const carga = await travarCarga(client, d.chamado_carga_id);
     if (!carga) return erro(404, "carga não encontrada");
@@ -131,6 +137,34 @@ rotasPropostas.post("/", exigirAutenticacao, exigirTipo("motorista"), async (req
   });
 
   res.status(resposta.status).json(resposta.corpo);
+});
+
+// Propostas do motorista logado, mais recentes primeiro. É por aqui que ele descobre
+// se foi aceito ou recusado (antes só a empresa enxergava o resultado).
+// O motorista vem pela disponibilidade usada na proposta, por isso o JOIN com ela.
+rotasPropostas.get("/minhas", exigirAutenticacao, exigirTipo("motorista"), async (req, res) => {
+  const motoristaId = await buscarMotoristaId(req.usuario!.id);
+  if (!motoristaId) {
+    res.status(404).json({ erro: "perfil de motorista não encontrado" });
+    return;
+  }
+
+  const { rows } = await pool.query(
+    `SELECT p.id, p.tipo, p.valor_proposto::float8 AS valor_proposto, p.status, p.criado_em,
+            p.chamado_carga_id, p.chamado_disp_id,
+            c.tipo_carga, c.valor_oferecido::float8 AS valor_oferecido,
+            e.razao_social AS empresa,
+            f.id AS frete_id
+       FROM propostas p
+       JOIN chamados_disponibilidade d ON d.id = p.chamado_disp_id
+       JOIN chamados_carga c           ON c.id = p.chamado_carga_id
+       JOIN empresas e                 ON e.id = c.empresa_id
+       LEFT JOIN fretes f              ON f.proposta_id = p.id
+      WHERE d.motorista_id = $1
+      ORDER BY p.criado_em DESC`,
+    [motoristaId],
+  );
+  res.json({ propostas: rows });
 });
 
 // Empresa dona da carga aceita ou recusa uma proposta.
@@ -208,4 +242,114 @@ rotasPropostas.post("/:id/responder", exigirAutenticacao, exigirTipo("empresa"),
   });
 
   res.status(resposta.status).json(resposta.corpo);
+});
+
+// ------------------------------------------------------------
+// Chat da proposta (GET e POST /propostas/:id/mensagens)
+// ------------------------------------------------------------
+
+// Mesmos valores do ENUM status_proposta do schema.sql.
+type StatusProposta = "pendente" | "aceita" | "recusada" | "expirada";
+
+// Os dois lados da proposta, já como id de USUÁRIO (o mesmo do token e de
+// mensagens.remetente_id). A empresa vem pela carga, o motorista pela disponibilidade.
+type PropostaChat = {
+  id: string;
+  status: StatusProposta;
+  empresa_usuario_id: string;
+  motorista_usuario_id: string;
+};
+
+// undefined = a proposta não existe. Quem decide o que responder é verificarAcessoChat.
+async function buscarPropostaChat(propostaId: string): Promise<PropostaChat | undefined> {
+  const { rows } = await pool.query(
+    `SELECT p.id, p.status,
+            e.usuario_id AS empresa_usuario_id,
+            m.usuario_id AS motorista_usuario_id
+       FROM propostas p
+       JOIN chamados_carga c           ON c.id = p.chamado_carga_id
+       JOIN empresas e                 ON e.id = c.empresa_id
+       JOIN chamados_disponibilidade d ON d.id = p.chamado_disp_id
+       JOIN motoristas m               ON m.id = d.motorista_id
+      WHERE p.id = $1`,
+    [propostaId],
+  );
+  return rows[0];
+}
+
+type AcaoChat = "ler" | "enviar";
+
+// Regra de acesso do chat. Devolve o erro a responder, ou null se pode seguir.
+function verificarAcessoChat(
+  proposta: PropostaChat | undefined,
+  usuarioId: string,
+  acao: AcaoChat,
+): Resposta | null {
+   if (!proposta) return erro(404, "proposta não encontrada");
+
+  const participante =
+    usuarioId === proposta.empresa_usuario_id ||
+    usuarioId === proposta.motorista_usuario_id;
+  if (!participante) return erro(404, "proposta não encontrada");
+
+  if (acao === "enviar" && (proposta.status === "recusada" || proposta.status === "expirada")) {
+    return erro(409, "proposta encerrada: não é possível enviar mensagens");
+  }
+
+  return null;
+}
+
+// Sem exigirTipo: quem entra é decidido por DONO da proposta, em verificarAcessoChat.
+// Um admin não é nenhum dos lados e cai no mesmo 404 de um estranho.
+// Sem transação: se a proposta for recusada entre a checagem e o INSERT, o pior caso é
+// uma mensagem gravada um instante depois. Nada fica inconsistente (diferente do frete).
+
+// Histórico do chat, em ordem cronológica. O id desempata mensagens com o mesmo
+// criado_em, para a ordem não mudar entre uma chamada e outra.
+rotasPropostas.get("/:id/mensagens", exigirAutenticacao, async (req, res) => {
+  const id = validarId(req.params.id, "id");
+  if (!id.ok) {
+    res.status(400).json({ erros: id.erros });
+    return;
+  }
+
+  const negado = verificarAcessoChat(await buscarPropostaChat(id.dados), req.usuario!.id, "ler");
+  if (negado) {
+    res.status(negado.status).json(negado.corpo);
+    return;
+  }
+
+  const { rows } = await pool.query(
+    `SELECT id, remetente_id, conteudo AS texto, criado_em
+       FROM mensagens
+      WHERE proposta_id = $1
+      ORDER BY criado_em, id`,
+    [id.dados],
+  );
+  res.json({ mensagens: rows });
+});
+
+// Envia uma mensagem. O remetente é sempre quem está logado: não vem no corpo,
+// senão um lado poderia escrever em nome do outro.
+rotasPropostas.post("/:id/mensagens", exigirAutenticacao, async (req, res) => {
+  const id = validarId(req.params.id, "id");
+  const texto = validarMensagem(req.body);
+  if (!id.ok || !texto.ok) {
+    res.status(400).json({ erros: [...(id.ok ? [] : id.erros), ...(texto.ok ? [] : texto.erros)] });
+    return;
+  }
+
+  const negado = verificarAcessoChat(await buscarPropostaChat(id.dados), req.usuario!.id, "enviar");
+  if (negado) {
+    res.status(negado.status).json(negado.corpo);
+    return;
+  }
+
+  const { rows } = await pool.query(
+    `INSERT INTO mensagens (proposta_id, remetente_id, conteudo)
+     VALUES ($1, $2, $3)
+     RETURNING id, proposta_id, remetente_id, conteudo AS texto, criado_em`,
+    [id.dados, req.usuario!.id, texto.dados],
+  );
+  res.status(201).json({ mensagem: rows[0] });
 });

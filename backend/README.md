@@ -106,7 +106,7 @@ Cadastrar motorista:
 ```bash
 curl -X POST http://localhost:3000/cadastro/motorista \
   -H "Content-Type: application/json" \
-  -d '{"email":"joao@exemplo.com","senha":"senha1234","nome_completo":"João da Silva","cpf":"123.456.789-09","cnh":"12345678900","veiculo_tipo":"truck","veiculo_placa":"ABC1D23","capacidade_kg":14000}'
+  -d '{"email":"joao@exemplo.com","senha":"senha1234","nome_completo":"João da Silva","cpf":"529.982.247-25","cnh":"12345678900","veiculo_tipo":"truck","veiculo_placa":"ABC1D23","capacidade_kg":14000}'
 # 201 {"usuario":{"id":"...","email":"joao@exemplo.com","tipo":"motorista","criado_em":"..."}}
 ```
 
@@ -114,7 +114,7 @@ Cadastrar empresa:
 ```bash
 curl -X POST http://localhost:3000/cadastro/empresa \
   -H "Content-Type: application/json" \
-  -d '{"email":"contato@transportes.com","senha":"senha1234","razao_social":"Transportes Exemplo LTDA","cnpj":"12.345.678/0001-90"}'
+  -d '{"email":"contato@transportes.com","senha":"senha1234","razao_social":"Transportes Exemplo LTDA","cnpj":"11.222.333/0001-81"}'
 # 201 {"usuario":{"id":"...","email":"contato@transportes.com","tipo":"empresa","criado_em":"..."}}
 ```
 
