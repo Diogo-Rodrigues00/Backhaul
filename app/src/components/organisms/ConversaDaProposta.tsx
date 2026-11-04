@@ -7,7 +7,16 @@
 // O anúncio de mensagem nova NÃO é feito aqui: a lista é `role="list"`, não `role="log"`, e quem
 // anuncia é a tela, pela região viva global (só as mensagens da outra parte, ADR 0016).
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, View, type Text, type TextInput, type ViewStyle } from 'react-native';
+import {
+  Platform,
+  ScrollView,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  type Text,
+  type TextInput,
+  type ViewStyle,
+} from 'react-native';
 
 import { Botao } from '@/components/atoms/Botao';
 import { Carregando } from '@/components/atoms/Carregando';
@@ -18,7 +27,7 @@ import { EstadoErro } from '@/components/molecules/EstadoErro';
 import { CampoTexto } from '@/components/molecules/CampoTexto';
 import { moverFoco } from '@/lib/a11y';
 import { formatarDataHora } from '@/lib/formatacao';
-import { MENSAGEM_MAXIMO_CARACTERES, validarMensagem } from '@/lib/mensagem';
+import { ERRO_MENSAGEM_LONGA, MENSAGEM_MAXIMO_CARACTERES, validarMensagem } from '@/lib/mensagem';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
@@ -35,8 +44,8 @@ export interface MensagemDaConversa {
 
 export const MOTIVO_CONVERSA_ENCERRADA =
   'Esta proposta foi encerrada. Você ainda pode ler a conversa.';
-export const ROTULO_ABRIR_CONVERSA = 'Abrir conversa';
-export const ROTULO_FECHAR_CONVERSA = 'Fechar conversa';
+/** Até aqui do fim do histórico a pessoa ainda "está no fim": mensagem nova rola sozinha. */
+export const DISTANCIA_DO_FIM_PX = 48;
 
 export interface PropsConversaDaProposta {
   /** Histórico em ordem cronológica. `undefined` enquanto a primeira leitura não terminou. */
@@ -76,6 +85,8 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
       alignItems: 'center',
       gap: space[2],
     } satisfies ViewStyle,
+    historicoBloco: { gap: space[2], alignItems: 'stretch' } satisfies ViewStyle,
+    verNova: { alignItems: 'flex-start' } satisfies ViewStyle,
     historico: { maxHeight: 340, flexGrow: 0 } satisfies ViewStyle,
     historicoConteudo: { padding: space[3] } satisfies ViewStyle,
     historicoCaixa: {
@@ -83,7 +94,7 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
       borderRadius: radius.md,
     } satisfies ViewStyle,
     lista: { gap: space[3] } satisfies ViewStyle,
-    mensagem: { maxWidth: '84%', gap: space[1] } satisfies ViewStyle,
+    mensagem: { maxWidth: '84%', minWidth: 0, gap: space[1] } satisfies ViewStyle,
     minha: { alignSelf: 'flex-end', alignItems: 'flex-end' } satisfies ViewStyle,
     dela: { alignSelf: 'flex-start', alignItems: 'flex-start' } satisfies ViewStyle,
     meta: {
@@ -93,6 +104,7 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
       alignItems: 'center',
     } satisfies ViewStyle,
     balao: {
+      minWidth: 0,
       paddingVertical: space[2],
       paddingHorizontal: space[3],
       borderWidth: border.width,
@@ -176,21 +188,44 @@ export function ConversaDaProposta({
   const [erroLocal, setErroLocal] = useState<string | undefined>();
   const idDoTitulo = `${id ?? 'conversa'}-titulo`;
 
-  // A conversa acaba de abrir: o foco vai ao título, para o leitor de tela dizer onde está.
+  // A conversa acaba de abrir: o foco vai ao título, para o leitor de tela dizer onde está. Na web só
+  // se o foco ainda estiver no botão que abriu (a pessoa pode já ter ido para outro lugar enquanto o
+  // código da conversa chegava); no iPhone sempre.
   useEffect(() => {
+    if (Platform.OS === 'web' && id !== undefined) {
+      const ativo = typeof document === 'undefined' ? null : document.activeElement;
+      if (ativo?.getAttribute('aria-controls') !== id) return;
+    }
     moverFoco(refTitulo);
-  }, []);
+  }, [id]);
 
-  // Histórico no fim: ao abrir e quando a última mensagem é minha (acabei de enviar).
+  // Rolagem do histórico. Mensagem nova com a pessoa perto do fim (≤ 48 px) rola ao fim sozinha; se
+  // ela subiu para reler, o histórico não se mexe e aparece "Ver nova mensagem". A mensagem que eu
+  // acabo de enviar sempre leva ao fim. O anúncio da mensagem nova é da região viva global (ADR 0016).
   const total = mensagens?.length ?? 0;
   const ultima = total > 0 ? mensagens?.[total - 1] : undefined;
   const ultimaEMinha = ultima !== undefined && ultima.remetente_id === meuUsuarioId;
-  const rolouAoAbrir = useRef(false);
-  useEffect(() => {
-    if (total === 0) return;
-    if (!rolouAoAbrir.current || ultimaEMinha) refRolagem.current?.scrollToEnd({ animated: false });
-    rolouAoAbrir.current = true;
-  }, [total, ultimaEMinha]);
+  const [seguindo, setSeguindo] = useState(true);
+  const [vistoAte, setVistoAte] = useState<number | null>(null);
+  const acompanhar = seguindo || ultimaEMinha;
+  const novas = acompanhar || vistoAte === null ? 0 : Math.max(0, total - vistoAte);
+
+  const aoRolar = (evento: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, layoutMeasurement, contentSize } = evento.nativeEvent;
+    const noFim =
+      contentSize.height - (contentOffset.y + layoutMeasurement.height) <= DISTANCIA_DO_FIM_PX;
+    setSeguindo(noFim);
+    // Visto até aqui: o total de quando a pessoa chegou ao fim, ou de quando saiu dele.
+    setVistoAte((visto) => (noFim ? total : (visto ?? total)));
+  };
+  const aoCrescer = () => {
+    if (acompanhar) refRolagem.current?.scrollToEnd({ animated: false });
+  };
+  const verNova = () => {
+    setSeguindo(true);
+    setVistoAte(total);
+    refRolagem.current?.scrollToEnd({ animated: false });
+  };
 
   const enviar = async () => {
     const resultado = validarMensagem(texto);
@@ -206,6 +241,10 @@ export function ConversaDaProposta({
   };
 
   const mostrarCampo = mensagens !== undefined;
+  // Passou do limite: erro com ícone e texto (não só a cor), sem esperar o envio. Não é região viva.
+  const passouDoLimite = texto.trim().length > MENSAGEM_MAXIMO_CARACTERES;
+  const erroDoTexto =
+    erroLocal ?? erroDoCampo ?? (passouDoLimite ? ERRO_MENSAGEM_LONGA : undefined);
   const ajuda = encerrada
     ? MOTIVO_CONVERSA_ENCERRADA
     : `${texto.length} de ${MENSAGEM_MAXIMO_CARACTERES} caracteres`;
@@ -235,32 +274,44 @@ export function ConversaDaProposta({
     );
   } else {
     historico = (
-      <ScrollView
-        ref={refRolagem}
-        role="region"
-        aria-label={`Mensagens da conversa com ${nomeDaOutraParte}`}
-        tabIndex={0}
-        style={[
-          estilos.historico,
-          estilos.historicoCaixa,
-          { backgroundColor: colors.bg.sunken, borderColor: colors.border.subtle },
-        ]}
-        contentContainerStyle={estilos.historicoConteudo}
-      >
-        <View role="list" style={estilos.lista}>
-          {mensagens.map((mensagem) => {
-            const minha = meuUsuarioId !== null && mensagem.remetente_id === meuUsuarioId;
-            return (
-              <Mensagem
-                key={mensagem.id}
-                mensagem={mensagem}
-                minha={minha}
-                autor={minha ? 'Você' : nomeDaOutraParte}
-              />
-            );
-          })}
-        </View>
-      </ScrollView>
+      <View style={estilos.historicoBloco}>
+        <ScrollView
+          ref={refRolagem}
+          role="region"
+          aria-label={`Mensagens da conversa com ${nomeDaOutraParte}`}
+          tabIndex={0}
+          scrollEventThrottle={100}
+          onScroll={aoRolar}
+          onContentSizeChange={aoCrescer}
+          style={[
+            estilos.historico,
+            estilos.historicoCaixa,
+            { backgroundColor: colors.bg.sunken, borderColor: colors.border.subtle },
+          ]}
+          contentContainerStyle={estilos.historicoConteudo}
+        >
+          <View role="list" style={estilos.lista}>
+            {mensagens.map((mensagem) => {
+              const minha = meuUsuarioId !== null && mensagem.remetente_id === meuUsuarioId;
+              return (
+                <Mensagem
+                  key={mensagem.id}
+                  mensagem={mensagem}
+                  minha={minha}
+                  autor={minha ? 'Você' : nomeDaOutraParte}
+                />
+              );
+            })}
+          </View>
+        </ScrollView>
+        {novas > 0 ? (
+          <View style={estilos.verNova}>
+            <Botao variante="secundario" icone="message-square" aoPressionar={verNova}>
+              {novas === 1 ? 'Ver nova mensagem' : 'Ver novas mensagens'}
+            </Botao>
+          </View>
+        ) : null}
+      </View>
     );
   }
 
@@ -281,7 +332,7 @@ export function ConversaDaProposta({
             ref={refCampo}
             rotulo="Mensagem"
             ajuda={ajuda}
-            erro={erroLocal ?? erroDoCampo}
+            erro={erroDoTexto}
             multiline
             numberOfLines={3}
             value={texto}

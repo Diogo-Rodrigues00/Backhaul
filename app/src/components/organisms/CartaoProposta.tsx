@@ -9,6 +9,7 @@ import { Etiqueta, type VarianteEtiqueta } from '@/components/atoms/Etiqueta';
 import { Preco } from '@/components/atoms/Preco';
 import { Texto } from '@/components/atoms/Texto';
 import { Titulo } from '@/components/atoms/Titulo';
+import { BotaoConversa } from '@/components/molecules/BotaoConversa';
 import { ResumoMotorista, type PropsResumoMotorista } from '@/components/molecules/ResumoMotorista';
 import { useMovimentoReduzido } from '@/hooks/useMovimentoReduzido';
 import { formatarDataHora, formatarMoeda, type NumeroEntrada } from '@/lib/formatacao';
@@ -42,13 +43,13 @@ export interface PropsCartaoProposta {
   aoAceitar: (origem: View | null) => void;
   aoRecusar: (origem: View | null) => void;
   /**
-   * Chat da proposta (card 042, ADR 0016). Com `aoAlternarConversa` o cartão mostra o botão
-   * "Abrir conversa" / "Fechar conversa" (`aria-expanded` e `aria-controls`); `conversa` é o painel,
-   * que a tela monta sob demanda só enquanto `conversaAberta`.
+   * Chat da proposta (card 042, ADR 0016). Com `aoAlternarConversa` e `idConversa` o cartão mostra
+   * o `BotaoConversa` ("Abrir conversa" / "Fechar conversa"); `conversa` é o painel, que a tela
+   * monta sob demanda só enquanto `conversaAberta`.
    */
   conversaAberta?: boolean;
   aoAlternarConversa?: () => void;
-  /** Mesmo `id` do painel em `conversa` (alvo do `aria-controls`). */
+  /** Mesmo `id` do painel em `conversa` (alvo do `aria-controls`); veja `idDoPainelDaConversa`. */
   idConversa?: string;
   conversa?: ReactNode;
   /** Raiz do cartão: a tela leva o foco para cá quando o botão que o tinha some. */
@@ -240,18 +241,13 @@ export function CartaoProposta({
             </Botao>
           </View>
         ) : null}
-        {aoAlternarConversa ? (
-          <Botao
-            variante="secundario"
-            icone="message-square"
-            bloco
-            aria-expanded={conversaAberta}
-            aria-controls={idConversa}
-            aria-label={`${conversaAberta ? 'Fechar' : 'Abrir'} conversa com ${motorista.nome}`}
-            aoPressionar={aoAlternarConversa}
-          >
-            {conversaAberta ? 'Fechar conversa' : 'Abrir conversa'}
-          </Botao>
+        {aoAlternarConversa && idConversa ? (
+          <BotaoConversa
+            aberta={conversaAberta}
+            nome={motorista.nome}
+            idDoPainel={idConversa}
+            aoAlternar={aoAlternarConversa}
+          />
         ) : null}
       </View>
       {conversaAberta && conversa ? (

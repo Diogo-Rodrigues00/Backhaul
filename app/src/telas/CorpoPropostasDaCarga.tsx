@@ -15,6 +15,7 @@ import { DialogoConfirmacao } from '@/components/organisms/DialogoConfirmacao';
 import { useCasca } from '@/components/organisms/useCasca';
 import { ConteudoLista, type EstadoLista } from '@/components/templates/TemplateLista';
 import { useAnunciarNovidades } from '@/hooks/useAnunciarNovidades';
+import { idDoPainelDaConversa, useUmaConversaAberta } from '@/hooks/useUmaConversaAberta';
 import { anunciar } from '@/lib/a11y';
 import { rotuloDoLocal } from '@/lib/cidades';
 import { ErroApi, MENSAGEM_FALHA } from '@/lib/erros';
@@ -114,7 +115,7 @@ export default function CorpoPropostasDaCarga() {
 
   // Chat (card 042, ADR 0016): uma conversa aberta por tela. Abrir outra fecha a anterior, então só
   // há uma consulta de mensagens com atualização automática além da lista de propostas.
-  const [conversaAberta, setConversaAberta] = useState<string | null>(null);
+  const conversas = useUmaConversaAberta();
 
   const [atualizando, setAtualizando] = useState(false);
   const atualizar = useCallback(async () => {
@@ -298,14 +299,12 @@ export default function CorpoPropostasDaCarga() {
                         podeResponder={cargaAberta && proposta.status === 'pendente'}
                         aoAceitar={(origem) => abrirDialogo(proposta, 'aceitar', origem)}
                         aoRecusar={(origem) => abrirDialogo(proposta, 'recusar', origem)}
-                        conversaAberta={conversaAberta === proposta.id}
-                        idConversa={`conversa-${proposta.id}`}
-                        aoAlternarConversa={() =>
-                          setConversaAberta((atual) => (atual === proposta.id ? null : proposta.id))
-                        }
+                        conversaAberta={conversas.estaAberta(proposta.id)}
+                        idConversa={idDoPainelDaConversa(proposta.id)}
+                        aoAlternarConversa={() => conversas.alternar(proposta.id)}
                         conversa={
                           <ConversaSobDemanda
-                            id={`conversa-${proposta.id}`}
+                            id={idDoPainelDaConversa(proposta.id)}
                             propostaId={proposta.id}
                             statusDaProposta={proposta.status}
                             nomeDaOutraParte={proposta.motorista.nome_completo}

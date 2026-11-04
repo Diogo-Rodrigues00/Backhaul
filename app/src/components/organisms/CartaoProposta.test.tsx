@@ -176,7 +176,12 @@ describe('CartaoProposta', () => {
     it('o botão da conversa aparece também nas propostas que não aceitam resposta', async () => {
       await renderizar(
         <CartaoProposta
-          {...props({ podeResponder: false, status: 'recusada', aoAlternarConversa: jest.fn() })}
+          {...props({
+            podeResponder: false,
+            status: 'recusada',
+            aoAlternarConversa: jest.fn(),
+            idConversa: 'conversa-1',
+          })}
         />,
       );
       expect(
