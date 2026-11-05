@@ -172,9 +172,11 @@ test.describe('minhas certificações', () => {
     await expect(page.getByRole('alert').first()).toContainText('Corrija 3 campos');
 
     const resultado = await new AxeBuilder({ page }).withTags(TAGS_WCAG).analyze();
-    expect(resultado.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.length} nó(s))`)).toEqual(
-      [],
-    );
+    expect(
+      resultado.violations.map(
+        (v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(' | ')})`,
+      ),
+    ).toEqual([]);
   });
 
   test.describe('tema escuro', () => {
@@ -187,7 +189,9 @@ test.describe('minhas certificações', () => {
 
       const resultado = await new AxeBuilder({ page }).withTags(TAGS_WCAG).analyze();
       expect(
-        resultado.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.length} nó(s))`),
+        resultado.violations.map(
+          (v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(' | ')})`,
+        ),
       ).toEqual([]);
     });
   });
