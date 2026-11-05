@@ -6,7 +6,7 @@
 //
 // O anúncio de mensagem nova NÃO é feito aqui: a lista é `role="list"`, não `role="log"`, e quem
 // anuncia é a tela, pela região viva global (só as mensagens da outra parte, ADR 0016).
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type Ref } from 'react';
 import {
   Platform,
   ScrollView,
@@ -15,6 +15,7 @@ import {
   type NativeSyntheticEvent,
   type Text,
   type TextInput,
+  type TextStyle,
   type ViewStyle,
 } from 'react-native';
 
@@ -77,9 +78,20 @@ export interface PropsConversaDaProposta {
   id?: string;
 }
 
+/**
+ * Texto sem espaços (300 "k" seguidos passa no filtro) não pode estourar o balão nem a tela de
+ * 320 px (WCAG 1.4.10): na web `overflow-wrap: anywhere` também reduz a largura mínima do conteúdo,
+ * coisa que o `word-wrap: break-word` do react-native-web não faz. No iPhone o texto já quebra.
+ */
+const QUEBRA_ONDE_PRECISAR: TextStyle | undefined = Platform.select({
+  // `wordWrap` também: é a chave que o react-native-web já usa (`break-word`) e a nossa a substitui.
+  web: { overflowWrap: 'anywhere', wordWrap: 'anywhere' } as unknown as TextStyle,
+});
+
 function criarEstilos({ border, radius, space }: TemaVisual) {
   return {
     raiz: { gap: space[4], minWidth: 0 } satisfies ViewStyle,
+    tituloTexto: { flexShrink: 1, minWidth: 0 } satisfies TextStyle,
     titulo: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -126,22 +138,34 @@ function Mensagem({
   mensagem,
   minha,
   autor,
+  refItem,
 }: {
   mensagem: MensagemDaConversa;
   minha: boolean;
   autor: string;
+  /** A última mensagem recebe o foco do VoiceOver depois de "Ver nova mensagem". */
+  refItem?: Ref<View>;
 }) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
-  // O lado e a cor só reforçam; quem escreveu e a hora estão sempre em texto (D-PO-13).
+  const web = Platform.OS === 'web';
+  const hora = formatarDataHora(mensagem.criado_em);
+  // O lado e a cor só reforçam; quem escreveu e a hora estão sempre em texto (D-PO-13). No iPhone a
+  // mensagem é um elemento só ("Você, 04/11/2026 14:00: texto"); na web cada texto é lido como está.
   return (
-    <View role="listitem" style={[estilos.mensagem, minha ? estilos.minha : estilos.dela]}>
+    <View
+      ref={refItem}
+      role="listitem"
+      accessible={!web}
+      accessibilityLabel={web ? undefined : `${autor}, ${hora}: ${mensagem.texto}`}
+      style={[estilos.mensagem, minha ? estilos.minha : estilos.dela]}
+    >
       <View style={estilos.meta}>
-        <Texto nivel="sm" peso="bold">
+        <Texto nivel="sm" peso="bold" style={QUEBRA_ONDE_PRECISAR}>
           {autor}
         </Texto>
         <Texto nivel="sm" cor="secundario">
-          {formatarDataHora(mensagem.criado_em)}
+          {hora}
         </Texto>
       </View>
       <View
@@ -152,7 +176,7 @@ function Mensagem({
             : { backgroundColor: colors.bg.surface, borderColor: colors.border.control },
         ]}
       >
-        <Texto>{mensagem.texto}</Texto>
+        <Texto style={QUEBRA_ONDE_PRECISAR}>{mensagem.texto}</Texto>
       </View>
     </View>
   );
@@ -184,6 +208,7 @@ export function ConversaDaProposta({
   const refTitulo = useRef<Text>(null);
   const refCampo = useRef<TextInput>(null);
   const refRolagem = useRef<ScrollView>(null);
+  const refUltima = useRef<View>(null);
   const [texto, setTexto] = useState('');
   const [erroLocal, setErroLocal] = useState<string | undefined>();
   const idDoTitulo = `${id ?? 'conversa'}-titulo`;
@@ -198,6 +223,14 @@ export function ConversaDaProposta({
     }
     moverFoco(refTitulo);
   }, [id]);
+
+  // A proposta foi encerrada com a conversa aberta (409 ao enviar): o campo e o botão se desligam e
+  // o foco, que estava neles, iria para o corpo da página. Vai ao título (WCAG 2.4.3).
+  const estavaEncerrada = useRef(encerrada);
+  useEffect(() => {
+    if (encerrada && !estavaEncerrada.current) moverFoco(refTitulo);
+    estavaEncerrada.current = encerrada;
+  }, [encerrada]);
 
   // Rolagem do histórico. Mensagem nova com a pessoa perto do fim (≤ 48 px) rola ao fim sozinha; se
   // ela subiu para reler, o histórico não se mexe e aparece "Ver nova mensagem". A mensagem que eu
@@ -225,6 +258,9 @@ export function ConversaDaProposta({
     setSeguindo(true);
     setVistoAte(total);
     refRolagem.current?.scrollToEnd({ animated: false });
+    // O botão some ao ser usado: o foco vai ao histórico (web) ou à última mensagem (VoiceOver),
+    // em vez de cair no corpo da página (WCAG 2.4.3).
+    moverFoco(Platform.OS === 'web' ? refRolagem : refUltima);
   };
 
   const enviar = async () => {
@@ -242,12 +278,14 @@ export function ConversaDaProposta({
 
   const mostrarCampo = mensagens !== undefined;
   // Passou do limite: erro com ícone e texto (não só a cor), sem esperar o envio. Não é região viva.
-  const passouDoLimite = texto.trim().length > MENSAGEM_MAXIMO_CARACTERES;
+  // O contador conta o mesmo que a validação e o backend medem: o texto sem espaços nas pontas.
+  const tamanho = texto.trim().length;
+  const passouDoLimite = tamanho > MENSAGEM_MAXIMO_CARACTERES;
   const erroDoTexto =
     erroLocal ?? erroDoCampo ?? (passouDoLimite ? ERRO_MENSAGEM_LONGA : undefined);
   const ajuda = encerrada
     ? MOTIVO_CONVERSA_ENCERRADA
-    : `${texto.length} de ${MENSAGEM_MAXIMO_CARACTERES} caracteres`;
+    : `${tamanho} de ${MENSAGEM_MAXIMO_CARACTERES} caracteres`;
 
   let historico;
   if (erroDeCarga !== undefined) {
@@ -291,7 +329,7 @@ export function ConversaDaProposta({
           contentContainerStyle={estilos.historicoConteudo}
         >
           <View role="list" style={estilos.lista}>
-            {mensagens.map((mensagem) => {
+            {mensagens.map((mensagem, indice) => {
               const minha = meuUsuarioId !== null && mensagem.remetente_id === meuUsuarioId;
               return (
                 <Mensagem
@@ -299,6 +337,7 @@ export function ConversaDaProposta({
                   mensagem={mensagem}
                   minha={minha}
                   autor={minha ? 'Você' : nomeDaOutraParte}
+                  refItem={indice === mensagens.length - 1 ? refUltima : undefined}
                 />
               );
             })}
@@ -319,7 +358,13 @@ export function ConversaDaProposta({
     <View nativeID={id} role="group" aria-labelledby={idDoTitulo} style={estilos.raiz}>
       <View style={estilos.titulo}>
         <Icone nome="message-square" cor={colors.text.primary} />
-        <Titulo ref={refTitulo} nivel={4} nativeID={idDoTitulo} tabIndex={-1}>
+        <Titulo
+          ref={refTitulo}
+          nivel={4}
+          nativeID={idDoTitulo}
+          tabIndex={-1}
+          style={[estilos.tituloTexto, QUEBRA_ONDE_PRECISAR]}
+        >
           {`Conversa com ${nomeDaOutraParte}`}
         </Titulo>
       </View>

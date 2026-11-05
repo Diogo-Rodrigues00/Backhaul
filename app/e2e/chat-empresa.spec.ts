@@ -4,11 +4,15 @@ import { entrarComoPerfil, expect, test } from './fixtures';
 
 // Card 042 (ADR 0016): chat da proposta em "Propostas da carga", empresa, no HTML exportado e no mock
 // da API (sem estado: o POST responde 201 e a lista de mensagens volta igual). A conversa entre duas
-// janelas fica no card 046. Cobertura única, no desktop.
+// janelas fica no card 046. O comportamento roda uma vez, no desktop; o axe nos dois temas e o
+// reflow em 320 px rodam também (e só) no projeto `estreito`.
 // eslint-disable-next-line no-empty-pattern -- o Playwright exige desestruturar o 1º argumento
-test.beforeEach(({}, info) => {
-  test.skip(info.project.name !== 'desktop', 'cobertura única, no projeto desktop');
-});
+function soNoDesktop() {
+  // eslint-disable-next-line no-empty-pattern -- idem
+  test.beforeEach(({}, info) => {
+    test.skip(info.project.name !== 'desktop', 'cobertura única, no projeto desktop');
+  });
+}
 
 const CARGA_URGENTE_ID = 'cccccccc-0000-4000-8000-000000000001';
 const URL_DETALHE = `/empresa/cargas/detalhe?id=${CARGA_URGENTE_ID}`;
@@ -36,6 +40,7 @@ async function violacoes(page: Page) {
 }
 
 test.describe('abrir e fechar com o teclado', () => {
+  soNoDesktop();
   test('Enter abre a conversa, o foco vai ao título e o histórico aparece com autor e hora', async ({
     page,
   }) => {
@@ -78,6 +83,7 @@ test.describe('abrir e fechar com o teclado', () => {
 });
 
 test.describe('enviar com o teclado', () => {
+  soNoDesktop();
   test('Tab leva ao campo e ao botão, Enter envia e o campo é limpo', async ({ page }) => {
     await abrirTela(page);
     await abrirConversaDoJoao(page);
@@ -121,6 +127,7 @@ test.describe('enviar com o teclado', () => {
 });
 
 test.describe('conversa encerrada', () => {
+  soNoDesktop();
   test('proposta recusada: histórico legível, envio desligado e o motivo em texto', async ({
     page,
   }) => {
@@ -138,28 +145,102 @@ test.describe('conversa encerrada', () => {
   });
 });
 
-test.describe('acessibilidade', () => {
-  test('axe sem violações com a conversa aberta', async ({ page }) => {
-    await abrirTela(page);
-    await abrirConversaDoJoao(page);
-    expect(await violacoes(page)).toEqual([]);
+// Axe com a conversa aberta, com o erro no campo e encerrada: tema claro e escuro, 1280 px e 320 px
+// (os dois projetos rodam estes testes).
+for (const esquema of ['light', 'dark'] as const) {
+  test.describe(`acessibilidade, tema ${esquema === 'light' ? 'claro' : 'escuro'}`, () => {
+    test.use({ colorScheme: esquema });
+
+    test('axe sem violações com a conversa aberta', async ({ page }) => {
+      await abrirTela(page);
+      await abrirConversaDoJoao(page);
+      expect(await violacoes(page)).toEqual([]);
+    });
+
+    test('axe sem violações com o erro no campo', async ({ page }) => {
+      await abrirTela(page);
+      await abrirConversaDoJoao(page);
+      await page.getByLabel('Mensagem', { exact: true }).fill('joao arroba gmail');
+      await page.getByRole('button', { name: 'Enviar', exact: true }).click();
+      await expect(page.getByText(/Não envie telefone, e-mail ou link/)).toBeVisible();
+      expect(await violacoes(page)).toEqual([]);
+    });
+
+    test('axe sem violações com a conversa encerrada', async ({ page }) => {
+      await abrirTela(page);
+      await page.getByRole('button', { name: 'Abrir conversa com Carlos Lima' }).click();
+      await expect(
+        page.getByText('Esta proposta foi encerrada. Você ainda pode ler a conversa.'),
+      ).toBeVisible();
+      expect(await violacoes(page)).toEqual([]);
+    });
+  });
+}
+
+// WCAG 1.4.10: mensagem longa sem espaços (300 letras passam no filtro de contato) não pode estourar
+// o balão nem criar rolagem horizontal em 320 px. O mock do E2E é sem estado: o histórico é
+// acrescido da mensagem longa na resposta do próprio mock (`page.route` + `route.fetch`), que
+// mantém os cabeçalhos de CORS do mock.
+test.describe('reflow em 320 px', () => {
+  const LARGURA_ESTREITA = 320;
+  const EMPRESA_ID = '11111111-1111-4111-8111-111111111111';
+  const JOAO_ID = '22222222-2222-4222-8222-222222222222';
+  const LONGO = 'k'.repeat(300);
+
+  test.beforeEach(({ page }, info) => {
+    test.skip(info.project.name !== 'estreito', 'só vale na largura de 320 px');
+    return page.route('**/propostas/*/mensagens', async (rota) => {
+      if (rota.request().method() !== 'GET') return rota.continue();
+      const resposta = await rota.fetch();
+      const corpo = (await resposta.json()) as { mensagens: unknown[] };
+      corpo.mensagens.push(
+        {
+          id: 'eeeeeeee-0000-4000-8000-0000000009a1',
+          remetente_id: JOAO_ID,
+          texto: LONGO,
+          criado_em: '2026-11-04T17:20:00.000Z',
+        },
+        {
+          id: 'eeeeeeee-0000-4000-8000-0000000009a2',
+          remetente_id: EMPRESA_ID,
+          texto: LONGO,
+          criado_em: '2026-11-04T17:21:00.000Z',
+        },
+      );
+      return rota.fulfill({ response: resposta, json: corpo });
+    });
   });
 
-  test('axe sem violações com o erro no campo', async ({ page }) => {
+  test('mensagem longa sem espaços quebra dentro do balão e da região, sem rolagem horizontal', async ({
+    page,
+  }) => {
     await abrirTela(page);
     await abrirConversaDoJoao(page);
-    await page.getByLabel('Mensagem', { exact: true }).fill('joao arroba gmail');
-    await page.getByRole('button', { name: 'Enviar', exact: true }).click();
-    await expect(page.getByText(/Não envie telefone, e-mail ou link/)).toBeVisible();
-    expect(await violacoes(page)).toEqual([]);
-  });
 
-  test('axe sem violações com a conversa encerrada', async ({ page }) => {
-    await abrirTela(page);
-    await page.getByRole('button', { name: 'Abrir conversa com Carlos Lima' }).click();
-    await expect(
-      page.getByText('Esta proposta foi encerrada. Você ainda pode ler a conversa.'),
-    ).toBeVisible();
-    expect(await violacoes(page)).toEqual([]);
+    const regiao = page.getByRole('region', { name: 'Mensagens da conversa com João da Silva' });
+    await expect(regiao.getByText(LONGO)).toHaveCount(2);
+
+    const regiaoSemRolagem = await regiao.evaluate((no) => no.scrollWidth <= no.clientWidth);
+    expect(regiaoSemRolagem).toBe(true);
+
+    const baloes = await regiao.getByText(LONGO).evaluateAll((nos) =>
+      nos.map((texto) => {
+        const balao = texto.parentElement as HTMLElement;
+        const caixa = (texto.closest('[role="region"]') as HTMLElement).getBoundingClientRect();
+        const lado = balao.getBoundingClientRect();
+        return {
+          textoCabe: texto.scrollWidth <= texto.clientWidth,
+          balaoCabe: balao.scrollWidth <= balao.clientWidth,
+          dentroDaRegiao: lado.left >= caixa.left - 1 && lado.right <= caixa.right + 1,
+        };
+      }),
+    );
+    expect(baloes).toEqual([
+      { textoCabe: true, balaoCabe: true, dentroDaRegiao: true },
+      { textoCabe: true, balaoCabe: true, dentroDaRegiao: true },
+    ]);
+
+    const largura = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(largura).toBeLessThanOrEqual(LARGURA_ESTREITA);
   });
 });
