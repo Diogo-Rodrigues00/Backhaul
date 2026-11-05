@@ -111,11 +111,13 @@ test.describe('sair', () => {
     await expect(page).toHaveURL(/\/entrar$/);
   });
 
-  test('administrador vê "sem telas nesta versão" e sai', async ({ page }) => {
+  test('administrador vê o resumo, com o item "Resumo" na navegação, e sai', async ({ page }) => {
     await entrarComoPerfil(page, 'admin');
     await page.goto('/admin');
-    await expect(h1(page)).toHaveText('Perfil de administrador sem telas nesta versão');
-    await expect(page.getByRole('navigation')).toHaveCount(0);
+    await expect(h1(page)).toHaveText('Resumo da plataforma');
+    await expect(
+      page.getByRole('navigation', { name: 'Principal' }).getByRole('link', { name: 'Resumo' }),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Sair' }).last().click();
     await expect(page).toHaveURL(/\/entrar$/);
     await expect.poll(() => token(page)).toBeNull();
@@ -210,7 +212,7 @@ test.describe('HTML estático das rotas protegidas', () => {
   const rotas = [
     { arquivo: 'empresa/cargas/index.html', h1: 'Minhas cargas' },
     { arquivo: 'motorista/cargas.html', h1: 'Cargas próximas' },
-    { arquivo: 'admin/index.html', h1: 'Perfil de administrador sem telas nesta versão' },
+    { arquivo: 'admin/index.html', h1: 'Resumo da plataforma' },
   ];
   for (const { arquivo, h1: titulo } of rotas) {
     test(`${arquivo}: cabeçalho, main e h1 no HTML, sem script de redirecionamento`, () => {

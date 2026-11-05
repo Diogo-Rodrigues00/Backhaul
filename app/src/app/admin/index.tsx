@@ -1,28 +1,25 @@
-import { Botao } from '@/components/atoms/Botao';
 import { useCasca } from '@/components/organisms/useCasca';
+import { ConteudoLista } from '@/components/templates/TemplateLista';
 import { TemplateTela } from '@/components/templates/TemplateTela';
-import { useSessao } from '@/state/sessao/useSessao';
+import { carregarCorpoResumoAdmin } from '@/telas/CorpoResumoAdmin.carregar';
+import { CorpoSobDemanda } from '@/telas/CorpoSobDemanda';
 
-// D-PO-10: o administrador não tem telas nesta versão; só pode sair.
+// Resumo da plataforma (card 040). Só a casca (h1, cabeçalho, abas) fica no JS inicial da rota: a
+// consulta e os números carregam por React.lazy logo depois, junto com o cliente de dados (ADR 0011
+// e ADR 0004, adendo). Título e frase fixos: estão no HTML estático.
 export default function Administrador() {
   const { cabecalho, abas } = useCasca();
-  const { sair } = useSessao();
   return (
     <TemplateTela
-      titulo="Perfil de administrador sem telas nesta versão"
-      tituloDaPagina="Administrador · Backhaul"
-      descricao="Esta versão do Backhaul não tem telas para o administrador. Use Sair para entrar com outra conta."
+      titulo="Resumo da plataforma"
+      descricao="Acompanhe pessoas, cargas, fretes e dinheiro da plataforma."
       cabecalho={cabecalho}
       abas={abas}
     >
-      <Botao
-        variante="secundario"
-        aoPressionar={() => {
-          void sair();
-        }}
-      >
-        Sair
-      </Botao>
+      <CorpoSobDemanda
+        carregar={carregarCorpoResumoAdmin}
+        carregando={<ConteudoLista estado="carregando" textoCarregando="Carregando resumo…" />}
+      />
     </TemplateTela>
   );
 }
