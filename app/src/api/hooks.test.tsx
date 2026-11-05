@@ -498,7 +498,17 @@ describe('propostas', () => {
     const { result } = await renderHook(() => useMinhasPropostas(), { wrapper });
     await esperarSucesso(result);
     const propostas = result.current.data?.propostas ?? [];
-    expect(propostas.map((p) => p.status)).toEqual(['pendente', 'aceita', 'recusada']);
+    // Fixture de 8 propostas (mocks/fixtures/propostas.ts, minhasPropostasMock), na ordem da API.
+    expect(propostas.map((p) => p.status)).toEqual([
+      'pendente',
+      'aceita',
+      'recusada',
+      'expirada',
+      'pendente',
+      'aceita',
+      'recusada',
+      'pendente',
+    ]);
     expect(propostas[0]).toMatchObject({
       chamado_carga_id: expect.any(String),
       chamado_disp_id: expect.any(String),
@@ -509,7 +519,16 @@ describe('propostas', () => {
     });
     expect(propostas[0]).not.toHaveProperty('carga');
     // `frete_id` só vem preenchido na proposta aceita.
-    expect(propostas.map((p) => p.frete_id !== null)).toEqual([false, true, false]);
+    expect(propostas.map((p) => p.frete_id !== null)).toEqual([
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+    ]);
   });
 
   it('useMinhasPropostas: 401 vira sessão', async () => {

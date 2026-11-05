@@ -17,13 +17,21 @@ export interface ItemNavegacao {
   href: Href;
   rotulo: string;
   icone: NomeIcone;
+  /**
+   * Só na barra inferior (até 960 px): o item vai para o "Mais" em vez de ficar à vista. No cabeçalho
+   * ele aparece normalmente, na ordem da lista.
+   */
+  noMais?: boolean;
 }
 
 export interface PropsAbaNavegacao extends ItemNavegacao {
   /** É a página aberta agora: `aria-current="page"`, âmbar e barra marcada (nunca só cor). */
   atual: boolean;
-  /** `cabecalho`: linha com sublinhado âmbar. `barra`: coluna com ícone em cima e barra no topo. */
-  variante: 'cabecalho' | 'barra';
+  /**
+   * `cabecalho`: linha com sublinhado âmbar. `barra`: coluna com ícone em cima e barra no topo.
+   * `menu`: linha dentro do "Mais" da barra (ícone e rótulo lado a lado).
+   */
+  variante: 'cabecalho' | 'barra' | 'menu';
 }
 
 // DS 5.2 (NavTab) e protótipo (.hdr nav a / .tabbar a).
@@ -31,7 +39,7 @@ const BARRA_ATUAL_CABECALHO = 4;
 const BARRA_ATUAL_INFERIOR = 3;
 const ALTURA_BARRA = 60;
 
-function criarEstilos({ space, touch }: TemaVisual) {
+function criarEstilos({ radius, space, touch }: TemaVisual) {
   return {
     cabecalho: {
       flexDirection: 'row',
@@ -54,6 +62,14 @@ function criarEstilos({ space, touch }: TemaVisual) {
       borderTopWidth: BARRA_ATUAL_INFERIOR,
       borderTopColor: 'transparent',
     } satisfies ViewStyle,
+    menu: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: space[3],
+      minHeight: touch.control,
+      paddingHorizontal: space[3],
+      borderRadius: radius.sm,
+    } satisfies ViewStyle,
     rotuloBarra: { textAlign: 'center' } satisfies TextStyle,
   } as const;
 }
@@ -66,21 +82,30 @@ export function AbaNavegacao({ href, rotulo, icone, atual, variante }: PropsAbaN
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
   const naBarra = variante === 'barra';
+  const noMenu = variante === 'menu';
   // Hover por estado (e não por `style` como função): o `asChild` do Link mescla `style` e só aceita objeto.
   const [sobre, setSobre] = useState(false);
-  const corIcone = atual && naBarra ? brand.amber : colors.text.onInverse;
+  // Barra e menu marcam a página atual em âmbar; o cabeçalho usa só o sublinhado.
+  const destacada = atual && (naBarra || noMenu);
+  const corIcone = destacada ? brand.amber : colors.text.onInverse;
 
+  const estiloBase = naBarra ? estilos.barra : noMenu ? estilos.menu : estilos.cabecalho;
   const estiloDaAba: ViewStyle = {
-    ...(naBarra ? estilos.barra : estilos.cabecalho),
-    ...(atual && (naBarra ? { borderTopColor: brand.amber } : { borderBottomColor: brand.amber })),
-    ...(!atual && !naBarra && sobre ? { borderBottomColor: colors.text.onInverseMuted } : null),
+    ...estiloBase,
+    ...(atual && naBarra ? { borderTopColor: brand.amber } : null),
+    ...(atual && !naBarra && !noMenu ? { borderBottomColor: brand.amber } : null),
+    ...(!atual && !naBarra && !noMenu && sobre
+      ? { borderBottomColor: colors.text.onInverseMuted }
+      : null),
   };
 
   const conteudo = (
     <>
-      {/* Cabeçalho: o ícone some até 1240 px (protótipo), sobra o rótulo. Barra: sempre. */}
+      {/* Cabeçalho: o ícone some até 1240 px (protótipo), sobra o rótulo. Barra e menu: sempre. */}
       {naBarra ? (
         <Icone nome={icone} tamanho="destaque" cor={corIcone} />
+      ) : noMenu ? (
+        <Icone nome={icone} cor={corIcone} />
       ) : (
         <Responsivo bp="sem-largo">
           <Icone nome={icone} cor={corIcone} />
@@ -90,7 +115,7 @@ export function AbaNavegacao({ href, rotulo, icone, atual, variante }: PropsAbaN
         nivel={naBarra ? 'caption' : 'base'}
         peso="bold"
         cor="sobreInverso"
-        style={[naBarra && estilos.rotuloBarra, atual && naBarra && { color: brand.amber }]}
+        style={[naBarra && estilos.rotuloBarra, destacada && { color: brand.amber }]}
       >
         {rotulo}
       </Texto>
