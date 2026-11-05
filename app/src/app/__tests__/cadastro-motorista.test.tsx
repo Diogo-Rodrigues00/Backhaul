@@ -266,6 +266,25 @@ describe('cadastro de motorista: validação local (D-PO-14)', () => {
     );
   });
 
+  it('capacidade acima de 99.999.999,99: erro no campo e nada é enviado à API', async () => {
+    const corpos: Record<string, unknown>[] = [];
+    ouvinte = async ({ request }) => {
+      if (request.method === 'POST' && request.url.endsWith('/cadastro/motorista')) {
+        corpos.push((await request.clone().json()) as Record<string, unknown>);
+      }
+    };
+    servidor.events.on('request:start', ouvinte);
+    await renderizarCadastroMotorista();
+    await preencherCadastroMotorista({ capacidade: '100000000' });
+
+    await criarContaCadastroMotorista();
+
+    await waitFor(() =>
+      expect(screen.getByText('Informe um valor até 99.999.999,99.')).toBeOnTheScreen(),
+    );
+    expect(corpos).toHaveLength(0);
+  });
+
   it('senha com menos de 8 caracteres: mensagem junto do campo', async () => {
     await renderizarCadastroMotorista();
     await preencherCadastroMotorista({ senha: 'curta' });

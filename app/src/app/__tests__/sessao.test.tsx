@@ -288,7 +288,8 @@ describe('área do administrador (card 040)', () => {
     await gravar(CHAVES.token, 'mock-admin');
     await abrir('/admin');
 
-    await waitFor(() => expect(sonda()).toBe('autenticado|Administrador|admin'));
+    // O admin vem com `nome: null` do GET /eu: a área abre sem nome e o cabeçalho mostra só o perfil.
+    await waitFor(() => expect(sonda()).toBe('autenticado|-|admin'));
     expect(titulo('Resumo da plataforma')).toBeOnTheScreen();
     expect(screen.getAllByRole('link', { name: 'Resumo' }).length).toBeGreaterThan(0);
 
