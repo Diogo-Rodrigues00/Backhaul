@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 
 import { useMovimentoReduzido } from '@/hooks/useMovimentoReduzido';
+import { Texto } from '@/components/atoms/Texto';
 import { comTema, renderizar } from '@/test-utils/renderComTema';
 
 import { CartaoProposta, DURACAO_DESTAQUE_MS, type PropsCartaoProposta } from './CartaoProposta';
@@ -124,6 +125,68 @@ describe('CartaoProposta', () => {
         await jest.advanceTimersByTimeAsync(DURACAO_DESTAQUE_MS + 500);
       });
       expect(destaque()).toHaveLength(0);
+    });
+  });
+
+  describe('conversa (card 042)', () => {
+    it('sem `aoAlternarConversa` não há botão de conversa', async () => {
+      await renderizar(<CartaoProposta {...props()} />);
+      expect(screen.queryByRole('button', { name: /conversa/i })).toBeNull();
+    });
+
+    it('fechada: "Abrir conversa" com o nome do motorista, aria-expanded e aria-controls', async () => {
+      const alternar = jest.fn();
+      await renderizar(
+        <CartaoProposta
+          {...props({
+            aoAlternarConversa: alternar,
+            idConversa: 'conversa-1',
+            conversa: <Texto>Painel da conversa</Texto>,
+          })}
+        />,
+      );
+      const botao = screen.getByRole('button', { name: 'Abrir conversa com João da Silva' });
+      expect(screen.getByText('Abrir conversa')).toBeOnTheScreen();
+      expect(botao).toBeCollapsed();
+      expect(botao.props['aria-controls']).toBe('conversa-1');
+      expect(screen.queryByText('Painel da conversa')).toBeNull();
+
+      await fireEvent.press(botao);
+      expect(alternar).toHaveBeenCalledTimes(1);
+    });
+
+    it('aberta: "Fechar conversa", aria-expanded e o painel dentro do cartão', async () => {
+      await renderizar(
+        <CartaoProposta
+          {...props({
+            conversaAberta: true,
+            aoAlternarConversa: jest.fn(),
+            idConversa: 'conversa-1',
+            conversa: <Texto>Painel da conversa</Texto>,
+          })}
+        />,
+      );
+      expect(
+        screen.getByRole('button', { name: 'Fechar conversa com João da Silva' }),
+      ).toBeExpanded();
+      expect(screen.getByText('Fechar conversa')).toBeOnTheScreen();
+      expect(screen.getByText('Painel da conversa')).toBeOnTheScreen();
+    });
+
+    it('o botão da conversa aparece também nas propostas que não aceitam resposta', async () => {
+      await renderizar(
+        <CartaoProposta
+          {...props({
+            podeResponder: false,
+            status: 'recusada',
+            aoAlternarConversa: jest.fn(),
+            idConversa: 'conversa-1',
+          })}
+        />,
+      );
+      expect(
+        screen.getByRole('button', { name: 'Abrir conversa com João da Silva' }),
+      ).toBeOnTheScreen();
     });
   });
 });

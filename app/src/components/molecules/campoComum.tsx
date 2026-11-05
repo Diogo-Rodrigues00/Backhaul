@@ -44,6 +44,12 @@ export function useIdCampo(id?: string): string {
 
 const ESPESSURA_ANEL = 3;
 const DESLOCAMENTO_ANEL = 2;
+// Campo de várias linhas (chat, card 042): cabe umas 3 linhas de texto, o texto começa no alto.
+const ALTURA_MINIMA_MULTILINHA = 96;
+const ENTRADA_MULTILINHA: TextStyle = {
+  minHeight: ALTURA_MINIMA_MULTILINHA,
+  textAlignVertical: 'top',
+};
 
 function criarEstilos({ border, radius, space, touch }: TemaVisual) {
   // Com erro a borda passa de 2 para 3 px: o preenchimento cede o que a borda ganhou, e o campo
@@ -237,7 +243,7 @@ export function EntradaTexto({
         setFocada(false);
         onBlur?.(evento);
       }}
-      style={[estilo, estiloExtra]}
+      style={[estilo, resto.multiline ? ENTRADA_MULTILINHA : null, estiloExtra]}
     />
   );
 }

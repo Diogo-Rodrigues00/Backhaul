@@ -47,6 +47,7 @@ const ICONES_DO_DS = [
   'lock',
   'send',
   'wifi-off',
+  'message-square',
 ];
 
 function svgDoIcone() {
