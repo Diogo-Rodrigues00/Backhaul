@@ -23,7 +23,8 @@ const ITENS: Record<TipoPerfil, readonly ItemNavegacao[]> = {
     { href: '/motorista/propostas', rotulo: 'Minhas propostas', icone: 'file' },
     { href: '/motorista/fretes', rotulo: 'Meus fretes', icone: 'truck' },
   ],
-  admin: [],
+  // 041 e 032 acrescentam os próprios itens quando as rotas existirem: nunca link para rota inexistente.
+  admin: [{ href: '/admin', rotulo: 'Resumo', icone: 'inbox' }],
 };
 
 export function itensDaArea(area: TipoPerfil): readonly ItemNavegacao[] {
