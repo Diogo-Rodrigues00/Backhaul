@@ -5,8 +5,9 @@ describe('itensDaArea', () => {
     expect(itensDaArea('admin')).toEqual([{ href: '/admin', rotulo: 'Resumo', icone: 'inbox' }]);
   });
 
-  it('empresa e motorista continuam com 3 destinos', () => {
+  it('empresa tem 3 destinos; motorista tem 4, com "Certificações" (card 031)', () => {
     expect(itensDaArea('empresa')).toHaveLength(3);
-    expect(itensDaArea('motorista')).toHaveLength(3);
+    expect(itensDaArea('motorista')).toHaveLength(4);
+    expect(itensDaArea('motorista').map((item) => item.rotulo)).toContain('Certificações');
   });
 });
