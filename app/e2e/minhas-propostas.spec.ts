@@ -120,6 +120,9 @@ test.describe('navegação por teclado até a tela', () => {
 
     await page.keyboard.press('Tab');
     await expect(disponibilidade).toBeFocused();
+    // Card 031: "Certificações" é o segundo item do painel; o Tab seguinte é que sai dele.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', { name: 'Certificações' })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(mais).toHaveAttribute('aria-expanded', 'false');
     await expect(disponibilidade).toBeHidden();
