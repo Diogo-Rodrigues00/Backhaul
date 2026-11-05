@@ -13,6 +13,7 @@ import {
 import { http, HttpResponse } from 'msw';
 
 import { CascaContext } from '@/components/organisms/useCasca';
+import { primeiraValidadeAceita } from '@/lib/datas';
 import { anunciar, moverFoco } from '@/lib/a11y';
 import { MENSAGEM_FALHA } from '@/lib/erros';
 import { TemaContext } from '@/state/tema/TemaProvider';
@@ -28,6 +29,7 @@ import { dataDaquiADias } from '../../../mocks/fixtures/datas';
 import { servidor, urlMock } from '../../../mocks/node';
 import { respostaErro, respostaErros } from '../../../mocks/respostas';
 import { criarClienteDeTeste, entrarComoMock, sairDoMock } from '../../../mocks/utils-teste';
+import { mensagemDataInvalida } from '@/telas/FormularioCertificacao';
 import MinhasCertificacoes from '../motorista/certificacoes';
 
 // O Jest não executa import() dinâmico: o corpo da tela (React.lazy) vem de um módulo falso.
@@ -248,6 +250,36 @@ describe('lista de certificações (MVP-19)', () => {
     falhar = false;
     await fireEvent.press(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(await screen.findByRole('heading', { name: NOME_MOPP_3 })).toBeOnTheScreen();
+  });
+
+  it('catálogo 500 com "minhas" 200: a lista aparece e, no lugar do formulário, o erro com "Tentar de novo"', async () => {
+    let falhar = true;
+    servidor.use(
+      http.get(urlMock('/certificacoes'), () =>
+        falhar
+          ? respostaErro(500, 'erro interno')
+          : HttpResponse.json({
+              certificacoes: [{ id: CERT_MOPP_8_ID, nome: NOME_MOPP_8, classificacao_onu: '8' }],
+            }),
+      ),
+    );
+    await abrir();
+
+    // A lista não fica presa em "Carregando…".
+    expect(await screen.findByRole('heading', { name: NOME_MOPP_3 })).toBeOnTheScreen();
+    expect(cartoes()).toHaveLength(3);
+    expect(screen.queryByText('Carregando suas certificações…')).not.toBeOnTheScreen();
+    // Sem formulário; o erro do catálogo tem o próprio "Tentar de novo".
+    expect(
+      await screen.findByText(/Não foi possível carregar as certificações para o envio/),
+    ).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Enviar para aprovação' })).not.toBeOnTheScreen();
+    expect(screen.queryByText(MENSAGEM_FALHA)).not.toBeOnTheScreen();
+
+    falhar = false;
+    await fireEvent.press(screen.getByRole('button', { name: 'Tentar de novo' }));
+    expect(await screen.findByRole('button', { name: 'Enviar para aprovação' })).toBeOnTheScreen();
+    expect(cartoes()).toHaveLength(3);
   });
 
   it('404 sem perfil de motorista: mostra a mensagem da API', async () => {
@@ -503,6 +535,9 @@ describe('reenvio (MVP-19)', () => {
     expect(await screen.findByRole('heading', { name: 'Enviar certificação' })).toBeOnTheScreen();
     expect(campoNumero().props.value).toBe('');
     expect(envios).toHaveLength(0);
+    // O foco volta ao botão "Reenviar" que abriu o formulário.
+    const ultimaChamada = focoMovido.mock.calls.at(-1)?.[0] as { current: unknown } | undefined;
+    expect(ultimaChamada?.current).toBeTruthy();
   });
 });
 
@@ -515,9 +550,7 @@ describe('validação local (D-PO-14)', () => {
     expect(await screen.findByText('Corrija 3 campos para continuar.')).toBeOnTheScreen();
     expect(screen.getAllByText('Escolha a certificação.').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Informe o número do certificado.').length).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText('Informe uma data válida. Exemplo: dia 31, mês 12, ano 2027.').length,
-    ).toBeGreaterThan(0);
+    expect(screen.getAllByText(mensagemDataInvalida()).length).toBeGreaterThan(0);
     expect(comPapel('alert').length).toBeGreaterThan(0);
     expect(focoMovido).toHaveBeenCalled();
     expect(envios).toHaveLength(0);
@@ -538,10 +571,7 @@ describe('validação local (D-PO-14)', () => {
     await fireEvent.changeText(campoAno(), String(new Date().getFullYear() + 2));
     await fireEvent.press(botaoEnviar());
 
-    expect(
-      (await screen.findAllByText('Informe uma data válida. Exemplo: dia 31, mês 12, ano 2027.'))
-        .length,
-    ).toBeGreaterThan(0);
+    expect((await screen.findAllByText(mensagemDataInvalida())).length).toBeGreaterThan(0);
     expect(envios).toHaveLength(0);
   });
 
@@ -554,15 +584,13 @@ describe('validação local (D-PO-14)', () => {
     await fireEvent.changeText(campoMes(), '13');
     await fireEvent.changeText(campoAno(), '2030');
     await fireEvent.press(botaoEnviar());
-    await screen.findAllByText('Informe uma data válida. Exemplo: dia 31, mês 12, ano 2027.');
+    await screen.findAllByText(mensagemDataInvalida());
 
     await fireEvent.changeText(campoMes(), '12');
     await fireEvent.changeText(campoAno(), '30');
     await fireEvent.press(botaoEnviar());
     await waitFor(() =>
-      expect(
-        screen.getAllByText('Informe uma data válida. Exemplo: dia 31, mês 12, ano 2027.').length,
-      ).toBeGreaterThan(0),
+      expect(screen.getAllByText(mensagemDataInvalida()).length).toBeGreaterThan(0),
     );
     expect(envios).toHaveLength(0);
   });
@@ -576,21 +604,17 @@ describe('validação local (D-PO-14)', () => {
     await fireEvent.press(botaoEnviar());
 
     expect(
-      (
-        await screen.findAllByText(
-          'A validade não pode estar no passado. Informe hoje ou uma data futura.',
-        )
-      ).length,
+      (await screen.findAllByText('A validade não pode estar no passado.')).length,
     ).toBeGreaterThan(0);
     expect(envios).toHaveLength(0);
   });
 
-  it('hoje (relógio local) passa pela validação do app e vai ao POST', async () => {
+  it('a primeira data aceita agora (hoje; entre 21h e 24h em Brasília, amanhã) vai ao POST', async () => {
     const envios = capturarEnvios();
     await abrirPronto();
     await escolherCertificacao(CERT_MOPP_8_ID, 2);
     await fireEvent.changeText(campoNumero(), '1');
-    await digitarValidade(dataLocalDaquiADias(0));
+    await digitarValidade(primeiraValidadeAceita());
     await fireEvent.press(botaoEnviar());
     await waitFor(() => expect(envios).toHaveLength(1));
   });
@@ -650,7 +674,7 @@ describe('erros da API', () => {
     expect(anunciado).not.toHaveBeenCalledWith('Certificação enviada. Aguardando aprovação.');
   });
 
-  it('400 "validade não pode estar no passado" para uma data que o app aceitou (borda do fuso/UTC): explica no grupo Validade', async () => {
+  it('400 de validade da API (ex.: passado pelo UTC) vai ao grupo Validade com a mensagem da API', async () => {
     servidor.use(
       http.post(urlMock('/certificacoes/minhas'), () =>
         respostaErros(400, ['validade não pode estar no passado']),
@@ -659,16 +683,42 @@ describe('erros da API', () => {
     await abrirPronto();
     await escolherCertificacao(CERT_MOPP_8_ID, 2);
     await fireEvent.changeText(campoNumero(), '777');
-    await digitarValidade(dataLocalDaquiADias(0));
+    await digitarValidade(primeiraValidadeAceita());
     await fireEvent.press(botaoEnviar());
 
-    expect(
-      await screen.findByText(
-        'O servidor recusou esta data como passada: ele usa o horário UTC, que à noite já é o dia seguinte. Informe a partir de amanhã.',
-      ),
-    ).toBeOnTheScreen();
+    expect(await screen.findByText('validade não pode estar no passado')).toBeOnTheScreen();
     expect(grupoValidade()?.props['aria-describedby']).toMatch(/-erro/);
-    expect(screen.queryByText('validade não pode estar no passado')).not.toBeOnTheScreen();
+    expect(campoDia().props['aria-invalid']).toBe(true);
+  });
+
+  it('401 no envio encerra a sessão', async () => {
+    const aoSessaoExpirada = jest.fn();
+    servidor.use(
+      http.post(urlMock('/certificacoes/minhas'), () =>
+        respostaErro(401, 'token inválido ou expirado'),
+      ),
+    );
+    await abrir(aoSessaoExpirada);
+    await screen.findByRole('button', { name: 'Enviar para aprovação' });
+    await escolherCertificacao(CERT_MOPP_8_ID, 2);
+    await fireEvent.changeText(campoNumero(), '777');
+    await digitarValidade(dataLocalDaquiADias(400));
+    await fireEvent.press(botaoEnviar());
+
+    await waitFor(() => expect(aoSessaoExpirada).toHaveBeenCalled());
+    expect(anunciado).not.toHaveBeenCalledWith('Certificação enviada. Aguardando aprovação.');
+  });
+
+  it('403 no envio (não é motorista): mostra a mensagem da API no resumo', async () => {
+    servidor.use(
+      http.post(urlMock('/certificacoes/minhas'), () =>
+        respostaErro(403, 'acesso restrito a motoristas'),
+      ),
+    );
+    await preencherEEnviar();
+
+    expect((await screen.findAllByText('acesso restrito a motoristas')).length).toBeGreaterThan(0);
+    expect(anunciado).not.toHaveBeenCalledWith('Certificação enviada. Aguardando aprovação.');
   });
 
   it('409 (já aprovada e vigente): mostra a mensagem e recarrega a lista', async () => {

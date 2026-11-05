@@ -58,6 +58,17 @@ describe('CampoDataPartes', () => {
     expect(aoMudar).toHaveBeenLastCalledWith({ dia: '31', mes: '12', ano: '2028' });
   });
 
+  it('só dígitos entram: letras, sinais e espaços são descartados', async () => {
+    const aoMudar = jest.fn();
+    await renderizar(<CampoDataPartes rotulo="Validade" valor={VAZIO} aoMudar={aoMudar} />);
+    await fireEvent.changeText(screen.getByLabelText('Dia'), '3a');
+    expect(aoMudar).toHaveBeenLastCalledWith({ dia: '3', mes: '', ano: '' });
+    await fireEvent.changeText(screen.getByLabelText('Ano'), ' 20-27/');
+    expect(aoMudar).toHaveBeenLastCalledWith({ dia: '', mes: '', ano: '2027' });
+    await fireEvent.changeText(screen.getByLabelText('Mês'), 'ab');
+    expect(aoMudar).toHaveBeenLastCalledWith({ dia: '', mes: '', ano: '' });
+  });
+
   it('ajuda e erro são do grupo; as três partes ficam inválidas e apontam para o mesmo erro', async () => {
     await renderizar(
       <CampoDataPartes

@@ -1,5 +1,5 @@
 import { useImperativeHandle, useRef, type Ref } from 'react';
-import { View, type TextInput, type ViewStyle } from 'react-native';
+import { Platform, View, type TextInput, type ViewStyle } from 'react-native';
 
 import { Texto } from '@/components/atoms/Texto';
 import { moverFoco } from '@/lib/a11y';
@@ -32,6 +32,11 @@ const PARTES = [
   { parte: 'mes', rotulo: 'Mês', maximo: 2 },
   { parte: 'ano', rotulo: 'Ano', maximo: 4 },
 ] as const;
+
+/** Na web, leva o foco ao campo pelo `id` (o rótulo não é um `<label for>`: o campo é um `TextInput`). */
+function focarCampo(id: string): void {
+  document.getElementById(id)?.focus();
+}
 
 const LARGURA_CURTA = 88;
 const LARGURA_ANO = 120;
@@ -101,7 +106,12 @@ export function CampoDataPartes({
               key={parte}
               style={[estilos.parte, parte === 'ano' ? estilos.ano : estilos.curta]}
             >
-              <Texto nativeID={idRotuloParte} peso="bold">
+              <Texto
+                nativeID={idRotuloParte}
+                peso="bold"
+                // Na web, clicar no rótulo leva o foco ao campo (como um <label for>).
+                onPress={Platform.OS === 'web' ? () => focarCampo(idParte) : undefined}
+              >
                 {rotuloDaParte}
               </Texto>
               <EntradaTexto
@@ -117,7 +127,8 @@ export function CampoDataPartes({
                 }}
                 desabilitado={desabilitado}
                 value={valor[parte]}
-                onChangeText={(texto) => aoMudar({ ...valor, [parte]: texto })}
+                // Só dígitos: letras, sinais e espaços colados ou digitados não entram.
+                onChangeText={(texto) => aoMudar({ ...valor, [parte]: texto.replace(/\D/g, '') })}
                 onBlur={onBlur}
                 inputMode="numeric"
                 maxLength={maximo}
