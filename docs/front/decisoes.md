@@ -56,3 +56,7 @@ Decisões fechadas antes do grill (kickoff, 2026-10-20). Novas decisões entram 
 | 2026-11-04 | Barra inferior do motorista: Cargas próximas, Minhas propostas, Meus fretes e "Mais" (Disponibilidade e Certificações). Muda o `BarraAbas` aprovado na Fase 2; entra no card 026 | Pedro (proposta do designer) |
 | 2026-11-04 | Admin: o item da fila de certificações chama "Aprovações" (menu e tela). Ícones novos do Lucide aprovados: `message-square`, `map`, `hourglass`, `award` | Pedro (proposta do designer) |
 | 2026-11-04 | Suíte completa de testes: a referência é o CI. Localmente, com vários agentes em paralelo, a máquina fica carregada e testes com timer estouram 5 s (reproduzido na linha de base, sem relação com os PRs); agentes rodam localmente só os testes afetados | Orquestrador (revisão do PR #108) |
+| 2026-11-04 | Deploy de produção da Onda 0 (036, INT, 037, 038) a partir de `bcc8884` | Pedro (autorizou o deploy) |
+| 2026-11-05 | Orquestrador só avança (merge, retomada de agente, ação nova) com permissão explícita do Pedro | Pedro |
+| 2026-11-05 | #125 (040) mergeado com as ressalvas A1–A4 da auditoria movidas para o card 046 | Pedro |
+| 2026-11-05 | #124 (026): corrigir antes do merge os itens 1–4 do "Mais" (foco do VoiceOver ao abrir, `onAccessibilityEscape`, fechar ao sair por Tab + Esc global, fundo só acima da barra no iPhone); Dynamic Type 2× vai para o 046 | Pedro |
