@@ -51,7 +51,7 @@ export const usuarioAdmin: UsuarioMock = {
     tipo: 'admin',
     ativo: true,
     criado_em: '2026-10-14T19:00:00.000Z',
-    nome: 'Administrador',
+    nome: null,
   },
 };
 
@@ -108,3 +108,17 @@ export const ADMIN_ID_MOCK = usuarioAdmin.usuario.id;
 export const MOTORISTA_MARIA_ID = '44444444-4444-4444-8444-444444444444';
 /** Motorista de uma proposta recusada: o mock-motorista NÃO participa dela. */
 export const MOTORISTA_CARLOS_ID = '55555555-5555-4555-8555-555555555555';
+
+// CNPJs (só dígitos) das empresas criadas pelo mock (POST /cadastro/empresa com 201), para barrar
+// CNPJ repetido com 409 como o backend. Ficam só até o processo acabar.
+const cnpjsCadastradosMock: string[] = [];
+
+/** CNPJ (só dígitos) já usado por uma empresa cadastrada pelo mock. */
+export function cnpjJaCadastradoMock(cnpjDigitos: string): boolean {
+  return cnpjsCadastradosMock.includes(cnpjDigitos);
+}
+
+/** Guarda o CNPJ (só dígitos) de uma empresa criada pelo mock. */
+export function registrarCnpjMock(cnpjDigitos: string): void {
+  cnpjsCadastradosMock.push(cnpjDigitos);
+}

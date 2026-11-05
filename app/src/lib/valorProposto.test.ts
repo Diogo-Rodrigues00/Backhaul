@@ -1,6 +1,11 @@
 import { validarValorProposto, valorPropostoComoNumero } from './valorProposto';
 
 describe('validarValorProposto (D-PO-14)', () => {
+  it('recusa acima do teto de 99.999.999,99 antes do envio', () => {
+    expect(validarValorProposto('100000000,00')).toBe('Informe um valor até 99.999.999,99.');
+    expect(validarValorProposto('99999999,99')).toBe(true);
+  });
+
   it.each(['3200', '3200,5', '3.200,50', '0,01', ' 15 '])('aceita "%s"', (texto) => {
     expect(validarValorProposto(texto)).toBe(true);
   });

@@ -32,7 +32,8 @@ export type Usuario = {
   tipo: TipoUsuario;
   ativo: boolean;
   criado_em: string;
-  nome: string;
+  /** null para o admin: o backend faz COALESCE de motorista e empresa, e o admin não tem nenhum. */
+  nome: string | null;
 };
 export type RespostaEu = { usuario: Usuario };
 

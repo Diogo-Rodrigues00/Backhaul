@@ -13,13 +13,19 @@ import { ResumoErros } from '@/components/molecules/ResumoErros';
 import { CartaoFormulario, CelulaFormulario } from '@/components/organisms/CartaoFormulario';
 import { TemplateFormulario } from '@/components/templates/TemplateFormulario';
 import { ErroApi } from '@/lib/erros';
-import { digitos, email as validarEmail, MAX, maximo, minimo, obrigatorio } from '@/lib/validacao';
+import {
+  cnpj as validarCnpj,
+  email as validarEmail,
+  MAX,
+  maximo,
+  minimo,
+  obrigatorio,
+} from '@/lib/validacao';
 import { useRedirecionarSeAutenticado } from '@/state/sessao/useRedirecionarSeAutenticado';
 import { useSessao } from '@/state/sessao/useSessao';
 
-// D-PO-14: a senha tem no mínimo 8 caracteres; o CNPJ, 14 dígitos (com ou sem pontuação).
+// D-PO-14: a senha tem no mínimo 8 caracteres; o CNPJ, 14 dígitos que fecham a conta (com ou sem pontuação).
 const MINIMO_SENHA = 8;
-const DIGITOS_CNPJ = 14;
 
 type FormularioEmpresa = {
   email: string;
@@ -48,7 +54,7 @@ const REGRAS = {
   email: { validate: { obrigatorio, email: validarEmail, maximo: maximo(MAX.email) } },
   senha: { validate: { obrigatorio, minimo: minimo(MINIMO_SENHA) } },
   razaoSocial: { validate: { obrigatorio, maximo: maximo(MAX.razao_social) } },
-  cnpj: { validate: { obrigatorio, digitos: digitos(DIGITOS_CNPJ) } },
+  cnpj: { validate: { obrigatorio, cnpj: validarCnpj } },
 };
 
 // Rota pública de login, ainda do card 015: fora do tipo de rota gerado até ele entrar.

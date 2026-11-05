@@ -202,7 +202,7 @@ function semente(): EstadoFluxo {
         token: `${PREFIXO_TOKEN_FLUXO}motorista`,
         nome: 'João da Silva',
         criadoEm,
-        cpf: '11122233344',
+        cpf: '11144477735',
         cnh: '11122233344',
         veiculoTipo: 'carreta',
         veiculoPlaca: 'ABC1D23',
