@@ -1,6 +1,6 @@
 // "Mais" da barra inferior (protótipo da Fase 6, card 026): um botão que abre a lista dos destinos que
 // não cabem na barra do celular. Fechado, os links nem existem na página, então o Tab não os alcança.
-import { useId, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Platform, Pressable, useWindowDimensions, View, type ViewStyle } from 'react-native';
 
 import { Icone } from '@/components/atoms/Icone';
@@ -64,6 +64,10 @@ function criarEstilos({ radius, space }: TemaVisual) {
   } as const;
 }
 
+// Id fixo do painel (só existe um "Mais" na página). Com `useId`, o id que o botão põe em `aria-controls`
+// e o que o painel recebe saíram diferentes depois da exportação estática: o axe acusou o id inexistente.
+const ID_PAINEL = 'mais-da-barra-painel';
+
 type EventoTecla = { key?: string; nativeEvent?: { key?: string }; preventDefault?: () => void };
 
 /**
@@ -75,7 +79,6 @@ export function MaisDaBarra({ destinos }: PropsMaisDaBarra) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
   const [aberto, setAberto] = useState(false);
-  const idPainel = useId();
   const refRaiz = useRef<View>(null);
   const refGatilho = useRef<View>(null);
   const janela = useWindowDimensions();
@@ -100,7 +103,7 @@ export function MaisDaBarra({ destinos }: PropsMaisDaBarra) {
       }
     : {};
   // `aria-controls` não está nos tipos do React Native (que não precisa dele): vai só na web.
-  const ligacaoComPainel = web ? { 'aria-controls': idPainel } : {};
+  const ligacaoComPainel = web ? { 'aria-controls': ID_PAINEL } : {};
 
   return (
     <View ref={refRaiz} style={estilos.raiz} {...teclado}>
@@ -145,7 +148,7 @@ export function MaisDaBarra({ destinos }: PropsMaisDaBarra) {
       </Pressable>
       {aberto ? (
         <View
-          nativeID={idPainel}
+          nativeID={ID_PAINEL}
           role="list"
           style={[estilos.painel, { backgroundColor: colors.bg.inverse }]}
         >
