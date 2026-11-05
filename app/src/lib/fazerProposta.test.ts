@@ -1,5 +1,10 @@
 import { ErroApi } from './erros';
-import { descreverCarga, lerErroDaProposta, rotuloAceitar } from './fazerProposta';
+import {
+  descreverCarga,
+  lerErroDaProposta,
+  MENSAGEM_PERFIL_NAO_ENCONTRADO,
+  rotuloAceitar,
+} from './fazerProposta';
 
 function erro(status: number, mensagem: string, tipo: 'mensagem' | 'validacao' = 'mensagem') {
   return new ErroApi({ tipo, status, mensagens: [mensagem] });
@@ -32,6 +37,31 @@ describe('lerErroDaProposta', () => {
     expect(lerErroDaProposta(erro(409, 'carga não está mais aberta para propostas')).desfecho).toBe(
       'carga-indisponivel',
     );
+  });
+
+  it('409 de disponibilidade usada ou vencida: desfecho próprio com link para publicar uma nova', () => {
+    expect(lerErroDaProposta(erro(409, 'disponibilidade não está mais aberta'))).toEqual({
+      desfecho: 'disponibilidade',
+      mensagem: 'disponibilidade não está mais aberta',
+      link: 'publicar',
+    });
+  });
+
+  it('404 de perfil de motorista: aviso fixo, nunca carga indisponível', () => {
+    const lido = lerErroDaProposta(erro(404, 'perfil de motorista não encontrado'));
+    expect(lido).toEqual({
+      desfecho: 'perfil',
+      mensagem: MENSAGEM_PERFIL_NAO_ENCONTRADO,
+    });
+    expect(lido.desfecho).not.toBe('carga-indisponivel');
+  });
+
+  it('404 de disponibilidade: link para Minhas disponibilidades (não para publicar)', () => {
+    expect(lerErroDaProposta(erro(404, 'disponibilidade não encontrada'))).toEqual({
+      desfecho: 'disponibilidade',
+      mensagem: 'disponibilidade não encontrada',
+      link: 'disponibilidades',
+    });
   });
 
   it('403 de certificação', () => {

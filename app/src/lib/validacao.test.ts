@@ -1,4 +1,6 @@
+import { formatarDecimal } from './formatacao';
 import {
+  ateValorMaximo,
   cnpj,
   cnpjValido,
   cpf,
@@ -15,6 +17,7 @@ import {
   obrigatorio,
   placa,
   placaValida,
+  VALOR_MAXIMO,
 } from './validacao';
 
 describe('obrigatorio', () => {
@@ -132,6 +135,26 @@ describe('numeroSemAmbiguidade', () => {
       expect(numeroSemAmbiguidade(valor)).toBe(true);
     },
   );
+});
+
+describe('ateValorMaximo (teto NUMERIC(10,2) do backend)', () => {
+  it('aceita até 99.999.999,99, inclusive, e valores comuns', () => {
+    expect(ateValorMaximo('99.999.999,99')).toBe(true);
+    expect(ateValorMaximo('99999999.99')).toBe(true);
+    expect(ateValorMaximo('1.234,56')).toBe(true);
+    expect(ateValorMaximo(VALOR_MAXIMO)).toBe(true);
+  });
+
+  it('recusa acima do teto, inclusive uma casa a mais que a coluna aceita', () => {
+    const mensagem = 'Informe um valor até 99.999.999,99.';
+    expect(ateValorMaximo('100.000.000')).toBe(mensagem);
+    expect(ateValorMaximo('99.999.999,991')).toBe(mensagem);
+    expect(ateValorMaximo(100_000_000)).toBe(mensagem);
+  });
+
+  it('a mensagem sai do próprio teto, formatada em pt-BR', () => {
+    expect(formatarDecimal(VALOR_MAXIMO)).toBe('99.999.999,99');
+  });
 });
 
 describe('numeroPositivo e numeroAte leem como o envio (paraNumero)', () => {

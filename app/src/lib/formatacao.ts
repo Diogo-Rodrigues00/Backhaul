@@ -21,6 +21,10 @@ const formatadorDistancia = new Intl.NumberFormat('pt-BR', {
 });
 const formatadorPeso = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
 const formatadorPercentual = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
+const formatadorDecimal = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 type FormatadorData = { format(data: Date): string };
 
@@ -117,6 +121,12 @@ export function formatarDistancia(km: NumeroEntrada): string {
 export function formatarPeso(kg: NumeroEntrada): string {
   const numero = paraNumero(kg);
   return numero === null ? SEM_VALOR : `${formatadorPeso.format(numero)} kg`;
+}
+
+// Número puro com duas casas, sem "R$": "99.999.999,99" (usado em mensagens de limite).
+export function formatarDecimal(valor: NumeroEntrada): string {
+  const numero = paraNumero(valor);
+  return numero === null ? SEM_VALOR : formatadorDecimal.format(numero);
 }
 
 // Exibe só o que a API devolveu; nunca calcula comissão (RNF-11).

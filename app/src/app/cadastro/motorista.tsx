@@ -21,6 +21,7 @@ import {
 } from '@/lib/cadastroMotorista';
 import { ErroApi, MENSAGEM_FALHA } from '@/lib/erros';
 import {
+  ateValorMaximo,
   cpf as validarCpf,
   email as emailValido,
   maximo,
@@ -69,7 +70,7 @@ const REGRAS = {
   cnh: { validate: { obrigatorio, maximo: maximo(MAX.cnh) } },
   veiculoTipo: { validate: { obrigatorio, maximo: maximo(MAX.veiculo_tipo) } },
   veiculoPlaca: { validate: { obrigatorio, placa: validarPlaca } },
-  capacidadeKg: { validate: { obrigatorio, numeroPositivo, numeroSemAmbiguidade } },
+  capacidadeKg: { validate: { obrigatorio, numeroPositivo, numeroSemAmbiguidade, ateValorMaximo } },
 };
 
 const VALORES_INICIAIS: DadosCadastroMotorista = {

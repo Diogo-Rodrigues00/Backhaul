@@ -288,7 +288,8 @@ describe('área do administrador (D-PO-10)', () => {
     await gravar(CHAVES.token, 'mock-admin');
     await abrir('/admin');
 
-    await waitFor(() => expect(sonda()).toBe('autenticado|Administrador|admin'));
+    // O admin vem com `nome: null` do GET /eu: a área abre sem nome e o cabeçalho mostra só o perfil.
+    await waitFor(() => expect(sonda()).toBe('autenticado|-|admin'));
     expect(titulo('Perfil de administrador sem telas nesta versão')).toBeOnTheScreen();
     expect(screen.container.queryAll((el) => el.props.role === 'navigation')).toHaveLength(0);
 
