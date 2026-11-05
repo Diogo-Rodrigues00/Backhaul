@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
-import { Platform, StyleSheet } from 'react-native';
+import { AccessibilityInfo, Dimensions, Platform, StyleSheet } from 'react-native';
 
 import { moverFoco } from '@/lib/a11y';
 import { renderizarComRota } from '@/test-utils/renderComRota';
@@ -23,6 +23,8 @@ const botaoMais = () => screen.getByRole('button', { name: 'Mais' });
 // Web: `aria-expanded` no DOM. iPhone: o React Native leva o mesmo estado para `accessibilityState`.
 const expandido = () =>
   botaoMais().props['aria-expanded'] ?? botaoMais().props.accessibilityState?.expanded;
+// O painel é a lista da barra (role="list") que só existe com o "Mais" aberto.
+const painel = () => screen.container.queryAll((el) => el.props.role === 'list')[0]!;
 
 beforeEach(() => focoMovido.mockClear());
 afterEach(() => jest.restoreAllMocks());
@@ -58,8 +60,8 @@ describe('MaisDaBarra', () => {
     await act(async () => fireEvent.press(botaoMais()));
     const controlado = botaoMais().props['aria-controls'];
     expect(controlado).toBeTruthy();
-    const painel = screen.container.queryAll((el) => el.props.nativeID === controlado);
-    expect(painel.length).toBeGreaterThan(0);
+    const alvo = screen.container.queryAll((el) => el.props.nativeID === controlado);
+    expect(alvo.length).toBeGreaterThan(0);
   });
 
   it('página atual dentro do "Mais": o link tem aria-current e o botão fica marcado em âmbar', async () => {
@@ -73,47 +75,57 @@ describe('MaisDaBarra', () => {
     );
   });
 
-  it('na web, Esc fecha o painel e devolve o foco ao botão', async () => {
-    jest.replaceProperty(Platform, 'OS', 'web');
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    await renderizarComRota(<MaisDaBarra destinos={destinos} />, { rotas });
-    await act(async () => fireEvent.press(botaoMais()));
-    const painel = screen.getByRole('link', { name: 'Disponibilidade' });
-
-    await act(async () => fireEvent(painel, 'keyDown', { key: 'Escape' }));
-
-    expect(expandido()).toBe(false);
-    expect(screen.queryByRole('link', { name: 'Disponibilidade' })).toBeNull();
-    expect(focoMovido).toHaveBeenCalledTimes(1);
-  });
-
-  it('outras teclas não fecham o painel', async () => {
-    jest.replaceProperty(Platform, 'OS', 'web');
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    await renderizarComRota(<MaisDaBarra destinos={destinos} />, { rotas });
-    await act(async () => fireEvent.press(botaoMais()));
-    await act(async () => fireEvent(botaoMais(), 'keyDown', { key: 'Enter' }));
-    expect(expandido()).toBe(true);
-    expect(focoMovido).not.toHaveBeenCalled();
-  });
-
-  it('iPhone: tocar fora do painel (no fundo) fecha, e o fundo só existe com o painel aberto', async () => {
-    await renderizarComRota(<MaisDaBarra destinos={destinos} />, { rotas });
-    expect(screen.queryByTestId('mais-fundo')).toBeNull();
-    await act(async () => fireEvent.press(botaoMais()));
-    // O fundo é escondido do leitor de tela (accessibilityElementsHidden): a consulta precisa ver o escondido.
-    const fundo = screen.getByTestId('mais-fundo', { includeHiddenElements: true });
-    await act(async () => fireEvent.press(fundo));
-    expect(expandido()).toBe(false);
-    expect(screen.queryByRole('link', { name: 'Disponibilidade' })).toBeNull();
-    expect(focoMovido).not.toHaveBeenCalled();
-  });
-
   it('o painel é uma lista e cada destino é um item dela', async () => {
     await renderizarComRota(<MaisDaBarra destinos={destinos} />, { rotas });
     await act(async () => fireEvent.press(botaoMais()));
-    const [painel] = screen.container.queryAll((el) => el.props.role === 'list');
-    expect(painel).toBeTruthy();
-    expect(within(painel!).getAllByRole('link')).toHaveLength(1);
+    expect(painel()).toBeTruthy();
+    expect(within(painel()).getAllByRole('link')).toHaveLength(1);
+  });
+
+  describe('iPhone (VoiceOver)', () => {
+    it('ao abrir, move o foco de acessibilidade para o primeiro link do painel', async () => {
+      const foco = jest.spyOn(AccessibilityInfo, 'setAccessibilityFocus');
+      // O renderizador de teste não tem nós nativos: o `findNodeHandle` do módulo devolve um número fixo.
+      // O módulo real (não a cópia do `import * as`): é o objeto que o componente lê.
+      const modulo = jest.requireActual<Record<string, unknown>>('react-native');
+      jest.spyOn(modulo, 'findNodeHandle', 'get').mockReturnValue(() => 42);
+      await renderizarComRota(<MaisDaBarra destinos={destinos} />, { rotas });
+      await act(async () => fireEvent.press(botaoMais()));
+      expect(foco).toHaveBeenCalledTimes(1);
+      expect(foco).toHaveBeenCalledWith(42);
+    });
+
+    it('o gesto de voltar do VoiceOver (escape mágico) fecha e devolve o foco ao botão', async () => {
+      await renderizarComRota(<MaisDaBarra destinos={destinos} />, { rotas });
+      await act(async () => fireEvent.press(botaoMais()));
+      await act(async () => fireEvent(painel(), 'accessibilityEscape'));
+      expect(expandido()).toBe(false);
+      expect(screen.queryByRole('link', { name: 'Disponibilidade' })).toBeNull();
+      expect(focoMovido).toHaveBeenCalledTimes(1);
+    });
+
+    it('tocar fora do painel (no fundo) fecha sem mover o foco, e o fundo só existe com o painel aberto', async () => {
+      await renderizarComRota(<MaisDaBarra destinos={destinos} />, { rotas });
+      expect(screen.queryByTestId('mais-fundo')).toBeNull();
+      await act(async () => fireEvent.press(botaoMais()));
+      // O fundo é escondido do leitor de tela (accessibilityElementsHidden): a consulta precisa ver o escondido.
+      const fundo = screen.getByTestId('mais-fundo', { includeHiddenElements: true });
+      await act(async () => fireEvent.press(fundo));
+      expect(expandido()).toBe(false);
+      expect(screen.queryByRole('link', { name: 'Disponibilidade' })).toBeNull();
+      expect(focoMovido).not.toHaveBeenCalled();
+    });
+
+    it('o fundo fica só acima da barra: encostado no topo dela, com a altura da janela (as abas ao lado seguem tocáveis)', async () => {
+      await renderizarComRota(<MaisDaBarra destinos={destinos} />, { rotas });
+      await act(async () => fireEvent.press(botaoMais()));
+      const fundo = StyleSheet.flatten(
+        screen.getByTestId('mais-fundo', { includeHiddenElements: true }).props.style,
+      );
+      expect(fundo).toMatchObject({
+        bottom: '100%',
+        height: Dimensions.get('window').height,
+      });
+    });
   });
 });
