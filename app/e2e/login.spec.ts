@@ -43,14 +43,14 @@ test.describe('entrar', () => {
     await expect(h1(page)).toHaveText('Cargas próximas');
   });
 
-  test('administrador chega à tela sem telas, com "Sair"', async ({ page }) => {
+  test('administrador chega ao resumo da plataforma, com "Sair"', async ({ page }) => {
     await page.goto('/entrar');
     await expect(h1(page)).toHaveText('Entrar');
     await preencher(page, 'admin@mock.test', SENHA);
     await page.getByRole('button', { name: 'Entrar' }).click();
 
     await expect(page).toHaveURL(/\/admin$/);
-    await expect(h1(page)).toHaveText('Perfil de administrador sem telas nesta versão');
+    await expect(h1(page)).toHaveText('Resumo da plataforma');
     await expect(page.getByRole('button', { name: 'Sair' }).first()).toBeVisible();
   });
 

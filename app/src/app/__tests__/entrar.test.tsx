@@ -200,13 +200,13 @@ describe('perfis (MVP-03)', () => {
     expect(titulo('Cargas próximas')).toBeOnTheScreen();
   });
 
-  it('administrador abre a tela de D-PO-10, com "Sair"', async () => {
+  it('administrador abre o resumo da plataforma, com "Sair"', async () => {
     await abrir('/entrar');
     await preencher('admin@mock.test', SENHA);
     await fireEvent.press(botaoEntrar());
 
     await waitFor(() => expect(caminho()).toBe('/admin'));
-    expect(titulo('Perfil de administrador sem telas nesta versão')).toBeOnTheScreen();
+    expect(titulo('Resumo da plataforma')).toBeOnTheScreen();
     expect(screen.getAllByRole('button', { name: 'Sair' }).length).toBeGreaterThan(0);
   });
 

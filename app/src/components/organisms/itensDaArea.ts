@@ -3,7 +3,6 @@ import type { TipoPerfil } from '@/lib/areas';
 
 // Navegação de cada perfil (arquitetura.md, seção 3; ícones e rótulos do protótipo aprovado).
 // Cabeçalho (acima de 960 px) e barra inferior (até 960 px) recebem a mesma lista.
-// O administrador não tem navegação nesta versão (D-PO-10).
 const ITENS: Record<TipoPerfil, readonly ItemNavegacao[]> = {
   empresa: [
     { href: '/empresa/cargas', rotulo: 'Minhas cargas', icone: 'package' },
@@ -17,7 +16,8 @@ const ITENS: Record<TipoPerfil, readonly ItemNavegacao[]> = {
     { href: '/motorista/disponibilidades', rotulo: 'Disponibilidade', icone: 'locate' },
     { href: '/motorista/fretes', rotulo: 'Meus fretes', icone: 'truck' },
   ],
-  admin: [],
+  // 041 e 032 acrescentam os próprios itens quando as rotas existirem: nunca link para rota inexistente.
+  admin: [{ href: '/admin', rotulo: 'Resumo', icone: 'inbox' }],
 };
 
 export function itensDaArea(area: TipoPerfil): readonly ItemNavegacao[] {
