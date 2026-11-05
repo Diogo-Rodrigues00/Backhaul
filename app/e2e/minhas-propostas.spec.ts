@@ -107,6 +107,23 @@ test.describe('navegação por teclado até a tela', () => {
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/motorista\/disponibilidades$/);
   });
+
+  test('celular: Tab para fora do painel fecha o "Mais" (o painel não cobre o que tem foco)', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'estreito', 'barra inferior só até 960 px');
+    const mais = page.getByRole('button', { name: 'Mais' });
+    const disponibilidade = page.getByRole('link', { name: 'Disponibilidade' });
+    await mais.focus();
+    await page.keyboard.press('Enter');
+    await expect(mais).toHaveAttribute('aria-expanded', 'true');
+
+    await page.keyboard.press('Tab');
+    await expect(disponibilidade).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(mais).toHaveAttribute('aria-expanded', 'false');
+    await expect(disponibilidade).toBeHidden();
+  });
 });
 
 // Axe com o "Mais" aberto, no celular, nos dois temas (o painel é o que a tela ganha ao abrir).
