@@ -1,4 +1,21 @@
-import { dataNoPassado, hojeLocal, montarData, separarData } from './datas';
+import {
+  dataNoPassado,
+  hojeLocal,
+  hojeUtc,
+  montarData,
+  primeiraValidadeAceita,
+  separarData,
+} from './datas';
+
+/** Um "agora" com dia local e dia UTC escolhidos à mão, sem depender do fuso da máquina. */
+function agoraCom(local: [number, number, number], iso: string): Date {
+  return {
+    getFullYear: () => local[0],
+    getMonth: () => local[1] - 1,
+    getDate: () => local[2],
+    toISOString: () => iso,
+  } as unknown as Date;
+}
 
 describe('montarData', () => {
   it('monta AAAA-MM-DD com zeros à esquerda', () => {
@@ -59,6 +76,25 @@ describe('hojeLocal e dataNoPassado', () => {
   it('hojeLocal usa o dia do relógio local, com zeros', () => {
     expect(hojeLocal(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05');
     expect(hojeLocal(new Date(2026, 10, 4, 0, 1))).toBe('2026-11-04');
+  });
+
+  it('hojeUtc usa o dia do instante em UTC', () => {
+    expect(hojeUtc(new Date('2026-11-05T01:30:00.000Z'))).toBe('2026-11-05');
+  });
+
+  it('primeiraValidadeAceita: de dia é hoje; entre 21h e 24h em Brasília (UTC já é amanhã) é amanhã', () => {
+    // Local e UTC no mesmo dia: hoje vale.
+    expect(primeiraValidadeAceita(agoraCom([2026, 11, 4], '2026-11-04T15:00:00.000Z'))).toBe(
+      '2026-11-04',
+    );
+    // 22h de 04/11 em Brasília = 01h de 05/11 em UTC: o backend já chama de 05/11.
+    expect(primeiraValidadeAceita(agoraCom([2026, 11, 4], '2026-11-05T01:00:00.000Z'))).toBe(
+      '2026-11-05',
+    );
+    // Fuso à frente de UTC (local já é o dia seguinte): vale o dia local.
+    expect(primeiraValidadeAceita(agoraCom([2026, 11, 5], '2026-11-04T23:00:00.000Z'))).toBe(
+      '2026-11-05',
+    );
   });
 
   it('hoje não é passado; ontem é', () => {

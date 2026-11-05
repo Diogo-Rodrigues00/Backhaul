@@ -53,6 +53,21 @@ export function hojeLocal(agora: Date = new Date()): string {
   return `${quatroDigitos(agora.getFullYear())}-${doisDigitos(agora.getMonth() + 1)}-${doisDigitos(agora.getDate())}`;
 }
 
+/** Hoje em UTC, `AAAA-MM-DD`: é o dia com que o backend compara a validade. */
+export function hojeUtc(agora: Date = new Date()): string {
+  return agora.toISOString().slice(0, 10);
+}
+
+/**
+ * Primeira validade que o backend aceita agora: o maior entre o dia local e o dia em UTC. À noite
+ * (21h às 24h em Brasília) o dia UTC já é o seguinte, e "hoje" seria recusado como passado.
+ */
+export function primeiraValidadeAceita(agora: Date = new Date()): string {
+  const local = hojeLocal(agora);
+  const utc = hojeUtc(agora);
+  return local > utc ? local : utc;
+}
+
 /** `true` quando `data` (`AAAA-MM-DD`) é anterior a `hoje`. Texto ISO de data compara como texto. */
 export function dataNoPassado(data: string, hoje: string = hojeLocal()): boolean {
   return data < hoje;

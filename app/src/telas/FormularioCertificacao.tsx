@@ -3,7 +3,7 @@
 // React.lazy a partir de `app/motorista/certificacoes.tsx` (ADR 0011).
 import { useEffect, useMemo, type RefObject } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import type { FieldPath, UseFormSetError } from 'react-hook-form';
+import type { FieldPath } from 'react-hook-form';
 import { View, type Text as TextoRN, type ViewStyle } from 'react-native';
 
 import { useEnviarCertificacao } from '@/api/certificacoes.hooks';
@@ -18,7 +18,7 @@ import { aplicarErroApi, useEnvioUnico, useResumoErros } from '@/components/mole
 import { ResumoErros } from '@/components/molecules/ResumoErros';
 import { CartaoFormulario, CelulaFormulario } from '@/components/organisms/CartaoFormulario';
 import { moverFoco } from '@/lib/a11y';
-import { dataNoPassado, montarData } from '@/lib/datas';
+import { hojeLocal, montarData, primeiraValidadeAceita } from '@/lib/datas';
 import { ErroApi } from '@/lib/erros';
 import { maximo } from '@/lib/validacao';
 import type { TemaVisual } from '@/state/tema/montarTema';
@@ -57,16 +57,21 @@ interface Valores {
 
 export const MAXIMO_NUMERO = 60;
 export const AVISO_REENVIO = 'Ao reenviar, a certificação volta para Aguardando aprovação.';
-export const MENSAGEM_DATA_INVALIDA = 'Informe uma data válida. Exemplo: dia 31, mês 12, ano 2027.';
-export const MENSAGEM_DATA_NO_PASSADO =
-  'A validade não pode estar no passado. Informe hoje ou uma data futura.';
+export const MENSAGEM_DATA_NO_PASSADO = 'A validade não pode estar no passado.';
 /**
- * O backend compara a validade com a data em UTC. Entre 21h e 24h em Brasília já é "amanhã" em UTC, e
- * "hoje" para a pessoa é "ontem" para o servidor. A API é a autoridade (card 031): o app não tenta
- * corrigir, só explica o 400 (a data estava certa no relógio do aparelho).
+ * O backend compara a validade com a data em UTC, que à noite (21h às 24h em Brasília) já é o dia
+ * seguinte. Por isso o app barra "hoje" nessa janela antes do POST (`primeiraValidadeAceita`).
  */
-export const MENSAGEM_DATA_RECUSADA_PELO_SERVIDOR =
-  'O servidor recusou esta data como passada: ele usa o horário UTC, que à noite já é o dia seguinte. Informe a partir de amanhã.';
+export const MENSAGEM_A_PARTIR_DE_AMANHA = 'Agora a validade precisa ser a partir de amanhã.';
+
+/** Exemplo de data para a ajuda e para o erro; o ano é o do ano que vem, para não envelhecer. */
+export function exemploDeData(agora: Date = new Date()): string {
+  return `dia 31, mês 12, ano ${agora.getFullYear() + 1}`;
+}
+
+export function mensagemDataInvalida(agora: Date = new Date()): string {
+  return `Informe uma data válida. Exemplo: ${exemploDeData(agora)}.`;
+}
 const MENSAGEM_ESCOLHER = 'Escolha a certificação.';
 const MENSAGEM_JA_APROVADA = 'Esta certificação já está aprovada e dentro da validade.';
 const MENSAGEM_NUMERO = 'Informe o número do certificado.';
@@ -91,20 +96,15 @@ const validarNumero = encadear(
   maximo(MAXIMO_NUMERO),
 );
 
-/** A validade digitada: data que existe e que não é anterior a hoje no relógio local. */
-export function validarValidade(valor: ValorDataPartes): true | string {
-  const data = montarData(valor.dia, valor.mes, valor.ano);
-  if (data === null) return MENSAGEM_DATA_INVALIDA;
-  return !dataNoPassado(data) || MENSAGEM_DATA_NO_PASSADO;
-}
-
 /**
- * O 400 "validade não pode estar no passado" para uma data que o app aceitou (hoje ou depois) só
- * acontece na borda do fuso (ver `MENSAGEM_DATA_RECUSADA_PELO_SERVIDOR`). As demais mensagens da API
- * seguem como vieram.
+ * A validade digitada: data que existe e que o backend aceita agora (hoje ou depois; à noite, só a
+ * partir de amanhã, porque ele conta o dia em UTC). Os 400 do backend seguem indo ao grupo "Validade".
  */
-export function explicarMensagemDaValidade(mensagem: string): string {
-  return /passado/.test(mensagem) ? MENSAGEM_DATA_RECUSADA_PELO_SERVIDOR : mensagem;
+export function validarValidade(valor: ValorDataPartes, agora: Date = new Date()): true | string {
+  const data = montarData(valor.dia, valor.mes, valor.ano);
+  if (data === null) return mensagemDataInvalida(agora);
+  if (data >= primeiraValidadeAceita(agora)) return true;
+  return data < hojeLocal(agora) ? MENSAGEM_DATA_NO_PASSADO : MENSAGEM_A_PARTIR_DE_AMANHA;
 }
 
 function traduzirErro(erro: unknown): ErroApi {
@@ -205,17 +205,8 @@ export default function FormularioCertificacao({
         });
       } catch (erro) {
         const falha = traduzirErro(erro);
-        // A mensagem da validade é explicada na hora de ir ao campo (borda do fuso, UTC).
-        const setErroTraduzido: UseFormSetError<Valores> = (campo, erroDoCampo, opcoesDoErro) =>
-          setError(
-            campo,
-            campo === 'validade' && erroDoCampo.message !== undefined
-              ? { ...erroDoCampo, message: explicarMensagemDaValidade(erroDoCampo.message) }
-              : erroDoCampo,
-            opcoesDoErro,
-          );
         aplicarErroApi<Valores, keyof typeof CAMPOS_DA_API>(falha, {
-          setError: setErroTraduzido,
+          setError,
           campos: CAMPOS_DA_API as Readonly<Record<keyof typeof CAMPOS_DA_API, FieldPath<Valores>>>,
           definirResumo: resumo.definirResumo,
           focarResumo: resumo.focarResumo,
@@ -323,12 +314,12 @@ export default function FormularioCertificacao({
           <Controller
             control={control}
             name="validade"
-            rules={{ validate: validarValidade }}
+            rules={{ validate: (valor) => validarValidade(valor) }}
             render={({ field, fieldState }) => (
               <CampoDataPartes
                 id="certificacao-validade"
                 rotulo={ROTULOS.validade}
-                ajuda="Data de vencimento do documento. Exemplo: dia 31, mês 12, ano 2027. Pode ser hoje ou depois."
+                ajuda={`Data de vencimento do documento. Exemplo: ${exemploDeData()}.`}
                 valor={field.value}
                 aoMudar={field.onChange}
                 onBlur={field.onBlur}
