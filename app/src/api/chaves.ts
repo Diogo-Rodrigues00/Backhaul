@@ -4,8 +4,11 @@ import type { ParametrosCargasProximas } from './tipos';
 export const chaves = {
   eu: () => ['eu'] as const,
   certificacoes: {
-    /** Catálogo (GET /certificacoes). Prefixo de todas as chaves de certificações. */
-    catalogo: () => ['certificacoes'] as const,
+    /**
+     * Catálogo (GET /certificacoes). Nenhuma das três chaves é prefixo de outra: invalidar uma
+     * não invalida as demais (o TanStack casa por prefixo).
+     */
+    catalogo: () => ['certificacoes', 'catalogo'] as const,
     minhas: () => ['certificacoes', 'minhas'] as const,
     pendentes: () => ['certificacoes', 'pendentes'] as const,
   },

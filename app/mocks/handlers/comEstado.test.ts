@@ -16,6 +16,7 @@ import { cadastrarMotorista, entrarNaApi } from '@/api/sessao';
 import { servidor, URL_BASE_TESTE } from '../node';
 import { ID_CARGA_GRAOS_FLUXO } from '../estado';
 import { CERT_MOPP_3_ID, CERT_MOPP_8_ID } from '../fixtures/certificacoes';
+import { dataDaquiADias } from '../fixtures/datas';
 
 import { criarHandlersComEstado } from './comEstado';
 
@@ -54,7 +55,7 @@ describe('certificação: motorista envia, admin decide, situação muda', () =>
     const enviada = await enviarCertificacao({
       certificacao_id: CERT_MOPP_8_ID,
       numero_certificado: '777888',
-      validade: '2031-01-31',
+      validade: dataDaquiADias(800),
     });
     expect((await listarMinhasCertificacoes()).certificacoes).toEqual([
       expect.objectContaining({
@@ -100,7 +101,7 @@ describe('certificação: motorista envia, admin decide, situação muda', () =>
       enviarCertificacao({
         certificacao_id: CERT_MOPP_3_ID,
         numero_certificado: '999',
-        validade: '2031-01-31',
+        validade: dataDaquiADias(800),
       }),
     ).rejects.toMatchObject({
       tipo: 'mensagem',
@@ -111,12 +112,12 @@ describe('certificação: motorista envia, admin decide, situação muda', () =>
     const primeiro = await enviarCertificacao({
       certificacao_id: CERT_MOPP_8_ID,
       numero_certificado: '111',
-      validade: '2031-01-31',
+      validade: dataDaquiADias(800),
     });
     const reenviada = await enviarCertificacao({
       certificacao_id: CERT_MOPP_8_ID,
       numero_certificado: '222',
-      validade: '2032-01-31',
+      validade: dataDaquiADias(1100),
     });
     expect(reenviada.certificacao).toMatchObject({
       id: primeiro.certificacao.id,
@@ -130,7 +131,7 @@ describe('certificação: motorista envia, admin decide, situação muda', () =>
     const enviada = await enviarCertificacao({
       certificacao_id: CERT_MOPP_8_ID,
       numero_certificado: '333',
-      validade: '2031-01-31',
+      validade: dataDaquiADias(800),
     });
 
     await entrarComo('admin@fluxo.test');
@@ -148,7 +149,7 @@ describe('certificação: motorista envia, admin decide, situação muda', () =>
       enviarCertificacao({
         certificacao_id: CERT_MOPP_8_ID,
         numero_certificado: '444',
-        validade: '2031-01-31',
+        validade: dataDaquiADias(800),
       }),
     ).resolves.toMatchObject({ certificacao: { numero_certificado: '444' } });
   });
@@ -159,7 +160,7 @@ describe('certificação: motorista envia, admin decide, situação muda', () =>
     await enviarCertificacao({
       certificacao_id: CERT_MOPP_8_ID,
       numero_certificado: '555',
-      validade: '2031-01-31',
+      validade: dataDaquiADias(800),
     });
     await entrarComo('admin@fluxo.test');
     expect((await obterResumoAdmin()).resumo).toMatchObject({

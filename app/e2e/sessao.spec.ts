@@ -128,8 +128,8 @@ test.describe('casca logada: navegação por largura', () => {
   for (const perfil of ['empresa', 'motorista'] as const) {
     const caminho = perfil === 'empresa' ? '/empresa/cargas' : '/motorista/cargas';
     test(`${perfil}: exatamente 1 navegação visível e os links da área`, async ({ page }, info) => {
-      // Empresa: 3 destinos. Motorista: 4 no cabeçalho (1280 px); 3 na barra com "Mais" fechado (320 px).
-      const itens = perfil === 'empresa' || info.project.name !== 'desktop' ? 3 : 4;
+      // Empresa: 3 destinos. Motorista: 5 no cabeçalho (1280 px); 3 na barra com "Mais" fechado (320 px).
+      const itens = perfil === 'empresa' || info.project.name !== 'desktop' ? 3 : 5;
       await entrarComoPerfil(page, perfil);
       await page.goto(caminho);
       await expect(h1(page)).toBeVisible();
