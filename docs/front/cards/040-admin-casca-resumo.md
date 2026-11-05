@@ -25,7 +25,7 @@ Trocar o placeholder "Perfil de administrador sem telas nesta versão" (`/admin`
   - **Pessoas:** Motoristas, Empresas.
   - **Operação:** Cargas abertas, Propostas pendentes, Certificações aguardando aprovação.
   - **Fretes:** Aceitos, Em trânsito, Entregues.
-  - **Dinheiro:** "Valor repassado (fretes entregues)" = `volume_liberado`; "Comissão recebida (fretes entregues)" = `comissao_total`; "Comissão retida (aguardando entrega)" = `comissao_retida`. Valores com `formatarMoeda`, **exatamente** o que a API devolveu (nada de percentual ou conta no front; `verificar:proibidos` continua passando).
+  - **Dinheiro:** "Volume dos fretes entregues" = `volume_liberado`; "Comissão recebida (fretes entregues)" = `comissao_total`; "Comissão retida (aguardando entrega)" = `comissao_retida`. Valores com `formatarMoeda`, **exatamente** o que a API devolveu (nada de percentual ou conta no front; `verificar:proibidos` continua passando).
 - Sem atualização automática; `BotaoAtualizar` no topo.
 - `src/components/organisms/itensDaArea.ts`: `admin: [{ href: '/admin', rotulo: 'Resumo', icone: 'inbox' }]` (ícone existente; troca se o designer pedir). **041 e 032 acrescentam os próprios itens** quando as rotas deles existirem: nunca link para rota que ainda não existe.
 - Conta de demo: `database/seed-admin.sql` (credenciais fora do repositório).
