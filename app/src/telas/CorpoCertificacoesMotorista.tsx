@@ -7,8 +7,10 @@ import { View, type Text as TextoRN, type ViewStyle } from 'react-native';
 
 import { useCertificacoes, useMinhasCertificacoes } from '@/api/certificacoes.hooks';
 import { Botao } from '@/components/atoms/Botao';
+import { Carregando } from '@/components/atoms/Carregando';
 import { Titulo } from '@/components/atoms/Titulo';
 import { Banner } from '@/components/molecules/Banner';
+import { EstadoErro } from '@/components/molecules/EstadoErro';
 import { Lista } from '@/components/molecules/Lista';
 import { CartaoCertificacao } from '@/components/organisms/CartaoCertificacao';
 import { useCasca } from '@/components/organisms/useCasca';
@@ -21,6 +23,7 @@ import { useEstilos } from '@/state/tema/useEstilos';
 import FormularioCertificacao, { type PedidoDeReenvio } from './FormularioCertificacao';
 
 export const MENSAGEM_ENVIADA = 'Certificação enviada. Aguardando aprovação.';
+const MENSAGEM_CATALOGO = 'Não foi possível carregar as certificações para o envio. Tente de novo.';
 
 /** Só a mensagem de erro de negócio da API (404 sem perfil de motorista, 403) aparece; o resto usa o padrão. */
 function mensagemDeErro(erro: unknown): string | undefined {
@@ -58,6 +61,8 @@ export default function CorpoCertificacoesMotorista() {
   const [recente, setRecente] = useState<string | null>(null);
   const [enviada, setEnviada] = useState(false);
   const tituloDoFormulario = useRef<TextoRN>(null);
+  // O botão "Reenviar" que abriu o formulário: ao cancelar o reenvio o foco volta para ele.
+  const retornoDoFoco = useRef<View | null>(null);
   const contadorDeReenvios = useRef(0);
 
   const atualizar = useCallback(async () => {
@@ -73,18 +78,26 @@ export default function CorpoCertificacoesMotorista() {
   const lista = minhas.data?.certificacoes;
   const itensDoCatalogo = useMemo(() => catalogo.data?.certificacoes ?? [], [catalogo.data]);
 
+  // A lista depende só de "minhas". O catálogo só alimenta o formulário: se ele falhar, a lista
+  // continua e o erro aparece no lugar do formulário (com o seu próprio "Tentar de novo").
   let estado: EstadoLista;
   if (!habilitado) estado = 'carregando';
-  else if (minhas.isError || (catalogo.isError && lista === undefined)) estado = 'erro';
-  else if (lista === undefined || catalogo.data === undefined) estado = 'carregando';
+  else if (minhas.isError) estado = 'erro';
+  else if (lista === undefined) estado = 'carregando';
   else estado = lista.length === 0 ? 'vazio' : 'pronto';
-  const formularioPronto = lista !== undefined && catalogo.data !== undefined;
-  const erro = minhas.isError ? minhas.error : catalogo.error;
+  const catalogoPronto = lista !== undefined && catalogo.data !== undefined;
+  const catalogoComErro = lista !== undefined && catalogo.isError && catalogo.data === undefined;
 
-  const pedirReenvio = (certificacaoId: string, numero: string) => {
+  const pedirReenvio = (certificacaoId: string, numero: string, origem: View | null) => {
     contadorDeReenvios.current += 1;
+    retornoDoFoco.current = origem;
     setEnviada(false);
     setReenvio({ certificacaoId, numero, tentativa: contadorDeReenvios.current });
+  };
+
+  const cancelarReenvio = () => {
+    setReenvio(null);
+    moverFoco(retornoDoFoco);
   };
 
   const aoEnviar = (certificacaoId: string) => {
@@ -118,7 +131,7 @@ export default function CorpoCertificacoesMotorista() {
             icone: 'award',
           }}
           erro={{
-            mensagem: mensagemDeErro(erro),
+            mensagem: mensagemDeErro(minhas.error),
             aoTentarDeNovo: atualizar,
             tentando: atualizando,
           }}
@@ -138,8 +151,12 @@ export default function CorpoCertificacoesMotorista() {
                   validade={certificacao.validade}
                   situacao={certificacao.situacao}
                   recente={certificacao.certificacao_id === recente}
-                  aoReenviar={() =>
-                    pedirReenvio(certificacao.certificacao_id, certificacao.numero_certificado)
+                  aoReenviar={(origem) =>
+                    pedirReenvio(
+                      certificacao.certificacao_id,
+                      certificacao.numero_certificado,
+                      origem,
+                    )
                   }
                 />
               )}
@@ -147,7 +164,7 @@ export default function CorpoCertificacoesMotorista() {
           </View>
         </ConteudoLista>
       </View>
-      {formularioPronto ? (
+      {catalogoPronto ? (
         <View style={estilos.formulario}>
           <FormularioCertificacao
             catalogo={itensDoCatalogo}
@@ -155,9 +172,24 @@ export default function CorpoCertificacoesMotorista() {
             reenvio={reenvio}
             aoEnviar={aoEnviar}
             aoConflito={() => void atualizar()}
-            aoCancelarReenvio={() => setReenvio(null)}
+            aoCancelarReenvio={cancelarReenvio}
             refTitulo={tituloDoFormulario}
           />
+        </View>
+      ) : null}
+      {catalogoComErro ? (
+        <View style={[estilos.formulario, estilos.pilha]}>
+          <Titulo nivel={2}>Enviar certificação</Titulo>
+          <EstadoErro
+            mensagem={mensagemDeErro(catalogo.error) ?? MENSAGEM_CATALOGO}
+            aoTentarDeNovo={() => recarregarCatalogo()}
+            tentando={catalogo.isFetching}
+          />
+        </View>
+      ) : null}
+      {lista !== undefined && !catalogoPronto && !catalogoComErro ? (
+        <View style={estilos.formulario}>
+          <Carregando texto="Carregando o formulário…" />
         </View>
       ) : null}
     </View>
