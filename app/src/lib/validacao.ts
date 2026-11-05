@@ -1,6 +1,7 @@
 // Validadores puros para `rules.validate` do react-hook-form (ADR 0007).
 // Cada um devolve `true` ou a mensagem em pt-BR. Espelham só as regras do backend (D-PO-14).
 // Vazio não passa: combine `obrigatorio` com os demais quando o campo for obrigatório.
+import { formatarDecimal } from './formatacao';
 import { DECIMAL_PT_BR, paraNumero } from './numeros';
 
 // Tamanhos máximos dos VARCHAR do schema (D-PO-14, relatório 5.5).
@@ -135,6 +136,18 @@ export function numeroAte(limite: number): Validador {
     );
   };
 }
+
+// Teto das colunas NUMERIC(10,2) do backend: acima disso ele devolve 500 (só `valor_proposto` tem 400).
+export const VALOR_MAXIMO = 99_999_999.99;
+
+/** Até 99.999.999,99 (peso, valor e capacidade). Use junto de `numeroPositivo`, que cuida do resto. */
+export const ateValorMaximo: Validador = (valor) => {
+  const numero = comoNumero(valor);
+  return (
+    (numero !== null && numero <= VALOR_MAXIMO) ||
+    `Informe um valor até ${formatarDecimal(VALOR_MAXIMO)}.`
+  );
+};
 
 /**
  * Recusa o número digitado com ponto e 3 dígitos depois ("1.234"), que pode ser 1234 (milhar, como
