@@ -12,6 +12,7 @@ import { icones, type NomeIcone } from './icones';
 import { simbolo, VIEWBOX_SIMBOLO } from './simbolo';
 
 // Lista da seção 4 do design-system.md. Ícone novo exige aprovação do designer.
+// `hourglass` entrou com o protótipo da Fase 6 (aprovado pelo Pedro em 2026-11-04, status "Pendente").
 const ICONES_DO_DS = [
   'triangle-alert',
   'octagon-alert',
@@ -21,6 +22,7 @@ const ICONES_DO_DS = [
   'truck',
   'package',
   'clock',
+  'hourglass',
   'shield-check',
   'check',
   'x',
@@ -41,7 +43,6 @@ const ICONES_DO_DS = [
   'user',
   'file',
   'award',
-  'hourglass',
   'flask',
   'inbox',
   'lock',

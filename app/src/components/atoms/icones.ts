@@ -67,6 +67,13 @@ export const icones = {
     ['circle', { cx: 12, cy: 12, r: 10 }],
     ['polyline', { points: '12 6 12 12 16 14' }],
   ],
+  // Aprovado no protótipo da Fase 6 (decisões de 2026-11-04): status "Pendente" de proposta.
+  hourglass: [
+    ['path', { d: 'M5 22h14' }],
+    ['path', { d: 'M5 2h14' }],
+    ['path', { d: 'M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22' }],
+    ['path', { d: 'M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2' }],
+  ],
   'shield-check': [
     [
       'path',
@@ -166,7 +173,7 @@ export const icones = {
     ['path', { d: 'M16 13H8' }],
     ['path', { d: 'M16 17H8' }],
   ],
-  // Card 031: `award` (item "Certificações" do menu) e `hourglass` (situação "Aguardando aprovação").
+  // Card 031: `award` (item "Certificações" do menu).
   award: [
     [
       'path',
@@ -175,12 +182,6 @@ export const icones = {
       },
     ],
     ['circle', { cx: 12, cy: 8, r: 6 }],
-  ],
-  hourglass: [
-    ['path', { d: 'M5 22h14' }],
-    ['path', { d: 'M5 2h14' }],
-    ['path', { d: 'M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22' }],
-    ['path', { d: 'M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2' }],
   ],
   flask: [
     [

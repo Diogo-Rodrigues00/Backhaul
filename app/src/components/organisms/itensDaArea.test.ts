@@ -5,9 +5,20 @@ describe('itensDaArea', () => {
     expect(itensDaArea('admin')).toEqual([{ href: '/admin', rotulo: 'Resumo', icone: 'inbox' }]);
   });
 
-  it('empresa tem 3 destinos; motorista tem 4, com "Certificações" (card 031)', () => {
+  it('empresa continua com 3 destinos', () => {
     expect(itensDaArea('empresa')).toHaveLength(3);
-    expect(itensDaArea('motorista')).toHaveLength(4);
-    expect(itensDaArea('motorista').map((item) => item.rotulo)).toContain('Certificações');
+  });
+
+  // Cards 026 e 031: o motorista tem 5 destinos; "Disponibilidade" e "Certificações" vão para o "Mais".
+  it('motorista tem 5 destinos, com Disponibilidade e Certificações marcadas para o "Mais"', () => {
+    const motorista = itensDaArea('motorista');
+    expect(motorista).toHaveLength(5);
+    expect(motorista.find((item) => item.rotulo === 'Minhas propostas')?.noMais).toBeUndefined();
+    expect(motorista.find((item) => item.rotulo === 'Disponibilidade')?.noMais).toBe(true);
+    expect(motorista.find((item) => item.rotulo === 'Certificações')).toMatchObject({
+      href: '/motorista/certificacoes',
+      icone: 'award',
+      noMais: true,
+    });
   });
 });
