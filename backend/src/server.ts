@@ -9,6 +9,7 @@ import { rotasCargas } from "./rotas/cargas";
 import { rotasCertificacoes } from "./rotas/certificacoes";
 import { rotasDisponibilidades } from "./rotas/disponibilidades";
 import { rotasLogin } from "./rotas/login";
+import { rotasMotoristas } from "./rotas/motoristas";
 import { rotasFretes } from "./rotas/fretes";
 import { rotasPropostas } from "./rotas/propostas";
 
@@ -41,6 +42,7 @@ app.use("/disponibilidades", rotasDisponibilidades);
 app.use("/propostas", rotasPropostas);
 app.use("/fretes", rotasFretes);
 app.use("/admin", rotasAdmin);
+app.use("/motorista", rotasMotoristas);
 
 app.get("/saude", async (_req, res) => {
   try {

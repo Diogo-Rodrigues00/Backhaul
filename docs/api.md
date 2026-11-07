@@ -358,6 +358,21 @@ Usuários cadastrados (até 200), mais recentes primeiro. Nunca traz senha, CPF 
 - **200:** `{ "usuarios": [ { "id", "email", "tipo", "ativo", "criado_em", "nome" } ] }`
 - **401** · **403**.
 
+### GET /motorista/chave-pix 🔒 *(só motorista)*
+Chave Pix do motorista logado (para onde o frete será repassado na entrega).
+- **200:** `{ "chave_pix": "52998224725", "tipo_chave_pix": "cpf" }`. Sem chave cadastrada: os dois campos vêm `null`.
+- **401** · **403** usuário não é motorista · **404** usuário sem perfil de motorista.
+
+### PUT /motorista/chave-pix 🔒 *(só motorista)*
+Cadastra ou troca a chave.
+```json
+{ "tipo_chave_pix": "cpf", "chave_pix": "529.982.247-25" }
+```
+- `tipo_chave_pix`: `cpf | cnpj | email | telefone | aleatoria`. A chave é conferida conforme o tipo e devolvida **normalizada**: CPF/CNPJ/telefone só com dígitos (telefone com 11 dígitos, aceita `+55`), e-mail e chave aleatória em minúsculas.
+- **200:** `{ "chave_pix": "52998224725", "tipo_chave_pix": "cpf" }`
+- **400** tipo desconhecido ou chave inválida para o tipo · **401** · **403** · **404** sem perfil de motorista.
+- Pré-requisito no banco: `database/migracoes/001_pagamentos_pix.sql`.
+
 ---
 
 ## 🔜 Rotas planejadas — semana 2 (contrato proposto)

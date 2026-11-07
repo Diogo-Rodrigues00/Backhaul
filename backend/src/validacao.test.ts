@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { cnpjValido, cpfValido, normalizarPlaca, validarCadastroEmpresa, validarCadastroMotorista } from "./validacao";
+import {
+  cnpjValido,
+  cpfValido,
+  normalizarPlaca,
+  validarCadastroEmpresa,
+  validarCadastroMotorista,
+  validarChavePix,
+} from "./validacao";
 
 describe("cpfValido", () => {
   it("aceita um CPF com dígitos verificadores corretos", () => assert.equal(cpfValido("52998224725"), true));
@@ -56,5 +63,38 @@ describe("validarCadastroEmpresa", () => {
     const r = validarCadastroEmpresa({ ...empresa, cnpj: "12.345.678/0001-99" });
     assert.equal(r.ok, false);
     if (!r.ok) assert.ok(r.erros.includes("cnpj inválido"));
+  });
+});
+
+describe("validarChavePix", () => {
+  const dados = (r: ReturnType<typeof validarChavePix>) => (r.ok ? r.dados : null);
+
+  it("CPF: limpa a pontuação e confere os dígitos", () => {
+    assert.deepEqual(dados(validarChavePix({ tipo_chave_pix: "cpf", chave_pix: "529.982.247-25" })), {
+      tipo_chave_pix: "cpf",
+      chave_pix: "52998224725",
+    });
+    assert.equal(validarChavePix({ tipo_chave_pix: "cpf", chave_pix: "123.456.789-01" }).ok, false);
+  });
+  it("CNPJ: limpa a pontuação e confere os dígitos", () => {
+    assert.equal(dados(validarChavePix({ tipo_chave_pix: "cnpj", chave_pix: "11.222.333/0001-81" }))?.chave_pix, "11222333000181");
+    assert.equal(validarChavePix({ tipo_chave_pix: "cnpj", chave_pix: "11.222.333/0001-82" }).ok, false);
+  });
+  it("telefone: vira 11 dígitos e aceita +55", () => {
+    assert.equal(dados(validarChavePix({ tipo_chave_pix: "telefone", chave_pix: "(34) 99999-1234" }))?.chave_pix, "34999991234");
+    assert.equal(dados(validarChavePix({ tipo_chave_pix: "telefone", chave_pix: "+55 34 99999-1234" }))?.chave_pix, "34999991234");
+    assert.equal(validarChavePix({ tipo_chave_pix: "telefone", chave_pix: "3499991234" }).ok, false);
+  });
+  it("e-mail: vai em minúsculas e precisa ter formato de e-mail", () => {
+    assert.equal(dados(validarChavePix({ tipo_chave_pix: "email", chave_pix: "Joao@Exemplo.com" }))?.chave_pix, "joao@exemplo.com");
+    assert.equal(validarChavePix({ tipo_chave_pix: "email", chave_pix: "sem-arroba" }).ok, false);
+  });
+  it("chave aleatória: precisa ser um UUID", () => {
+    assert.equal(validarChavePix({ tipo_chave_pix: "aleatoria", chave_pix: "123e4567-e89b-42d3-a456-426614174000" }).ok, true);
+    assert.equal(validarChavePix({ tipo_chave_pix: "aleatoria", chave_pix: "qualquer-coisa" }).ok, false);
+  });
+  it("recusa tipo desconhecido e corpo vazio", () => {
+    assert.equal(validarChavePix({ tipo_chave_pix: "boleto", chave_pix: "x" }).ok, false);
+    assert.equal(validarChavePix(undefined).ok, false);
   });
 });

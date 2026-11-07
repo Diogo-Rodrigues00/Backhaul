@@ -38,3 +38,9 @@ export function centavosParaTexto(centavos: number): string {
 export function calcularComissaoCentavos(valorCentavos: number): number {
   return Math.round((valorCentavos * PERCENTUAL_COMISSAO) / 100);
 }
+
+// Quanto o motorista recebe: valor do frete menos a comissão, tudo em centavos inteiros.
+// Comissão + repasse sempre somam o valor do frete (nada some nem sobra no arredondamento).
+export function calcularRepasseCentavos(valorCentavos: number): number {
+  return valorCentavos - calcularComissaoCentavos(valorCentavos);
+}
