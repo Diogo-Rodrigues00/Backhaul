@@ -480,3 +480,49 @@ export function validarDecisaoCertificacao(body: unknown): Resultado<DecisaoCert
     ? { ok: true, dados: acao }
     : { ok: false, erros: [`acao deve ser ${DECISOES_CERTIFICACAO.join(" ou ")}`] };
 }
+
+// ---- Chave Pix do motorista (usada para repassar o frete na entrega) ----
+
+export type TipoChavePix = "cpf" | "cnpj" | "email" | "telefone" | "aleatoria";
+
+// Mesmos valores do ENUM tipo_chave_pix do schema.sql.
+const TIPOS_CHAVE_PIX: readonly TipoChavePix[] = ["cpf", "cnpj", "email", "telefone", "aleatoria"];
+
+export type DadosChavePix = { tipo_chave_pix: TipoChavePix; chave_pix: string };
+
+// Limpa e confere a chave conforme o tipo, e devolve a forma que vai para o banco:
+// cpf/cnpj/telefone só com dígitos, e-mail e chave aleatória em minúsculas.
+// O telefone vira 11 dígitos (DDD + número); um "+55" na frente é aceito e removido.
+export function validarChavePix(body: unknown): Resultado<DadosChavePix> {
+  const b = corpo(body);
+  const tipo = b.tipo_chave_pix as TipoChavePix;
+  const bruta = texto(b.chave_pix);
+
+  if (!TIPOS_CHAVE_PIX.includes(tipo)) {
+    return { ok: false, erros: [`tipo_chave_pix deve ser ${TIPOS_CHAVE_PIX.join(", ")}`] };
+  }
+
+  let chave = bruta;
+  let valida = false;
+  if (tipo === "cpf") {
+    chave = bruta.replace(/\D/g, "");
+    valida = cpfValido(chave);
+  } else if (tipo === "cnpj") {
+    chave = bruta.replace(/\D/g, "");
+    valida = cnpjValido(chave);
+  } else if (tipo === "telefone") {
+    chave = bruta.replace(/\D/g, "");
+    if (chave.length === 13 && chave.startsWith("55")) chave = chave.slice(2);
+    valida = /^\d{2}9\d{8}$/.test(chave);
+  } else if (tipo === "email") {
+    chave = bruta.toLowerCase();
+    valida = REGEX_EMAIL.test(chave) && chave.length <= 140;
+  } else {
+    chave = bruta.toLowerCase();
+    valida = REGEX_UUID.test(chave);
+  }
+
+  return valida
+    ? { ok: true, dados: { tipo_chave_pix: tipo, chave_pix: chave } }
+    : { ok: false, erros: [`chave_pix inválida para o tipo ${tipo}`] };
+}

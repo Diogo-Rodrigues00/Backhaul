@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { calcularComissaoCentavos, centavosParaTexto, textoParaCentavos, transicaoPermitida } from "./frete-regras";
+import {
+  calcularComissaoCentavos,
+  calcularRepasseCentavos,
+  centavosParaTexto,
+  textoParaCentavos,
+  transicaoPermitida,
+} from "./frete-regras";
 
 describe("textoParaCentavos / centavosParaTexto", () => {
   it("converte sem erro de ponto flutuante", () => {
@@ -38,5 +44,17 @@ describe("transicaoPermitida", () => {
   it("entregue e cancelado são o fim da linha", () => {
     assert.equal(transicaoPermitida("entregue", "cancelado"), false);
     assert.equal(transicaoPermitida("cancelado", "aceito"), false);
+  });
+});
+
+describe("calcularRepasseCentavos", () => {
+  it("é o valor do frete menos a comissão", () => {
+    assert.equal(calcularRepasseCentavos(350000), 332500);
+    assert.equal(centavosParaTexto(calcularRepasseCentavos(textoParaCentavos("3500.10"))), "3325.09");
+  });
+  it("comissão + repasse sempre somam o valor do frete", () => {
+    for (const valor of [0, 1, 9, 10, 99, 1009, 350010, 9999999999]) {
+      assert.equal(calcularComissaoCentavos(valor) + calcularRepasseCentavos(valor), valor);
+    }
   });
 });

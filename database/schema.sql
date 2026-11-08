@@ -45,6 +45,9 @@ CREATE TYPE status_entrega AS ENUM ('aceito', 'em_transito', 'entregue', 'cancel
 
 CREATE TYPE status_pagamento AS ENUM ('pendente', 'retido', 'liberado', 'estornado');
 
+-- Tipo da chave Pix do motorista (para onde o frete é repassado).
+CREATE TYPE tipo_chave_pix AS ENUM ('cpf', 'cnpj', 'email', 'telefone', 'aleatoria');
+
 -- ------------------------------------------------------------
 -- 3. TABELAS
 -- ------------------------------------------------------------
@@ -73,6 +76,8 @@ CREATE TABLE motoristas (
     veiculo_tipo      VARCHAR(50) NOT NULL,      -- ex: 'truck', 'carreta', 'bitrem'
     veiculo_placa     VARCHAR(10) NOT NULL,
     capacidade_kg     NUMERIC(10,2) NOT NULL,
+    tipo_chave_pix    tipo_chave_pix,            -- onde o frete é repassado na entrega
+    chave_pix         VARCHAR(140),
     criado_em         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -190,9 +195,26 @@ CREATE TABLE transacoes (
     percentual_comissao NUMERIC(5,2) NOT NULL,
     valor_comissao      NUMERIC(10,2) NOT NULL,
     status_pagamento    status_pagamento NOT NULL DEFAULT 'pendente',
-    gateway_referencia  VARCHAR(100),          -- ID da transação no gateway externo
+    gateway_referencia  VARCHAR(100),          -- ID da cobrança no gateway externo
+    gateway             VARCHAR(30),           -- 'simulado', 'asaas'...
+    pix_copia_cola      TEXT,
+    expira_em           TIMESTAMPTZ,
+    pago_em             TIMESTAMPTZ,
+    repasse_referencia  VARCHAR(100),          -- ID da transferência ao motorista no gateway
+    repassado_em        TIMESTAMPTZ,
     criado_em           TIMESTAMPTZ NOT NULL DEFAULT now(),
     atualizado_em       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- EVENTOS_PAGAMENTO: cada aviso (webhook) do gateway. O UNIQUE impede processar o mesmo aviso duas vezes.
+CREATE TABLE eventos_pagamento (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    gateway     VARCHAR(30)  NOT NULL,
+    evento_id   VARCHAR(100) NOT NULL,
+    tipo        VARCHAR(60)  NOT NULL,
+    payload     JSONB        NOT NULL,
+    recebido_em TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    UNIQUE (gateway, evento_id)
 );
 
 -- LOGS_AUDITORIA: rastreamento de ações sensíveis (RNF19 — requisito de segurança).
