@@ -25,6 +25,7 @@ import type {
   Urgencia,
 } from '../src/api/tipos';
 import { certificacoesMock, CERT_MOPP_3_ID } from './fixtures/certificacoes';
+import { dataDaquiADias } from './fixtures/datas';
 
 export const DOMINIO_FLUXO = '@fluxo.test';
 export const PREFIXO_TOKEN_FLUXO = 'fluxo-';
@@ -212,7 +213,7 @@ function semente(): EstadoFluxo {
             certificacaoId: MOPP_CLASSE_3?.id ?? CERT_MOPP_3_ID,
             nome: MOPP_CLASSE_3?.nome ?? 'MOPP',
             numero_certificado: '123456',
-            validade: '2030-05-01',
+            validade: dataDaquiADias(900),
             aprovada: true,
             criado_em: criadoEm,
           },

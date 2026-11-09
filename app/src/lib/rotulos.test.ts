@@ -1,6 +1,7 @@
 import {
   proximoPassoFrete,
   rotuloPagamento,
+  rotuloSituacaoCertificacao,
   rotuloStatusCarga,
   rotuloStatusDisponibilidade,
   rotuloStatusEntrega,
@@ -8,6 +9,18 @@ import {
   rotuloTipoProposta,
   rotuloUrgencia,
 } from './rotulos';
+
+describe('rotuloSituacaoCertificacao (card 031)', () => {
+  it('rotula as três situações em texto', () => {
+    expect(rotuloSituacaoCertificacao('pendente')).toBe('Aguardando aprovação');
+    expect(rotuloSituacaoCertificacao('aprovada')).toBe('Aprovada');
+    expect(rotuloSituacaoCertificacao('vencida')).toBe('Vencida');
+  });
+
+  it('valor novo da API vira traço, não "undefined"', () => {
+    expect(rotuloSituacaoCertificacao('suspensa' as never)).toBe('—');
+  });
+});
 
 describe('rotuloUrgencia (D-PO-13)', () => {
   it('rotula cada urgência com texto', () => {

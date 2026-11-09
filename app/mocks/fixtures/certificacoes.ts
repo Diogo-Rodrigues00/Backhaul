@@ -4,7 +4,7 @@ import type {
   CertificacaoPendenteDoContrato,
   MinhaCertificacao,
 } from '../../src/api/tipos';
-import { daquiAHoras } from './datas';
+import { daquiAHoras, dataDaquiADias } from './datas';
 import { MOTORISTA_JOAO_ID, MOTORISTA_MARIA_ID } from './usuarios';
 
 export const CERT_MOPP_3_ID = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -38,6 +38,9 @@ export const MINHA_CERT_ENVIADA_ID = 'dddddddd-0000-4000-8000-000000000099';
 /** Registro da Maria na fila do admin (sem registro próprio no mock sem estado). */
 export const MINHA_CERT_FILA_MARIA_ID = 'dddddddd-0000-4000-8000-000000000011';
 
+/** Validade da certificação pendente do João (a mesma na lista dele e na fila do admin). */
+const PENDENTE_VALIDADE = dataDaquiADias(700);
+
 /** GET /certificacoes/minhas do motorista João: uma de cada situação, em ordem alfabética. */
 export const minhasCertificacoesMock: MinhaCertificacao[] = [
   {
@@ -45,7 +48,7 @@ export const minhasCertificacoesMock: MinhaCertificacao[] = [
     certificacao_id: CERT_MOPP_3_ID,
     nome: 'MOPP - Classe 3 Inflamáveis',
     numero_certificado: '123456',
-    validade: '2030-05-01',
+    validade: dataDaquiADias(900),
     validado_por_admin: true,
     situacao: 'aprovada',
     criado_em: daquiAHoras(-400),
@@ -55,7 +58,7 @@ export const minhasCertificacoesMock: MinhaCertificacao[] = [
     certificacao_id: CERT_MOPP_8_ID,
     nome: 'MOPP - Classe 8 Corrosivos',
     numero_certificado: '654321',
-    validade: '2030-11-20',
+    validade: PENDENTE_VALIDADE,
     validado_por_admin: false,
     situacao: 'pendente',
     criado_em: daquiAHoras(-3),
@@ -65,7 +68,7 @@ export const minhasCertificacoesMock: MinhaCertificacao[] = [
     certificacao_id: CERT_INDIVISIVEIS_ID,
     nome: 'Transporte de Cargas Indivisíveis',
     numero_certificado: '777001',
-    validade: '2025-01-10',
+    validade: dataDaquiADias(-30),
     validado_por_admin: true,
     situacao: 'vencida',
     criado_em: daquiAHoras(-900),
@@ -82,7 +85,7 @@ export const certificacoesPendentesContratoMock: CertificacaoPendenteDoContrato[
     id: MINHA_CERT_FILA_MARIA_ID,
     certificacao: 'Transporte de Cargas Indivisíveis',
     numero_certificado: '880011',
-    validade: '2029-02-15',
+    validade: dataDaquiADias(600),
     criado_em: daquiAHoras(-10),
     motorista: {
       id: MOTORISTA_MARIA_ID,
@@ -96,7 +99,7 @@ export const certificacoesPendentesContratoMock: CertificacaoPendenteDoContrato[
     id: MINHA_CERT_PENDENTE_ID,
     certificacao: 'MOPP - Classe 8 Corrosivos',
     numero_certificado: '654321',
-    validade: '2030-11-20',
+    validade: PENDENTE_VALIDADE,
     criado_em: daquiAHoras(-3),
     motorista: {
       id: MOTORISTA_JOAO_ID,

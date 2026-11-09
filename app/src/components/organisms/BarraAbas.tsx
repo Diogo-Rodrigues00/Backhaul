@@ -3,6 +3,7 @@ import { Platform, View, type ViewStyle } from 'react-native';
 
 import { AbaNavegacao, type ItemNavegacao } from '@/components/molecules/AbaNavegacao';
 import { AreaSegura } from '@/components/molecules/AreaSegura';
+import { MaisDaBarra } from '@/components/molecules/MaisDaBarra';
 import { Responsivo } from '@/components/molecules/Responsivo';
 import { indiceDaPaginaAtual, type HrefSimples } from '@/lib/navegacao';
 import type { TemaVisual } from '@/state/tema/montarTema';
@@ -53,6 +54,13 @@ export function BarraAbas({ itens }: PropsBarraAbas) {
     pathname,
     itens.map((item) => item.href as HrefSimples),
   );
+  // Os itens marcados `noMais` vão para o "Mais" (mantendo a ordem); os demais ficam à vista.
+  const aVista = itens.flatMap((item, indice) =>
+    item.noMais ? [] : [{ ...item, atual: indice === indiceAtual }],
+  );
+  const noMais = itens.flatMap((item, indice) =>
+    item.noMais ? [{ ...item, atual: indice === indiceAtual }] : [],
+  );
 
   return (
     <Responsivo bp="so-barra" style={estiloGrudado()}>
@@ -63,11 +71,16 @@ export function BarraAbas({ itens }: PropsBarraAbas) {
       >
         <View role="navigation" aria-label="Principal">
           <View role="list" style={estilos.lista}>
-            {itens.map((item, indice) => (
+            {aVista.map((item) => (
               <View key={item.rotulo} role="listitem" style={estilos.item}>
-                <AbaNavegacao {...item} variante="barra" atual={indice === indiceAtual} />
+                <AbaNavegacao {...item} variante="barra" />
               </View>
             ))}
+            {noMais.length > 0 ? (
+              <View role="listitem" style={estilos.item}>
+                <MaisDaBarra destinos={noMais} />
+              </View>
+            ) : null}
           </View>
         </View>
       </AreaSegura>

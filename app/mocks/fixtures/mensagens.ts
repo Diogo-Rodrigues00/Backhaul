@@ -1,7 +1,13 @@
 // Chat da proposta (GET /propostas/:id/mensagens). Quem participa de cada proposta e o histórico de exemplo.
 import type { Mensagem, StatusProposta } from '../../src/api/tipos';
 import { daquiAHoras } from './datas';
-import { PROPOSTA_ACEITE_ID, PROPOSTA_PENDENTE_ID, PROPOSTA_RECUSADA_ID } from './propostas';
+import {
+  PROPOSTA_ACEITE_ID,
+  PROPOSTA_EXPIRADA_JOAO_ID,
+  PROPOSTA_PENDENTE_ID,
+  PROPOSTA_RECUSADA_ID,
+  PROPOSTA_RECUSADA_JOAO_ID,
+} from './propostas';
 import { EMPRESA_ID_MOCK, MOTORISTA_CARLOS_ID, MOTORISTA_JOAO_ID } from './usuarios';
 
 export type ParticipantesProposta = {
@@ -28,6 +34,17 @@ export const PARTICIPANTES_PROPOSTA_MOCK: Record<string, ParticipantesProposta> 
     empresa: EMPRESA_ID_MOCK,
     motorista: MOTORISTA_CARLOS_ID,
     status: 'recusada',
+  },
+  // Propostas do João que "Minhas propostas" também lista (a recusada e a expirada, card 043).
+  [PROPOSTA_RECUSADA_JOAO_ID]: {
+    empresa: EMPRESA_ID_MOCK,
+    motorista: MOTORISTA_JOAO_ID,
+    status: 'recusada',
+  },
+  [PROPOSTA_EXPIRADA_JOAO_ID]: {
+    empresa: EMPRESA_ID_MOCK,
+    motorista: MOTORISTA_JOAO_ID,
+    status: 'expirada',
   },
 };
 
@@ -62,6 +79,14 @@ export const mensagensPorPropostaMock: Record<string, Mensagem[]> = {
       remetente_id: EMPRESA,
       texto: 'Obrigado pela proposta, mas fechamos com outro motorista.',
       criado_em: daquiAHoras(-7),
+    },
+  ],
+  [PROPOSTA_RECUSADA_JOAO_ID]: [
+    {
+      id: 'eeeeeeee-0000-4000-8000-000000000005',
+      remetente_id: EMPRESA,
+      texto: 'Agradecemos o interesse, mas a carga seguiu com outro motorista.',
+      criado_em: daquiAHoras(-69),
     },
   ],
 };

@@ -15,6 +15,9 @@ import { FRETE_ACEITO_ID } from './fretes';
 export const PROPOSTA_PENDENTE_ID = 'bbbbbbbb-0000-4000-8000-000000000001';
 export const PROPOSTA_ACEITE_ID = 'bbbbbbbb-0000-4000-8000-000000000002';
 export const PROPOSTA_RECUSADA_ID = 'bbbbbbbb-0000-4000-8000-000000000003';
+// Propostas do João em "Minhas propostas" (card 043): uma expirada e uma recusada, para o chat encerrado.
+export const PROPOSTA_EXPIRADA_JOAO_ID = 'bbbbbbbb-0000-4000-8000-0000000000a1';
+export const PROPOSTA_RECUSADA_JOAO_ID = 'bbbbbbbb-0000-4000-8000-0000000000a4';
 
 /** Resposta do POST /propostas (201): contraproposta pendente. */
 export const propostaCriadaMock: PropostaCriada = {
@@ -190,6 +193,73 @@ export const minhasPropostasMock: MinhaProposta[] = [
     tipo_carga: cargaProximaUrgente.tipo_carga,
     valor_oferecido: cargaProximaUrgente.valor_oferecido,
     empresa: cargaProximaUrgente.empresa,
+    frete_id: null,
+  },
+  // Mais cinco para somar 8 (Lighthouse e E2E de "Minhas propostas"; card 026). As cargas destas não
+  // estão na lista de "Cargas próximas" do mock, então não mudam as marcações de lá.
+  {
+    id: PROPOSTA_EXPIRADA_JOAO_ID,
+    tipo: 'aceite',
+    valor_proposto: 1850,
+    status: 'expirada',
+    criado_em: daquiAHoras(-40),
+    chamado_carga_id: 'dddddddd-0000-4000-8000-000000000001',
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: 'Material de construção',
+    valor_oferecido: 1850,
+    empresa: 'Distribuidora Casa Forte',
+    frete_id: null,
+  },
+  {
+    id: 'bbbbbbbb-0000-4000-8000-0000000000a2',
+    tipo: 'contraproposta',
+    valor_proposto: 4500,
+    status: 'pendente',
+    criado_em: daquiAHoras(-50),
+    chamado_carga_id: 'dddddddd-0000-4000-8000-000000000002',
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: 'Produtos químicos inflamáveis',
+    valor_oferecido: 4800,
+    empresa: 'Química Triângulo Ltda.',
+    frete_id: null,
+  },
+  {
+    id: 'bbbbbbbb-0000-4000-8000-0000000000a3',
+    tipo: 'aceite',
+    valor_proposto: 2400,
+    status: 'aceita',
+    criado_em: daquiAHoras(-60),
+    chamado_carga_id: 'dddddddd-0000-4000-8000-000000000003',
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: 'Carga seca paletizada',
+    valor_oferecido: 2400,
+    empresa: 'Transportes Rápidos LTDA',
+    frete_id: 'ffffffff-0000-4000-8000-000000000004',
+  },
+  {
+    id: PROPOSTA_RECUSADA_JOAO_ID,
+    tipo: 'contraproposta',
+    valor_proposto: 3200,
+    status: 'recusada',
+    criado_em: daquiAHoras(-70),
+    chamado_carga_id: 'dddddddd-0000-4000-8000-000000000004',
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: 'Grãos a granel',
+    valor_oferecido: 3500,
+    empresa: 'Agro Cerrado Grãos S.A.',
+    frete_id: null,
+  },
+  {
+    id: 'bbbbbbbb-0000-4000-8000-0000000000a5',
+    tipo: 'aceite',
+    valor_proposto: 980,
+    status: 'pendente',
+    criado_em: daquiAHoras(-80),
+    chamado_carga_id: 'dddddddd-0000-4000-8000-000000000005',
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: 'Encomendas urgentes',
+    valor_oferecido: 980,
+    empresa: 'Expresso Cerrado ME',
     frete_id: null,
   },
 ];

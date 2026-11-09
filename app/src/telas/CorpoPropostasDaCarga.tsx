@@ -15,12 +15,14 @@ import { DialogoConfirmacao } from '@/components/organisms/DialogoConfirmacao';
 import { useCasca } from '@/components/organisms/useCasca';
 import { ConteudoLista, type EstadoLista } from '@/components/templates/TemplateLista';
 import { useAnunciarNovidades } from '@/hooks/useAnunciarNovidades';
+import { idDoPainelDaConversa, useUmaConversaAberta } from '@/hooks/useUmaConversaAberta';
 import { anunciar } from '@/lib/a11y';
 import { rotuloDoLocal } from '@/lib/cidades';
 import { ErroApi, MENSAGEM_FALHA } from '@/lib/erros';
 import { formatarMoeda, type NumeroEntrada } from '@/lib/formatacao';
 import { descreverNovidades, idsNovos } from '@/lib/novidadesPropostas';
 import { statusEfetivo } from '@/lib/vencimento';
+import { ConversaSobDemanda } from '@/telas/ConversaSobDemanda';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
@@ -110,6 +112,10 @@ export default function CorpoPropostasDaCarga() {
     setNovas(idsNovos(anterior, atual));
     return texto;
   });
+
+  // Chat (card 042, ADR 0016): uma conversa aberta por tela. Abrir outra fecha a anterior, então só
+  // há uma consulta de mensagens com atualização automática além da lista de propostas.
+  const conversas = useUmaConversaAberta();
 
   const [atualizando, setAtualizando] = useState(false);
   const atualizar = useCallback(async () => {
@@ -293,6 +299,17 @@ export default function CorpoPropostasDaCarga() {
                         podeResponder={cargaAberta && proposta.status === 'pendente'}
                         aoAceitar={(origem) => abrirDialogo(proposta, 'aceitar', origem)}
                         aoRecusar={(origem) => abrirDialogo(proposta, 'recusar', origem)}
+                        conversaAberta={conversas.estaAberta(proposta.id)}
+                        idConversa={idDoPainelDaConversa(proposta.id)}
+                        aoAlternarConversa={() => conversas.alternar(proposta.id)}
+                        conversa={
+                          <ConversaSobDemanda
+                            id={idDoPainelDaConversa(proposta.id)}
+                            propostaId={proposta.id}
+                            statusDaProposta={proposta.status}
+                            nomeDaOutraParte={proposta.motorista.nome_completo}
+                          />
+                        }
                       />
                     </View>
                   ))}
