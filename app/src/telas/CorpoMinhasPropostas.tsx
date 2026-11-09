@@ -11,8 +11,10 @@ import { CartaoMinhaProposta } from '@/components/organisms/CartaoMinhaProposta'
 import { useCasca } from '@/components/organisms/useCasca';
 import { ConteudoLista, type EstadoLista } from '@/components/templates/TemplateLista';
 import { useAnunciarNovidades } from '@/hooks/useAnunciarNovidades';
+import { idDoPainelDaConversa, useUmaConversaAberta } from '@/hooks/useUmaConversaAberta';
 import { descreverMudancasPropostas } from '@/lib/descreverMudancasPropostas';
 import { ErroApi } from '@/lib/erros';
+import { ConversaSobDemanda } from '@/telas/ConversaSobDemanda';
 
 /** Só a mensagem de erro de negócio da API (404 "perfil de motorista não encontrado") aparece. */
 function mensagemDeErro(erro: unknown): string | undefined {
@@ -34,6 +36,10 @@ export default function CorpoMinhasPropostas() {
     setNovidade(texto ?? '');
     return texto;
   });
+
+  // Chat (card 043, ADR 0016): uma conversa aberta por tela; a lista segue atualizando a cada 10 s
+  // e a conversa aberta a cada 10 s, sem tirar o foco nem o texto digitado.
+  const conversas = useUmaConversaAberta();
 
   const [atualizando, setAtualizando] = useState(false);
   const atualizar = useCallback(async () => {
@@ -84,6 +90,17 @@ export default function CorpoMinhasPropostas() {
             valorProposto={proposta.valor_proposto}
             criadoEm={proposta.criado_em}
             freteId={proposta.frete_id}
+            conversaAberta={conversas.estaAberta(proposta.id)}
+            idConversa={idDoPainelDaConversa(proposta.id)}
+            aoAlternarConversa={() => conversas.alternar(proposta.id)}
+            conversa={
+              <ConversaSobDemanda
+                id={idDoPainelDaConversa(proposta.id)}
+                propostaId={proposta.id}
+                statusDaProposta={proposta.status}
+                nomeDaOutraParte={proposta.empresa}
+              />
+            }
           />
         )}
       />

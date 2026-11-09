@@ -1,4 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
+import type { Page } from '@playwright/test';
 
 import { entrarComoPerfil, expect, test } from './fixtures';
 
@@ -152,3 +153,134 @@ test.describe('axe com o "Mais" da barra aberto (320 px)', () => {
     });
   }
 });
+
+// Card 043 (ADR 0016): chat da proposta em "Minhas propostas", no mock da API (sem estado: o POST
+// responde 201 e a lista de mensagens volta igual). A 1ª e a 3ª proposta dividem empresa e carga, então
+// o botão da pendente é o primeiro com o nome. O comportamento roda no desktop; o axe roda nos dois projetos.
+const PENDENTE = 'Abrir conversa com Transportes Rápidos LTDA sobre Produtos inflamáveis';
+const RECUSADA = 'Abrir conversa com Agro Cerrado Grãos S.A. sobre Grãos a granel';
+const TITULO_CONVERSA = 'Conversa com Transportes Rápidos LTDA';
+const ENCERRADA = 'Esta proposta foi encerrada. Você ainda pode ler a conversa.';
+
+async function abrirMinhasPropostas(page: Page) {
+  await entrarComoPerfil(page, 'motorista');
+  await page.goto('/motorista/propostas');
+  await expect(page.getByRole('heading', { level: 1, name: 'Minhas propostas' })).toBeVisible();
+}
+
+async function abrirConversaPendente(page: Page) {
+  await page.getByRole('button', { name: PENDENTE }).first().focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { level: 4, name: TITULO_CONVERSA })).toBeVisible();
+  await expect(page.getByText('Combinado, portão 2.')).toBeVisible();
+}
+
+test.describe('chat da proposta do motorista', () => {
+  // eslint-disable-next-line no-empty-pattern -- o Playwright exige desestruturar o 1º argumento
+  test.beforeEach(({}, info) => {
+    test.skip(info.project.name !== 'desktop', 'cobertura única, no projeto desktop');
+  });
+
+  test('Enter abre a conversa, o foco vai ao título e o histórico tem autor e hora', async ({
+    page,
+  }) => {
+    await abrirMinhasPropostas(page);
+    await expect(page.getByRole('button', { name: /^Abrir conversa com / })).toHaveCount(8);
+    await abrirConversaPendente(page);
+
+    const aberto = page.getByRole('button', {
+      name: 'Fechar conversa com Transportes Rápidos LTDA sobre Produtos inflamáveis',
+    });
+    await expect(aberto).toHaveAttribute('aria-expanded', 'true');
+    await expect(aberto).toHaveAttribute('aria-controls', /^conversa-/);
+    await expect(page.getByRole('heading', { level: 4, name: TITULO_CONVERSA })).toBeFocused();
+
+    const historico = page.getByRole('region', {
+      name: 'Mensagens da conversa com Transportes Rápidos LTDA',
+    });
+    await expect(historico.getByText('Você', { exact: true })).toHaveCount(1);
+    await expect(historico.getByRole('listitem')).toHaveCount(3);
+    await expect(page.locator('[role="log"]')).toHaveCount(0);
+  });
+
+  test('abrir outra conversa fecha a anterior', async ({ page }) => {
+    await abrirMinhasPropostas(page);
+    await abrirConversaPendente(page);
+
+    await page.getByRole('button', { name: RECUSADA }).click();
+    await expect(page.getByRole('heading', { level: 4 })).toHaveCount(1);
+    await expect(
+      page.getByRole('heading', { level: 4, name: 'Conversa com Agro Cerrado Grãos S.A.' }),
+    ).toBeVisible();
+  });
+
+  test('Tab leva ao campo e ao botão, Enter envia e o campo é limpo', async ({ page }) => {
+    await abrirMinhasPropostas(page);
+    await abrirConversaPendente(page);
+
+    const campo = page.getByLabel('Mensagem', { exact: true });
+    await page.keyboard.press('Tab');
+    await expect(
+      page.getByRole('region', { name: 'Mensagens da conversa com Transportes Rápidos LTDA' }),
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(campo).toBeFocused();
+    await page.keyboard.type('Chego às 14h no portão 2');
+    await expect(page.getByText('24 de 1000 caracteres')).toBeVisible();
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Enviar', exact: true })).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(campo).toHaveValue('');
+    await expect(campo).toBeFocused();
+  });
+
+  test('proposta recusada: histórico legível, envio desligado e o motivo em texto', async ({
+    page,
+  }) => {
+    await abrirMinhasPropostas(page);
+    await page.getByRole('button', { name: RECUSADA }).click();
+
+    await expect(
+      page.getByText('Agradecemos o interesse, mas a carga seguiu com outro motorista.'),
+    ).toBeVisible();
+    await expect(page.getByText(ENCERRADA)).toBeVisible();
+    await expect(page.getByLabel('Mensagem', { exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Enviar', exact: true })).toBeDisabled();
+  });
+});
+
+// Axe com a conversa aberta (aberta, com erro no campo e encerrada): claro e escuro, 1280 px e 320 px.
+for (const esquema of ['light', 'dark'] as const) {
+  test.describe(`axe do chat, tema ${esquema === 'light' ? 'claro' : 'escuro'}`, () => {
+    test.use({ colorScheme: esquema });
+
+    async function violacoes(page: Page) {
+      const resultado = await new AxeBuilder({ page }).withTags(TAGS_WCAG).analyze();
+      return resultado.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.length} nó(s))`);
+    }
+
+    test('sem violações com a conversa aberta', async ({ page }) => {
+      await abrirMinhasPropostas(page);
+      await abrirConversaPendente(page);
+      expect(await violacoes(page)).toEqual([]);
+    });
+
+    test('sem violações com o erro no campo', async ({ page }) => {
+      await abrirMinhasPropostas(page);
+      await abrirConversaPendente(page);
+      await page.getByLabel('Mensagem', { exact: true }).fill('joao arroba gmail');
+      await page.getByRole('button', { name: 'Enviar', exact: true }).click();
+      await expect(page.getByText(/Não envie telefone, e-mail ou link/)).toBeVisible();
+      expect(await violacoes(page)).toEqual([]);
+    });
+
+    test('sem violações com a conversa encerrada', async ({ page }) => {
+      await abrirMinhasPropostas(page);
+      await page.getByRole('button', { name: RECUSADA }).click();
+      await expect(page.getByText(ENCERRADA)).toBeVisible();
+      expect(await violacoes(page)).toEqual([]);
+    });
+  });
+}

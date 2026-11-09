@@ -15,6 +15,9 @@ import { FRETE_ACEITO_ID } from './fretes';
 export const PROPOSTA_PENDENTE_ID = 'bbbbbbbb-0000-4000-8000-000000000001';
 export const PROPOSTA_ACEITE_ID = 'bbbbbbbb-0000-4000-8000-000000000002';
 export const PROPOSTA_RECUSADA_ID = 'bbbbbbbb-0000-4000-8000-000000000003';
+// Propostas do João em "Minhas propostas" (card 043): uma expirada e uma recusada, para o chat encerrado.
+export const PROPOSTA_EXPIRADA_JOAO_ID = 'bbbbbbbb-0000-4000-8000-0000000000a1';
+export const PROPOSTA_RECUSADA_JOAO_ID = 'bbbbbbbb-0000-4000-8000-0000000000a4';
 
 /** Resposta do POST /propostas (201): contraproposta pendente. */
 export const propostaCriadaMock: PropostaCriada = {
@@ -195,7 +198,7 @@ export const minhasPropostasMock: MinhaProposta[] = [
   // Mais cinco para somar 8 (Lighthouse e E2E de "Minhas propostas"; card 026). As cargas destas não
   // estão na lista de "Cargas próximas" do mock, então não mudam as marcações de lá.
   {
-    id: 'bbbbbbbb-0000-4000-8000-0000000000a1',
+    id: PROPOSTA_EXPIRADA_JOAO_ID,
     tipo: 'aceite',
     valor_proposto: 1850,
     status: 'expirada',
@@ -234,7 +237,7 @@ export const minhasPropostasMock: MinhaProposta[] = [
     frete_id: 'ffffffff-0000-4000-8000-000000000004',
   },
   {
-    id: 'bbbbbbbb-0000-4000-8000-0000000000a4',
+    id: PROPOSTA_RECUSADA_JOAO_ID,
     tipo: 'contraproposta',
     valor_proposto: 3200,
     status: 'recusada',
