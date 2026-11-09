@@ -7,6 +7,7 @@ import { Botao } from '@/components/atoms/Botao';
 import { Texto } from '@/components/atoms/Texto';
 import { TextoOculto } from '@/components/atoms/TextoOculto';
 import { ResumoCarga } from '@/components/molecules/ResumoCarga';
+import { BotaoMapa, idDoMapa, PainelMapa } from '@/components/organisms/MapaSobDemanda';
 import { type Coordenada, rotuloDoLocal } from '@/lib/cidades';
 import type { NumeroEntrada } from '@/lib/formatacao';
 import type { StatusCarga, Urgencia } from '@/lib/rotulos';
@@ -29,6 +30,10 @@ export interface PropsCartaoCargaEmpresa {
   expiraEm: string;
   status: StatusCarga;
   totalPropostas: number;
+  /** Mapa da rota aberto neste cartão (a tela deixa um só aberto por vez). */
+  mapaAberto?: boolean;
+  /** Abre/fecha o mapa. Sem ele o cartão não mostra "Ver no mapa". */
+  aoAlternarMapa?: () => void;
   /** Relógio para o status efetivo (CT-10). Padrão: agora. Injetável para teste. */
   agora?: Date;
 }
@@ -76,12 +81,17 @@ export function CartaoCargaEmpresa({
   expiraEm,
   status,
   totalPropostas,
+  mapaAberto = false,
+  aoAlternarMapa,
   agora,
 }: PropsCartaoCargaEmpresa) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
   const expirado = statusEfetivo(status, expiraEm, agora) === 'expirado';
   const idTitulo = `carga-${id}-titulo`;
+  const idMapa = idDoMapa(id);
+  const rotuloOrigem = rotuloDoLocal(origem) ?? LOCAL_NAO_IDENTIFICADO;
+  const rotuloDestino = rotuloDoLocal(destino) ?? LOCAL_NAO_IDENTIFICADO;
 
   return (
     <View
@@ -101,8 +111,8 @@ export function CartaoCargaEmpresa({
       </TextoOculto>
       <ResumoCarga
         tipoCarga={tipoCarga}
-        origem={rotuloDoLocal(origem) ?? LOCAL_NAO_IDENTIFICADO}
-        destino={rotuloDoLocal(destino) ?? LOCAL_NAO_IDENTIFICADO}
+        origem={rotuloOrigem}
+        destino={rotuloDestino}
         pesoKg={pesoKg}
         valorOferecido={valorOferecido}
         urgencia={urgencia}
@@ -118,7 +128,26 @@ export function CartaoCargaEmpresa({
             Ver propostas
           </Botao>
         </LinkDoRouter>
+        {aoAlternarMapa ? (
+          <BotaoMapa
+            aberto={mapaAberto}
+            aoAlternar={aoAlternarMapa}
+            idPainel={idMapa}
+            sobre={`da rota de ${tipoCarga}`}
+          />
+        ) : null}
       </View>
+      {aoAlternarMapa && mapaAberto ? (
+        <PainelMapa
+          idPainel={idMapa}
+          descricao={`Mapa da rota de ${rotuloOrigem} a ${rotuloDestino}`}
+          pontos={[
+            { ...origem, tipo: 'origem' },
+            { ...destino, tipo: 'destino' },
+          ]}
+          linha={[origem, destino]}
+        />
+      ) : null}
     </View>
   );
 }

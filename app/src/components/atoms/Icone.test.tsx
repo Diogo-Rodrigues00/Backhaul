@@ -12,12 +12,13 @@ import { icones, type NomeIcone } from './icones';
 import { simbolo, VIEWBOX_SIMBOLO } from './simbolo';
 
 // Lista da seção 4 do design-system.md. Ícone novo exige aprovação do designer.
-// `hourglass` entrou com o protótipo da Fase 6 (aprovado pelo Pedro em 2026-11-04, status "Pendente").
+// `hourglass` entrou com o protótipo da Fase 6 (aprovado pelo Pedro em 2026-11-04, status "Pendente"); `map` entrou com o card 035.
 const ICONES_DO_DS = [
   'triangle-alert',
   'octagon-alert',
   'circle',
   'map-pin',
+  'map',
   'locate',
   'truck',
   'package',
