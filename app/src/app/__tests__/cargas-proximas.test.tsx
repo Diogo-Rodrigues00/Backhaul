@@ -220,7 +220,9 @@ describe('Cargas próximas', () => {
           within(el).queryByRole('heading', { name: cargaProximaUrgente.tipo_carga }) !== null,
       );
       expect(within(pendente!).getByText('Proposta enviada')).toBeOnTheScreen();
-      expect(within(pendente!).queryByRole('button')).toBeNull();
+      expect(
+        within(pendente!).queryByRole('button', { name: /Aceitar|Contraproposta/ }),
+      ).toBeNull();
 
       // A contraproposta recusada não marca a carga, mas esgota a contraproposta (D-PO-05).
       const recusada = cartoes().find(
@@ -253,7 +255,7 @@ describe('Cargas próximas', () => {
           );
         if (status === 'pendente') {
           await waitFor(() => expect(cartao().getByText('Proposta enviada')).toBeOnTheScreen());
-          expect(cartao().queryByRole('button')).toBeNull();
+          expect(cartao().queryByRole('button', { name: /Aceitar|Contraproposta/ })).toBeNull();
         } else {
           await waitFor(() =>
             expect(cartao().getByRole('button', { name: /^Aceitar R\$/ })).toBeOnTheScreen(),

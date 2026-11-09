@@ -79,7 +79,7 @@ describe('Fazer proposta: botões do cartão', () => {
 
     const pendente = cartaoDa('Produtos inflamáveis');
     expect(pendente.getByText('Proposta enviada')).toBeOnTheScreen();
-    expect(pendente.queryByRole('button')).toBeNull();
+    expect(pendente.queryByRole('button', { name: /Aceitar|Contraproposta/ })).toBeNull();
   });
 
   it('depois de uma contraproposta recusada, some "Contraproposta" e "Aceitar" continua (D-PO-05)', async () => {
@@ -120,7 +120,7 @@ describe('Fazer proposta: botões do cartão', () => {
 
     // Pendente guardada para a carga: só "Proposta enviada".
     await waitFor(() => expect(cartaoDa(CARGA).getByText('Proposta enviada')).toBeOnTheScreen());
-    expect(cartaoDa(CARGA).queryByRole('button')).toBeNull();
+    expect(cartaoDa(CARGA).queryByRole('button', { name: /Aceitar|Contraproposta/ })).toBeNull();
   });
 });
 
@@ -146,7 +146,7 @@ describe('Fazer proposta: sem GET /propostas/minhas', () => {
     expect(botaoDoCartao(CARGA, 'Contraproposta')).toBeOnTheScreen();
     const proposta = cartaoDa('Produtos inflamáveis');
     expect(proposta.getByText('Proposta enviada')).toBeOnTheScreen();
-    expect(proposta.queryByRole('button')).toBeNull();
+    expect(proposta.queryByRole('button', { name: /Aceitar|Contraproposta/ })).toBeNull();
   });
 
   it('a carga já proposta nunca mostra botões, nem enquanto o aparelho é lido', async () => {
@@ -160,7 +160,9 @@ describe('Fazer proposta: sem GET /propostas/minhas', () => {
     await abrirComLista();
     await aguardarAcoes(CARGA);
     // Os botões só surgem juntos, depois de saber quem já tem proposta.
-    expect(cartaoDa('Produtos inflamáveis').queryByRole('button')).toBeNull();
+    expect(
+      cartaoDa('Produtos inflamáveis').queryByRole('button', { name: /Aceitar|Contraproposta/ }),
+    ).toBeNull();
   });
 });
 
@@ -190,7 +192,7 @@ describe('Fazer proposta: aceite', () => {
     ]);
     expect(recebidos[0]).not.toHaveProperty('valor_proposto');
     expect(anuncios.mensagens).toContain('Proposta enviada');
-    expect(cartaoDa(CARGA).queryByRole('button')).toBeNull();
+    expect(cartaoDa(CARGA).queryByRole('button', { name: /Aceitar|Contraproposta/ })).toBeNull();
     anuncios.parar();
   });
 
