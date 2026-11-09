@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 
 import { Texto } from '@/components/atoms/Texto';
 import { renderizarComRota } from '@/test-utils/renderComRota';
@@ -134,5 +134,49 @@ describe('fraseDaDiferenca', () => {
 
   it('sem número válido, não há frase', () => {
     expect(fraseDaDiferenca('contraproposta', null, 3200)).toBeNull();
+  });
+});
+
+describe('CartaoMinhaProposta: conversa (card 043)', () => {
+  it('sem as props da conversa não há botão', async () => {
+    await renderizar();
+    expect(screen.queryByRole('button', { name: /conversa/ })).toBeNull();
+  });
+
+  it('o botão leva empresa e carga no nome, aria-expanded e aria-controls', async () => {
+    const aoAlternar = jest.fn();
+    await renderizar({ idConversa: 'conversa-1', aoAlternarConversa: aoAlternar });
+    const botao = screen.getByRole('button', {
+      name: 'Abrir conversa com Transportes Rápidos LTDA sobre Grãos',
+    });
+    expect(botao).toBeCollapsed();
+    expect(botao.props['aria-controls']).toBe('conversa-1');
+    await fireEvent.press(botao);
+    expect(aoAlternar).toHaveBeenCalledTimes(1);
+  });
+
+  it('o painel só aparece com a conversa aberta', async () => {
+    const props = {
+      idConversa: 'conversa-1',
+      aoAlternarConversa: jest.fn(),
+      conversa: <Texto>painel da conversa</Texto>,
+    };
+    await renderizar(props);
+    expect(screen.queryByText('painel da conversa')).toBeNull();
+  });
+
+  it('aberta: mostra o painel e "Fechar conversa"', async () => {
+    await renderizar({
+      conversaAberta: true,
+      idConversa: 'conversa-1',
+      aoAlternarConversa: jest.fn(),
+      conversa: <Texto>painel da conversa</Texto>,
+    });
+    expect(screen.getByText('painel da conversa')).toBeOnTheScreen();
+    expect(
+      screen.getByRole('button', {
+        name: 'Fechar conversa com Transportes Rápidos LTDA sobre Grãos',
+      }),
+    ).toBeExpanded();
   });
 });

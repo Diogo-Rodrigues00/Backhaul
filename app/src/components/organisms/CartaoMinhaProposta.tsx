@@ -10,6 +10,7 @@ import { Link } from '@/components/atoms/Link';
 import { Preco } from '@/components/atoms/Preco';
 import { Texto } from '@/components/atoms/Texto';
 import { Titulo } from '@/components/atoms/Titulo';
+import { BotaoConversa } from '@/components/molecules/BotaoConversa';
 import { formatarDataHora, formatarMoeda, type NumeroEntrada } from '@/lib/formatacao';
 import { paraNumero } from '@/lib/numeros';
 import { rotuloStatusProposta, type StatusProposta, type TipoProposta } from '@/lib/rotulos';
@@ -29,8 +30,18 @@ export interface PropsCartaoMinhaProposta {
   criadoEm: string;
   /** Só vem preenchido quando a proposta foi aceita (contrato de `GET /propostas/minhas`). */
   freteId: string | null;
-  /** Slot do rodapé, ao lado de "Ver frete" (o card 043 põe aqui o botão da conversa). */
+  /** Slot do rodapé, ao lado de "Ver frete". */
   children?: ReactNode;
+  /**
+   * Chat da proposta (card 043, ADR 0016). Com `aoAlternarConversa` e `idConversa` o cartão mostra o
+   * `BotaoConversa` ("Abrir conversa com <empresa> sobre <carga>"); `conversa` é o painel, que a tela
+   * monta sob demanda só enquanto `conversaAberta`.
+   */
+  conversaAberta?: boolean;
+  aoAlternarConversa?: () => void;
+  /** Mesmo `id` do painel em `conversa` (alvo do `aria-controls`); veja `idDoPainelDaConversa`. */
+  idConversa?: string;
+  conversa?: ReactNode;
 }
 
 // Cor do selo por status (DS: status vai em texto + ícone, a cor só reforça).
@@ -69,6 +80,8 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
       alignItems: 'center',
       gap: space[3],
     } satisfies ViewStyle,
+    acaoConversa: { width: '100%', maxWidth: 360 } satisfies ViewStyle,
+    conversa: { minWidth: 0, paddingTop: space[4], borderTopWidth: border.width } satisfies ViewStyle,
   } as const;
 }
 
@@ -107,6 +120,10 @@ export function CartaoMinhaProposta({
   criadoEm,
   freteId,
   children,
+  conversaAberta = false,
+  aoAlternarConversa,
+  idConversa,
+  conversa,
 }: PropsCartaoMinhaProposta) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
@@ -149,6 +166,19 @@ export function CartaoMinhaProposta({
         ) : null}
         {children}
       </View>
+      {aoAlternarConversa && idConversa ? (
+        <View style={estilos.acaoConversa}>
+          <BotaoConversa
+            aberta={conversaAberta}
+            nome={`${empresa} sobre ${tipoCarga}`}
+            idDoPainel={idConversa}
+            aoAlternar={aoAlternarConversa}
+          />
+        </View>
+      ) : null}
+      {conversaAberta && conversa ? (
+        <View style={[estilos.conversa, { borderTopColor: colors.border.subtle }]}>{conversa}</View>
+      ) : null}
     </View>
   );
 }
