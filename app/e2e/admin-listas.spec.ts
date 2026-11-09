@@ -82,6 +82,8 @@ test.describe('admin: fretes e usuários', () => {
   test('reflow em 320 px com texto longo sem espaços (fretes)', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 800 });
     await page.route('**/admin/fretes', async (rota) => {
+      // A mesma URL é a da página (documento) e a da API (fetch): só a API é trocada.
+      if (rota.request().resourceType() === 'document') return rota.continue();
       const resposta = await rota.fetch();
       const corpo = (await resposta.json()) as { fretes: Record<string, unknown>[] };
       corpo.fretes = corpo.fretes.map((frete) => ({
@@ -104,6 +106,8 @@ test.describe('admin: fretes e usuários', () => {
   test('reflow em 320 px com texto longo sem espaços (usuários)', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 800 });
     await page.route('**/admin/usuarios', async (rota) => {
+      // A mesma URL é a da página (documento) e a da API (fetch): só a API é trocada.
+      if (rota.request().resourceType() === 'document') return rota.continue();
       const resposta = await rota.fetch();
       const corpo = (await resposta.json()) as { usuarios: Record<string, unknown>[] };
       corpo.usuarios = corpo.usuarios.map((usuario) => ({
