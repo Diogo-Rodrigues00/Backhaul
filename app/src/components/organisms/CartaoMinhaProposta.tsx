@@ -81,7 +81,11 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
       gap: space[3],
     } satisfies ViewStyle,
     acaoConversa: { width: '100%', maxWidth: 360 } satisfies ViewStyle,
-    conversa: { minWidth: 0, paddingTop: space[4], borderTopWidth: border.width } satisfies ViewStyle,
+    conversa: {
+      minWidth: 0,
+      paddingTop: space[4],
+      borderTopWidth: border.width,
+    } satisfies ViewStyle,
   } as const;
 }
 
