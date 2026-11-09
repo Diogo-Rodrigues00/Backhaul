@@ -250,6 +250,12 @@ describe('lista de certificações (MVP-19)', () => {
     falhar = false;
     await fireEvent.press(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(await screen.findByRole('heading', { name: NOME_MOPP_3 })).toBeOnTheScreen();
+    // O bloco do erro (e o botão focado) saiu: o foco vai para o título "Suas certificações".
+    await waitFor(() => expect(focoMovido).toHaveBeenCalled());
+    const alvo = focoMovido.mock.calls.at(-1)?.[0] as {
+      current: { props: { children?: unknown } };
+    };
+    expect(alvo.current.props.children).toBe('Suas certificações');
   });
 
   it('catálogo 500 com "minhas" 200: a lista aparece e, no lugar do formulário, o erro com "Tentar de novo"', async () => {
@@ -280,6 +286,12 @@ describe('lista de certificações (MVP-19)', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(await screen.findByRole('button', { name: 'Enviar para aprovação' })).toBeOnTheScreen();
     expect(cartoes()).toHaveLength(3);
+    // O erro do catálogo saiu: o foco vai para o título do formulário.
+    await waitFor(() => expect(focoMovido).toHaveBeenCalled());
+    const alvo = focoMovido.mock.calls.at(-1)?.[0] as {
+      current: { props: { children?: unknown } };
+    };
+    expect(alvo.current.props.children).toBe('Enviar certificação');
   });
 
   it('404 sem perfil de motorista: mostra a mensagem da API', async () => {

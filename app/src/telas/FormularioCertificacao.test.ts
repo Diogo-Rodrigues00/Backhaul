@@ -49,6 +49,10 @@ describe('validarValidade', () => {
 
   it('as mensagens não têm jargão técnico', () => {
     expect(MENSAGEM_A_PARTIR_DE_AMANHA).not.toMatch(/servidor|utc/i);
+    // A regra real é o dia UTC, não um horário de Brasília: o texto não cita hora.
+    expect(MENSAGEM_A_PARTIR_DE_AMANHA).toBe(
+      'Neste horário, a validade precisa ser a partir de amanhã.',
+    );
     expect(MENSAGEM_DATA_NO_PASSADO).not.toMatch(/servidor|utc/i);
   });
 });

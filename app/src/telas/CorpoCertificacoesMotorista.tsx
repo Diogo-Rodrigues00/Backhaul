@@ -2,7 +2,7 @@
 // certificação e o formulário que cadastra e reenvia. Sem atualização automática (o admin decide
 // quando quiser): só o botão "Atualizar". Carregado por React.lazy a partir de
 // `app/motorista/certificacoes.tsx` (ADR 0011).
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, type Text as TextoRN, type ViewStyle } from 'react-native';
 
 import { useCertificacoes, useMinhasCertificacoes } from '@/api/certificacoes.hooks';
@@ -61,6 +61,11 @@ export default function CorpoCertificacoesMotorista() {
   const [recente, setRecente] = useState<string | null>(null);
   const [enviada, setEnviada] = useState(false);
   const tituloDoFormulario = useRef<TextoRN>(null);
+  const tituloDaLista = useRef<TextoRN>(null);
+  // "Tentar de novo" desmonta o bloco do erro (e o botão focado): quando a leitura dá certo o foco
+  // vai para o título que passa a ocupar o lugar (WCAG 2.4.3), em vez de cair no `body`.
+  const focarListaAoCarregar = useRef(false);
+  const focarFormularioAoCarregar = useRef(false);
   // O botão "Reenviar" que abriu o formulário: ao cancelar o reenvio o foco volta para ele.
   const retornoDoFoco = useRef<View | null>(null);
   const contadorDeReenvios = useRef(0);
@@ -87,6 +92,28 @@ export default function CorpoCertificacoesMotorista() {
   else estado = lista.length === 0 ? 'vazio' : 'pronto';
   const catalogoPronto = lista !== undefined && catalogo.data !== undefined;
   const catalogoComErro = lista !== undefined && catalogo.isError && catalogo.data === undefined;
+
+  useEffect(() => {
+    if (!focarListaAoCarregar.current || estado === 'erro' || estado === 'carregando') return;
+    focarListaAoCarregar.current = false;
+    moverFoco(tituloDaLista);
+  }, [estado]);
+
+  useEffect(() => {
+    if (!focarFormularioAoCarregar.current || !catalogoPronto) return;
+    focarFormularioAoCarregar.current = false;
+    moverFoco(tituloDoFormulario);
+  }, [catalogoPronto]);
+
+  const tentarDeNovoLista = () => {
+    focarListaAoCarregar.current = true;
+    return atualizar();
+  };
+
+  const tentarDeNovoCatalogo = () => {
+    focarFormularioAoCarregar.current = true;
+    return recarregarCatalogo();
+  };
 
   const pedirReenvio = (certificacaoId: string, numero: string, origem: View | null) => {
     contadorDeReenvios.current += 1;
@@ -132,14 +159,16 @@ export default function CorpoCertificacoesMotorista() {
           }}
           erro={{
             mensagem: mensagemDeErro(minhas.error),
-            aoTentarDeNovo: atualizar,
+            aoTentarDeNovo: tentarDeNovoLista,
             tentando: atualizando,
           }}
           aoAtualizar={atualizar}
           atualizando={atualizando}
         >
           <View style={estilos.pilha}>
-            <Titulo nivel={2}>Suas certificações</Titulo>
+            <Titulo nivel={2} ref={tituloDaLista} tabIndex={-1}>
+              Suas certificações
+            </Titulo>
             <Lista
               rotulo="Certificações enviadas"
               itens={lista ?? []}
@@ -179,10 +208,12 @@ export default function CorpoCertificacoesMotorista() {
       ) : null}
       {catalogoComErro ? (
         <View style={[estilos.formulario, estilos.pilha]}>
-          <Titulo nivel={2}>Enviar certificação</Titulo>
+          <Titulo nivel={2} ref={tituloDoFormulario} tabIndex={-1}>
+            Enviar certificação
+          </Titulo>
           <EstadoErro
             mensagem={mensagemDeErro(catalogo.error) ?? MENSAGEM_CATALOGO}
-            aoTentarDeNovo={() => recarregarCatalogo()}
+            aoTentarDeNovo={() => void tentarDeNovoCatalogo()}
             tentando={catalogo.isFetching}
           />
         </View>

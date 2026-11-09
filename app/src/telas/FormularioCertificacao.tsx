@@ -63,7 +63,7 @@ export const MENSAGEM_DATA_NO_PASSADO = 'A validade não pode estar no passado.'
  * seguinte. Por isso o app barra "hoje" nessa janela antes do POST (`primeiraValidadeAceita`).
  */
 export const MENSAGEM_A_PARTIR_DE_AMANHA =
-  'Depois das 21h, a validade precisa ser a partir de amanhã.';
+  'Neste horário, a validade precisa ser a partir de amanhã.';
 
 /** Exemplo de data para a ajuda e para o erro; o ano é o do ano que vem, para não envelhecer. */
 export function exemploDeData(agora: Date = new Date()): string {
