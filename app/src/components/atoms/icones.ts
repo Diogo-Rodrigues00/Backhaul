@@ -224,6 +224,9 @@ export const icones = {
     ['path', { d: 'M22 8.82a15 15 0 0 0-11.288-3.764' }],
     ['path', { d: 'm2 2 20 20' }],
   ],
+  'message-square': [
+    ['path', { d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' }],
+  ],
 } as const satisfies Record<string, readonly Forma[]>;
 
 export type NomeIcone = keyof typeof icones;

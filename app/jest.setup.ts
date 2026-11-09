@@ -31,6 +31,11 @@ jest.mock('@/components/organisms/FormularioProposta.carregar', () => ({
     }),
 }));
 
+// Idem para o painel do chat da proposta (card 042, ADR 0016): React.lazy no primeiro "Abrir conversa".
+jest.mock('@/telas/PainelDaConversa.carregar', () => ({
+  carregarPainelDaConversa: () => Promise.resolve(jest.requireActual('@/telas/PainelDaConversa')),
+}));
+
 // Idem para os corpos que o app abre por React.lazy com o cliente de dados (ADR 0004, adendo): os
 // testes montam o componente na hora e dão o próprio QueryClientProvider (mocks/utils-teste.tsx).
 jest.mock('@/telas/CorpoMinhasCargas.carregar', () => ({
