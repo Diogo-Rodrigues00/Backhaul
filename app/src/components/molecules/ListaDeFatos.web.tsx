@@ -3,6 +3,7 @@
 import type { CSSProperties } from 'react';
 
 import { Texto } from '@/components/atoms/Texto';
+import { QUEBRA_ONDE_PRECISAR } from '@/lib/quebraDeTexto';
 import { space } from '@/theme/tokens';
 
 import { LARGURA_MINIMA_ITEM, type PropsListaDeFatos } from './listaDeFatosComum';
@@ -35,7 +36,7 @@ export function ListaDeFatos({ itens }: PropsListaDeFatos) {
           </dt>
           <dd style={estiloZerado}>
             {typeof valor === 'string' ? (
-              <Texto nivel="base" peso="bold">
+              <Texto nivel="base" peso="bold" style={QUEBRA_ONDE_PRECISAR}>
                 {valor}
               </Texto>
             ) : (

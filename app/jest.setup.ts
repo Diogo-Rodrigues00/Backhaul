@@ -51,6 +51,15 @@ jest.mock('@/telas/CorpoResumoAdmin.carregar', () => ({
   carregarCorpoResumoAdmin: () => Promise.resolve(jest.requireActual('@/telas/CorpoResumoAdmin')),
 }));
 
+jest.mock('@/telas/CorpoFretesAdmin.carregar', () => ({
+  carregarCorpoFretesAdmin: () => Promise.resolve(jest.requireActual('@/telas/CorpoFretesAdmin')),
+}));
+
+jest.mock('@/telas/CorpoUsuariosAdmin.carregar', () => ({
+  carregarCorpoUsuariosAdmin: () =>
+    Promise.resolve(jest.requireActual('@/telas/CorpoUsuariosAdmin')),
+}));
+
 jest.mock('@/state/disponibilidade-ativa/ConsultaDasDisponibilidades.carregar', () => ({
   carregarConsultaDasDisponibilidades: () =>
     Promise.resolve(
