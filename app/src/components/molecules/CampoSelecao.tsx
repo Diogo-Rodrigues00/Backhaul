@@ -14,6 +14,8 @@ export interface OpcaoSelecao {
   valor: string;
   /** Texto mostrado ao usuário. */
   rotulo: string;
+  /** Opção que aparece mas não pode ser escolhida (`<option disabled>` na web; o iPhone ignora, a tela valida). */
+  desabilitada?: boolean;
 }
 
 export interface PropsCampoSelecao extends PropsCampoBase {
@@ -118,7 +120,12 @@ export function CampoSelecao({
           >
             {textoVazio !== undefined ? <Picker.Item label={textoVazio} value="" /> : null}
             {opcoes.map((opcao) => (
-              <Picker.Item key={opcao.valor} label={opcao.rotulo} value={opcao.valor} />
+              <Picker.Item
+                key={opcao.valor}
+                label={opcao.rotulo}
+                value={opcao.valor}
+                enabled={!opcao.desabilitada}
+              />
             ))}
           </Picker>
         );

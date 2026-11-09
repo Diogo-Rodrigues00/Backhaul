@@ -42,6 +42,7 @@ const ICONES_DO_DS = [
   'server',
   'user',
   'file',
+  'award',
   'flask',
   'inbox',
   'lock',
