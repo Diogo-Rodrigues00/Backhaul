@@ -1,9 +1,9 @@
 # STATUS — Front-end do Backhaul
 
-_Atualizado em 2026-11-05 (Fase 6, Onda 1, orquestrador)._
+_Atualizado em 2026-11-09 (Fase 6, Ondas 1 e 2 parciais, orquestrador)._
 
 ## Fase atual
-**Fase 6 — Backend novo: Onda 0 concluída e em produção; Onda 1 em execução.** Spec: `spec-fase-backend-novo.md` (os cards em `cards/` são a fonte vigente). Sem cronograma com datas (decisão do Pedro em 04/11): ondas em ordem, até onde der antes da Mostra Tech (12/11).
+**Fase 6 — Backend novo: Ondas 0 e 1 concluídas; Onda 2 em andamento (043 mergeado).** Spec: `spec-fase-backend-novo.md` (os cards em `cards/` são a fonte vigente). Sem cronograma com datas (decisão do Pedro em 04/11): ondas em ordem, até onde der antes da Mostra Tech (12/11).
 
 **Regra de operação (05/11):** o orquestrador só avança (merge, retomada de agente, ação nova) com permissão explícita do Pedro.
 
@@ -37,12 +37,12 @@ Bug crítico de "Cargas próximas" (036) corrigido e publicado: deploy de produ�
 | 039 | #112 | Protótipos | designer | — | 0 | aprovado |
 | INT | PR #108 | Contrato das rotas novas | integracao-api | — | 0 | **mergeado** (#108) |
 | 040 | #113 | Admin: casca e resumo | sonnet | INT | 1 | **mergeado** (#125, 05/11); ressalvas A1–A4 da auditoria → 046 |
-| 026 | #37 | Minhas propostas (tela) + "Mais" na barra | haiku | 036, PROTO | 1 | PR #124: revisão e auditoria aprovadas com ressalvas; **corrigindo itens 1–4 do "Mais"** (ordem do Pedro) antes do merge |
-| 031 | #46 | Certificações do motorista | sonnet | INT, PROTO | 1 | PR #126: revisão aprovada com ressalvas; **corrigindo achados**; depois auditoria e integração com o #124 |
-| 042 | #115 | Chat (empresa) | sonnet | INT, PROTO | 1 | PR #127: auditoria reprovou 1× (texto longo sem espaço cortado); **corrigindo**; depois reauditoria |
+| 026 | #37 | Minhas propostas (tela) + "Mais" na barra | haiku | 036, PROTO | 1 | **mergeado** (#124, 05/11) |
+| 031 | #46 | Certificações do motorista | sonnet | INT, PROTO | 1 | **mergeado** (#126, 09/11); ressalvas da auditoria → 046 |
+| 042 | #115 | Chat (empresa) | sonnet | INT, PROTO | 1 | **mergeado** (#127, 05/11); reauditoria aprovada |
 | 032 | #47 | Admin aprova certificações | haiku | 040, INT, PROTO | 2 | aguardando |
 | 041 | #114 | Admin: fretes e usuários | haiku | 040, INT | 2 | aguardando |
-| 043 | #116 | Chat (motorista) | haiku | 026, 042 | 2 | aguardando |
+| 043 | #116 | Chat (motorista) | sonnet | 026, 042 | 2 | **mergeado** (#133, 09/11); revisão aprovada com ressalvas → 046 |
 | 035 | #50 | Mapa sob demanda | sonnet | PROTO | 2 | aguardando |
 | 033 | #48 | Cancelar carga | haiku | ROTA-P1 | 2 | bloqueado externo |
 | 034 | #49 | Cancelar disponibilidade | haiku | ROTA-P2 | 2 | bloqueado externo |
@@ -56,7 +56,6 @@ Protótipo aprovado (Fase 2): https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP 
 Site publicado: https://backhaul-front.vercel.app (último deploy de produção em 2026-11-04, a partir de `bcc8884`, com a Onda 0).
 
 ## Bloqueios e atenção
-- **Integração #124 × #126 (armadilha sem conflito de texto):** `hourglass` sai duplicado em `icones.ts` e `Icone.test.tsx` → manter o do #124 e só o `award` do #126; em `itensDaArea.ts` o item Certificações precisa de `noMais: true` (cabeçalho com 5 links; barra com 3 itens + "Mais" com Disponibilidade e Certificações); ajustar `e2e/sessao.spec.ts` (desktop 5, demais 3) e `sessao.test.tsx`.
 - Rate limit secundário do GitHub com vários `gh run watch` em paralelo: agentes usam `-i 120`.
 - Falha de infraestrutura conhecida do Lighthouse no CI ("TimeoutError ... WS endpoint"): `gh run rerun <id> --failed` resolve.
 - Playwright usa portas fixas (4173, 4010) compartilhadas entre worktrees: agentes em paralelo não rodam E2E/Lighthouse local; CI é a fonte.
@@ -100,9 +99,14 @@ Site publicado: https://backhaul-front.vercel.app (último deploy de produção 
 - Desejável: `percentual_comissao`/`valor_comissao` em `GET /fretes/meus`; 409 para disponibilidade não aberta; ping em `/saude` nos dias de ensaio e em 12/11.
 
 ## Depende do Pedro
-- Permissão para cada merge da Onda 1 (ordem 026 → 031 → 042) e para iniciar a Onda 2.
+- Em 09/11 o Pedro liberou "fazer tudo": merges e deploys seguem com o CI verde.
 - Enviar `pedido-ao-diogo.md` ao Diogo (resumo no fim do arquivo).
 - Confirmar com o Diogo se `seed-demo.sql` e `seed-admin.sql` rodaram no Neon; credenciais fora do repo.
 - Instalar Expo Go no iPhone e marcar uma sessão de teste com VoiceOver/Dynamic Type antes de 11/11.
 - Confirmar com o professor que PWA conta como "instalável".
 - Preencher o "Quadro de contas" do `roteiro-demo.md` **fora do repositório** depois do seed.
+
+## Pendências para o card 046 (Onda 1 e 043)
+- 031: ajuda estática da validade contradiz o erro noturno ("Pode ser hoje ou depois"); nota de a11y do Lighthouse depende da posição dos botões sobre a barra (target-size); lista vazia depois de "Tentar de novo" sem alvo de foco; estados sem axe (vazio, erro, reenvio, 409); VoiceOver lê "Validade" duas vezes; opção "(já aprovada)" selecionável no iOS; mensagens 400 da API sem tradução.
+- 043: sem E2E de reflow em 320 px com a conversa aberta em `/motorista/propostas`; nome do botão repetido para a mesma empresa e carga; salto h2 → h4 no painel da conversa; constante nomeada para `maxWidth: 360`.
+- Backend (main, 09/11): só pagamentos (chave Pix do motorista em `/motorista/chave-pix`, provedor Asaas/simulado, migração 001). As rotas pedidas ao Diogo (cancelar carga e disponibilidade, `GET /disponibilidades/minhas`, extensões de fretes e propostas) seguem ausentes: 033, 034 e 044 bloqueados.
