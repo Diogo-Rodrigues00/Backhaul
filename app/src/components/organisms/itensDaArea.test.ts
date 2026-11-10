@@ -1,17 +1,21 @@
 import { itensDaArea } from './itensDaArea';
 
 describe('itensDaArea', () => {
-  it('administrador começa por "Resumo" (/admin); 041 acrescenta os seus', () => {
-    expect(itensDaArea('admin')[0]).toEqual({ href: '/admin', rotulo: 'Resumo', icone: 'inbox' });
-  });
-
-  // Card 032: o item da fila de certificações chama "Aprovações" (decisão de 04/11).
-  it('administrador tem "Aprovações" (/admin/certificacoes) com o ícone hourglass', () => {
-    expect(itensDaArea('admin')).toContainEqual({
-      href: '/admin/certificacoes',
-      rotulo: 'Aprovações',
-      icone: 'hourglass',
-    });
+  it('administrador tem Resumo, Aprovações, Fretes e Usuários, nessa ordem', () => {
+    expect(itensDaArea('admin')).toEqual(
+      expect.arrayContaining([
+        { href: '/admin', rotulo: 'Resumo', icone: 'inbox' },
+        { href: '/admin/certificacoes', rotulo: 'Aprovações', icone: 'hourglass' },
+        { href: '/admin/fretes', rotulo: 'Fretes', icone: 'truck' },
+        { href: '/admin/usuarios', rotulo: 'Usuários', icone: 'user' },
+      ]),
+    );
+    expect(itensDaArea('admin').map((item) => item.rotulo)).toEqual([
+      'Resumo',
+      'Aprovações',
+      'Fretes',
+      'Usuários',
+    ]);
   });
 
   it('empresa continua com 3 destinos', () => {
