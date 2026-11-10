@@ -24,7 +24,11 @@ const ITENS: Record<TipoPerfil, readonly ItemNavegacao[]> = {
     { href: '/motorista/certificacoes', rotulo: 'Certificações', icone: 'award', noMais: true },
   ],
   // 041 e 032 acrescentam os próprios itens quando as rotas existirem: nunca link para rota inexistente.
-  admin: [{ href: '/admin', rotulo: 'Resumo', icone: 'inbox' }],
+  admin: [
+    { href: '/admin', rotulo: 'Resumo', icone: 'inbox' },
+    // Card 032; o item chama "Aprovações" por decisão de 04/11 (decisoes.md).
+    { href: '/admin/certificacoes', rotulo: 'Aprovações', icone: 'hourglass' },
+  ],
 };
 
 export function itensDaArea(area: TipoPerfil): readonly ItemNavegacao[] {
