@@ -1,5 +1,9 @@
 # 032 — Admin: aprovar certificações
 
+## Implementação (2026-11-09)
+- A decisão de 04/11 (`decisoes.md`) vale sobre o texto abaixo: o item do menu e o `h1` chamam **"Aprovações"** (ícone `hourglass`), não "Certificações". O `h2` "Certificações pendentes" fica fora do `ConteudoLista` e é o alvo estável do foco (cartão seguinte, ou este título quando o último sai).
+- Rota: `/admin/certificacoes`. O fetcher do INT já descartava `cpf` e `cnh`; a fixture do mock tem 2 pendentes (não 4), com CPF/CNH presentes para provar que não aparecem.
+
 ## Revisão 2026-11-04
 - **Deixou de ser "se der"**: as rotas existem na `main` com contrato em `docs/api.md`, diferentes da proposta 4d:
   - D4 `GET /admin/certificacoes?status=pendente` → **`GET /certificacoes/pendentes`** (só pendentes, mais antigas primeiro). `certificacao` é o **nome em texto** (não objeto). O `motorista` vem com **`cpf` e `cnh`**: a UI **nunca** exibe, loga ou guarda (pedido P7/D ao Diogo para tirá-los).

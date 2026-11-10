@@ -1,20 +1,21 @@
 import { itensDaArea } from './itensDaArea';
 
 describe('itensDaArea', () => {
-  // Card 041: Fretes e Usuários vêm depois de "Resumo" (o 032 acrescenta o dele).
-  it('administrador tem Resumo, Fretes e Usuários, nessa ordem', () => {
+  it('administrador tem Resumo, Aprovações, Fretes e Usuários, nessa ordem', () => {
     expect(itensDaArea('admin')).toEqual(
       expect.arrayContaining([
         { href: '/admin', rotulo: 'Resumo', icone: 'inbox' },
+        { href: '/admin/certificacoes', rotulo: 'Aprovações', icone: 'hourglass' },
         { href: '/admin/fretes', rotulo: 'Fretes', icone: 'truck' },
         { href: '/admin/usuarios', rotulo: 'Usuários', icone: 'user' },
       ]),
     );
-    expect(
-      itensDaArea('admin')
-        .map((item) => item.rotulo)
-        .slice(0, 3),
-    ).toEqual(['Resumo', 'Fretes', 'Usuários']);
+    expect(itensDaArea('admin').map((item) => item.rotulo)).toEqual([
+      'Resumo',
+      'Aprovações',
+      'Fretes',
+      'Usuários',
+    ]);
   });
 
   it('empresa continua com 3 destinos', () => {

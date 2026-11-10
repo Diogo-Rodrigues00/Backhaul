@@ -23,9 +23,10 @@ const ITENS: Record<TipoPerfil, readonly ItemNavegacao[]> = {
     { href: '/motorista/fretes', rotulo: 'Meus fretes', icone: 'truck' },
     { href: '/motorista/certificacoes', rotulo: 'Certificações', icone: 'award', noMais: true },
   ],
-  // 032 acrescenta o próprio item quando a rota existir: nunca link para rota inexistente.
+  // Itens do admin, na ordem do menu. O item da fila de certificações chama "Aprovações" (decisão de 04/11).
   admin: [
     { href: '/admin', rotulo: 'Resumo', icone: 'inbox' },
+    { href: '/admin/certificacoes', rotulo: 'Aprovações', icone: 'hourglass' },
     { href: '/admin/fretes', rotulo: 'Fretes', icone: 'truck' },
     { href: '/admin/usuarios', rotulo: 'Usuários', icone: 'user' },
   ],
