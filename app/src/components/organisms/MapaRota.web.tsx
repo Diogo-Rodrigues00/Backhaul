@@ -7,6 +7,7 @@ import { View } from 'react-native';
 
 import { Texto } from '@/components/atoms/Texto';
 import { useTema } from '@/state/tema/useTema';
+import { colors as colorsDoTema } from '@/theme/tokens';
 
 import {
   ALTURA_MAPA,
@@ -20,10 +21,11 @@ import {
 export type { PropsMapaRota } from './MapaRota.logica';
 
 // Os ladrilhos são claros nos dois temas: o desenho por cima usa cores fixas de alto contraste.
-const TRACO = '#0F4C9A';
-const CONTORNO = '#FFFFFF';
-const TINTA = '#14181D';
-const ALERTA = '#FFB300';
+const CLARO = colorsDoTema.light;
+const TRACO = CLARO.text.link;
+const CONTORNO = CLARO.bg.surface;
+const TINTA = CLARO.text.primary;
+const ALERTA = CLARO.action.fill;
 
 export function MapaRota(props: PropsMapaRota) {
   const { colors } = useTema();
@@ -88,7 +90,8 @@ export function MapaRota(props: PropsMapaRota) {
                 cx={cena.circulo.x}
                 cy={cena.circulo.y}
                 r={cena.circulo.raio}
-                fill="rgba(15,76,154,0.10)"
+                fill={TRACO}
+                fillOpacity={0.1}
                 stroke={TRACO}
                 strokeWidth={2}
                 strokeDasharray="6 4"
