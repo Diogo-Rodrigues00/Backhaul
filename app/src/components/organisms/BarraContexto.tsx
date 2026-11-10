@@ -8,6 +8,7 @@ import { Texto } from '@/components/atoms/Texto';
 import { type Coordenada, rotuloDoLocal } from '@/lib/cidades';
 import { formatarDataHora, type NumeroEntrada } from '@/lib/formatacao';
 import { rotuloRaio } from '@/components/organisms/CartaoDisponibilidade';
+import { BotaoMapa } from '@/components/organisms/MapaSobDemanda';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
@@ -17,6 +18,8 @@ export interface PropsBarraContexto {
   raioKm: NumeroEntrada;
   /** Prazo da disponibilidade ativa (`expira_em`). */
   expiraEm: string;
+  /** Mapa geral (card 035): sem isto a barra não mostra "Ver cargas no mapa". */
+  mapa?: { aberto: boolean; aoAlternar: () => void; idPainel: string };
 }
 
 /** Texto do local quando o ponto não tem cidade na lista (coordenada fora do mapa). */
@@ -48,7 +51,7 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
  * Local, raio e validade usados na busca, em texto completo (não só ícone), e o link "Trocar
  * disponibilidade" para `/motorista/disponibilidades`.
  */
-export function BarraContexto(props: PropsBarraContexto) {
+export function BarraContexto({ mapa, ...props }: PropsBarraContexto) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
 
@@ -69,6 +72,15 @@ export function BarraContexto(props: PropsBarraContexto) {
       >
         Trocar disponibilidade
       </Link>
+      {mapa ? (
+        <BotaoMapa
+          aberto={mapa.aberto}
+          aoAlternar={mapa.aoAlternar}
+          idPainel={mapa.idPainel}
+          rotulo="Ver cargas no mapa"
+          rotuloFechar="Fechar mapa das cargas"
+        />
+      ) : null}
     </View>
   );
 }

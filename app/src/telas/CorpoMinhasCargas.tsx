@@ -8,6 +8,8 @@ import { useCasca } from '@/components/organisms/useCasca';
 import { ConteudoLista, type EstadoLista } from '@/components/templates/TemplateLista';
 import { ErroApi } from '@/lib/erros';
 
+import { useMapaUnico } from './useMapaUnico';
+
 /** Só a mensagem de erro de negócio (403, 404, 409 com `erro`) aparece; 500 e falhas usam o padrão. */
 function mensagemDeErro(erro: unknown): string | undefined {
   return erro instanceof ErroApi && erro.tipo === 'mensagem' ? erro.mensagens.join(' ') : undefined;
@@ -17,6 +19,7 @@ export default function CorpoMinhasCargas() {
   const { habilitado } = useCasca();
   const consulta = useMinhasCargas({ habilitado });
   const cargas = consulta.data?.cargas ?? [];
+  const mapa = useMapaUnico();
 
   const estado: EstadoLista = consulta.isError
     ? 'erro'
@@ -61,6 +64,8 @@ export default function CorpoMinhasCargas() {
             expiraEm={carga.expira_em}
             status={carga.status}
             totalPropostas={carga.total_propostas}
+            mapaAberto={mapa.aberto === carga.id}
+            aoAlternarMapa={() => mapa.alternar(carga.id)}
           />
         )}
       />

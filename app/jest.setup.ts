@@ -31,6 +31,19 @@ jest.mock('@/components/organisms/FormularioProposta.carregar', () => ({
     }),
 }));
 
+// Idem para o mapa "Ver no mapa" (card 035, ADR 0017): React.lazy no primeiro clique. Os testes de
+// tela não baixam ladrilhos: o `MapaRota` vira um bloco de texto simples.
+jest.mock('@/components/organisms/MapaRota.carregar', () => ({
+  carregarMapaRota: () =>
+    Promise.resolve({
+      default: ({ descricao }: { descricao: string }) => {
+        const { Text } = jest.requireActual('react-native');
+        const { createElement } = jest.requireActual('react');
+        return createElement(Text, null, `MAPA: ${descricao}`);
+      },
+    }),
+}));
+
 // Idem para o painel do chat da proposta (card 042, ADR 0016): React.lazy no primeiro "Abrir conversa".
 jest.mock('@/telas/PainelDaConversa.carregar', () => ({
   carregarPainelDaConversa: () => Promise.resolve(jest.requireActual('@/telas/PainelDaConversa')),

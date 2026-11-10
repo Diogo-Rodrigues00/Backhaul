@@ -20,6 +20,7 @@ import {
 } from '@/components/organisms/CartaoCargaProxima';
 import { rotuloRaio } from '@/components/organisms/CartaoDisponibilidade';
 import { carregarFormularioProposta } from '@/components/organisms/FormularioProposta.carregar';
+import { idDoMapa, PainelMapa } from '@/components/organisms/MapaSobDemanda';
 import { useCasca } from '@/components/organisms/useCasca';
 import { ConteudoLista, type EstadoLista } from '@/components/templates/TemplateLista';
 import { rotuloDoLocal } from '@/lib/cidades';
@@ -30,9 +31,12 @@ import { useDisponibilidadeAtiva } from '@/state/disponibilidade-ativa/useDispon
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 
+import { useMapaUnico } from './useMapaUnico';
 import { usePropostasDoMotorista } from './usePropostasDoMotorista';
 
 const ROTA_PUBLICAR = '/motorista/disponibilidades/nova';
+/** Chave do mapa geral (local, raio e coletas) no `useMapaUnico`; os das cargas usam o id da carga. */
+const MAPA_GERAL = 'geral';
 
 // Diálogo de proposta (card 025): só é baixado na primeira vez que o motorista pede uma proposta.
 const FormularioProposta = lazy(carregarFormularioProposta);
@@ -51,6 +55,7 @@ function criarEstilos({ space }: TemaVisual) {
 export default function CorpoCargasProximas() {
   const estilos = useEstilos(criarEstilos);
   const { habilitado } = useCasca();
+  const mapa = useMapaUnico();
   const {
     ativa,
     carregando: carregandoAtiva,
@@ -137,7 +142,34 @@ export default function CorpoCargasProximas() {
 
   return (
     <>
-      <BarraContexto local={ativa.local} raioKm={ativa.raio_busca_km} expiraEm={ativa.expira_em} />
+      <BarraContexto
+        local={ativa.local}
+        raioKm={ativa.raio_busca_km}
+        expiraEm={ativa.expira_em}
+        mapa={
+          lista.length > 0
+            ? {
+                aberto: mapa.aberto === MAPA_GERAL,
+                aoAlternar: () => mapa.alternar(MAPA_GERAL),
+                idPainel: idDoMapa(MAPA_GERAL),
+              }
+            : undefined
+        }
+      />
+      {mapa.aberto === MAPA_GERAL && lista.length > 0 && raio !== null ? (
+        // O texto equivalente é a barra acima (local e raio) e a própria lista (coletas).
+        <PainelMapa
+          idPainel={idDoMapa(MAPA_GERAL)}
+          descricao={`Mapa das cargas num raio de ${rotuloRaio(ativa.raio_busca_km)} de ${
+            rotuloDoLocal(ativa.local) ?? LOCAL_NAO_IDENTIFICADO
+          }`}
+          pontos={[
+            { ...ativa.local, tipo: 'local' },
+            ...lista.map((carga) => ({ ...carga.origem, tipo: 'carga' as const })),
+          ]}
+          circulo={{ centro: ativa.local, raioKm: raio }}
+        />
+      ) : null}
       {avisoDaCarga ? (
         // Foco programático (volta do diálogo): fora da ordem do Tab. O anúncio sai por `anunciar`.
         <View ref={refAvisoDaCarga} tabIndex={-1}>
@@ -197,6 +229,8 @@ export default function CorpoCargasProximas() {
                   distanciaKm={carga.distancia_origem_km}
                   propostaEnviada={pendentes.has(carga.id)}
                   refPropostaEnviada={(no) => registrarMarcador(carga.id, no)}
+                  mapaAberto={mapa.aberto === carga.id}
+                  aoAlternarMapa={() => mapa.alternar(carga.id)}
                   acoes={
                     // Só com a lista de propostas (da API ou do aparelho) conhecida: antes disso uma proposta pendente ainda
                     // não apareceria como "Proposta enviada" e daria para mandar um aceite duplicado.
