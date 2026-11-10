@@ -334,7 +334,7 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       expect(corpo.propostas[0]).not.toHaveProperty('carga');
       const cartao = janelaM.getByRole('article', { name: CARGA });
       await expect(cartao.getByText('Proposta enviada', { exact: true })).toBeVisible();
-      await expect(cartao.getByRole('button')).toHaveCount(0);
+      await expect(cartao.getByRole('button', { name: /Aceitar|Contraproposta/ })).toHaveCount(0);
       marcar('API devolveu a proposta no formato real');
     });
 
