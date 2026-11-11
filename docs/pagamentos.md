@@ -1,6 +1,6 @@
 # Pagamentos — proposta de desenho (Pix)
 
-> **Status: proposta.** Nada aqui está implementado ainda. Hoje o pagamento é simulado (`POST /fretes/:id/pagamento` só grava a transação). Este documento registra o que foi pesquisado e o que o grupo precisa decidir. Atualize-o conforme as decisões forem tomadas.
+> **Status (08/11/2026): em implementação.** Já feito: migração 001 aplicada no Neon, chave Pix do motorista (`/motorista/chave-pix`) e a camada de provedor (`backend/src/pagamentos/`). Teste manual no sandbox do Asaas concluído (veja "Resultado do teste no sandbox"). Ainda **não** feito: ligar `POST /fretes/:id/pagamento` e a entrega ao provedor, e a rota do webhook. Até lá, o pagamento continua simulado (`POST /fretes/:id/pagamento` só grava a transação).
 
 ## Objetivo
 
@@ -49,6 +49,25 @@ Pesquisa feita em 07/11/2026 na documentação oficial. **O que foi confirmado e
 | Webhook | Sim | Sim; assinatura `x-signature` (HMAC). O cálculo exato não está na página lida |
 
 **Por que Asaas primeiro:** cobrança Pix e transferência Pix no mesmo provedor permitem testar o ciclo completo (pagar, reter, repassar) sem o motorista ter conta no gateway. **Isso é uma hipótese a validar** com um teste real antes de escrever o código definitivo.
+
+## Resultado do teste no sandbox (08/11/2026)
+
+Teste manual com duas contas sandbox (plataforma e empresa), usando a API do Asaas. **Confirmado:**
+
+| Etapa | Resultado |
+|---|---|
+| Criar cobrança Pix de R$ 100 | Funciona. Exige que a conta da plataforma tenha uma chave Pix cadastrada (`POST /pix/addressKeys`, tipo `EVP`); sem ela o QR Code não é gerado |
+| QR Code e copia e cola | Funciona (`GET /payments/{id}/pixQrCode`) |
+| Pagar a cobrança | `POST /pix/qrCodes/pay` falha com "saldo insuficiente" (a conta pagadora do sandbox nasce sem saldo). O pagamento foi confirmado **pelo painel** do sandbox |
+| Saldo após o pagamento | R$ 99,01: **taxa de R$ 0,99 por Pix recebido** |
+| Repasse Pix por chave | `POST /transfers` funciona, **sem taxa de transferência**. Nasce `PENDING` e `authorized=false`; o saldo disponível cai na hora (valor reservado). No sandbox a conclusão (`DONE`) depende de uma ação manual no painel. Depois disso, a conta destino recebeu o valor |
+
+**Ainda não verificado:**
+- O formato real dos webhooks (`PAYMENT_RECEIVED`, `TRANSFER_DONE`). O código segue a documentação, mas nenhum webhook real foi recebido; isso exige a URL pública da API cadastrada no Asaas.
+- O mecanismo opcional de **validação de saques por webhook** (*Integrações > Mecanismos de segurança*): se ativado, todo repasse feito pela API passa antes por uma rota nossa, que responde `APPROVED` ou `REFUSED`. Boa proteção contra vazamento da chave de API; ainda não testado.
+- Em produção a conclusão do repasse depende do processamento bancário, não de ação manual.
+
+**Efeito no negócio:** a comissão é de 5% e o gateway cobra cerca de R$ 0,99 por cobrança. Num frete de R$ 3.500 a comissão é R$ 175 e a taxa pesa pouco; num frete de R$ 100 a comissão é R$ 5 e quase 20% dela vai para o gateway. Confira a tabela de taxas da conta de produção antes de definir um frete mínimo.
 
 ## Mudanças de dados previstas
 
