@@ -6,6 +6,7 @@ import type {
   Frete,
   FreteDaEmpresa,
   FreteDoMotorista,
+  PixPagamento,
   RespostaMeusFretes,
   RespostaPagamento,
   RespostaStatusFrete,
@@ -34,6 +35,38 @@ export function atualizarStatusFrete(
   });
 }
 
-export function pagarFrete(freteId: string): Promise<RespostaPagamento> {
-  return requisitar<RespostaPagamento>('POST', `/fretes/${encodeURIComponent(freteId)}/pagamento`);
+// Limites generosos: o copia e cola do Pix tem centenas de caracteres e o PNG do QR, poucos KB.
+const MAX_COPIA_E_COLA = 4_000;
+const MAX_QR_BASE64 = 200_000;
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
+
+/**
+ * Lê o `pix` da resposta sem confiar nele: só vale com os três campos no formato esperado (texto
+ * não vazio, base64 e data válida); qualquer falha devolve `undefined` e a tela segue
+ * como no modo simulado. Campos desconhecidos são descartados (a resposta pode ganhar campos).
+ */
+export function lerPix(bruto: unknown): PixPagamento | undefined {
+  if (typeof bruto !== 'object' || bruto === null) return undefined;
+  const {
+    copia_e_cola: codigo,
+    qr_code_base64: qr,
+    expira_em: expira,
+  } = bruto as Record<string, unknown>;
+  if (typeof codigo !== 'string' || codigo.length === 0 || codigo.length > MAX_COPIA_E_COLA) {
+    return undefined;
+  }
+  if (typeof qr !== 'string' || qr.length > MAX_QR_BASE64) return undefined;
+  const qrLimpo = qr.replace(/\s/g, '');
+  if (!BASE64.test(qrLimpo)) return undefined;
+  if (typeof expira !== 'string' || Number.isNaN(Date.parse(expira))) return undefined;
+  return { copia_e_cola: codigo, qr_code_base64: qrLimpo, expira_em: expira };
+}
+
+export async function pagarFrete(freteId: string): Promise<RespostaPagamento> {
+  const resposta = await requisitar<RespostaPagamento>(
+    'POST',
+    `/fretes/${encodeURIComponent(freteId)}/pagamento`,
+  );
+  const pix = lerPix((resposta as { pix?: unknown }).pix);
+  return pix ? { transacao: resposta.transacao, pix } : { transacao: resposta.transacao };
 }

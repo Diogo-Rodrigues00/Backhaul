@@ -134,6 +134,27 @@ export type TransacaoFluxo = {
   valor_comissao: number;
   status_pagamento: StatusPagamento;
   criado_em: string;
+  /** Só no modo Pix (card 048): cobrança devolvida no POST. */
+  pix?: { copia_e_cola: string; qr_code_base64: string; expira_em: string };
+  /** Só no modo Pix: quantas leituras de GET /fretes/meus faltam para o "webhook" confirmar (`retido`). */
+  leiturasAteConfirmar?: number;
+};
+
+/**
+ * Modo de teste do Pix (card 048), imitando `PAGAMENTOS_MODO=sandbox` do backend: o POST de pagamento
+ * devolve `pendente` + `pix`, e o pagamento vira `retido` depois de N leituras da lista da empresa ou
+ * quando o teste chama `POST /__mock/pix/pagar`. Desligado (padrão), vale o modo simulado (`retido`, sem `pix`).
+ */
+export type ModoPix = {
+  ativo: boolean;
+  /** Leituras da lista até confirmar sozinho; `null` = só quando o teste "paga". */
+  leiturasAteConfirmar: number | null;
+  /** O gateway falha: o POST responde 502. */
+  falharGateway: boolean;
+  /** Tamanho do copia e cola (para testar quebra de linha); `null` = código de tamanho realista. */
+  tamanhoCodigo: number | null;
+  /** Validade do Pix a partir do POST; negativo = já nasce expirado. */
+  expiraEmSegundos: number;
 };
 
 export type EstadoFluxo = {
@@ -145,7 +166,18 @@ export type EstadoFluxo = {
   transacoes: TransacaoFluxo[];
   mensagens: MensagemFluxo[];
   sequenciaCadastro: number;
+  pix: ModoPix;
 };
+
+export function modoPixDesligado(): ModoPix {
+  return {
+    ativo: false,
+    leiturasAteConfirmar: null,
+    falharGateway: false,
+    tamanhoCodigo: null,
+    expiraEmSegundos: 30 * 60,
+  };
+}
 
 const HORA_MS = 60 * 60 * 1000;
 
@@ -252,6 +284,7 @@ function semente(): EstadoFluxo {
     transacoes: [],
     mensagens: [],
     sequenciaCadastro: 0,
+    pix: modoPixDesligado(),
   };
 }
 

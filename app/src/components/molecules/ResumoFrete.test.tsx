@@ -54,7 +54,7 @@ describe('ResumoFrete', () => {
   it.each([
     ['liberado', 'Liberado ao motorista'],
     ['estornado', 'Estornado'],
-    ['pendente', 'Pendente'],
+    ['pendente', 'Pagamento pendente'],
   ] as const)('pagamento %s usa o rótulo "%s"', async (statusPagamento, rotulo) => {
     await renderizar(<ResumoFrete {...freteCompleto} statusPagamento={statusPagamento} />);
     expect(screen.getByText(rotulo)).toBeOnTheScreen();
