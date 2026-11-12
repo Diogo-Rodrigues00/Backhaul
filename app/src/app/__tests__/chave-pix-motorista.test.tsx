@@ -13,7 +13,7 @@ import { valorDoTema } from '@/test-utils/renderComTema';
 
 import { reiniciarChavePixMock } from '../../../mocks/handlers/chavePix';
 import { servidor, urlMock } from '../../../mocks/node';
-import { respostaErro } from '../../../mocks/respostas';
+import { respostaErro, respostaErros } from '../../../mocks/respostas';
 import { criarClienteDeTeste, entrarComoMock, sairDoMock } from '../../../mocks/utils-teste';
 import ChavePixMotorista from '../motorista/chave-pix';
 
@@ -229,6 +229,52 @@ describe('cadastro', () => {
       campoChave().props['aria-invalid'] ?? campoChave().props.accessibilityState,
     ).toBeTruthy();
   });
+
+  it('trocar o tipo depois de um 400 limpa o erro da chave (campo e resumo)', async () => {
+    await abrirPronto();
+    await cadastrar('cpf', 'a@b.com');
+    expect(
+      (await screen.findAllByText('chave_pix inválida para o tipo cpf')).length,
+    ).toBeGreaterThan(0);
+    expect(campoChave().props['aria-invalid']).toBeTruthy();
+
+    await escolherTipo('email');
+
+    await waitFor(() =>
+      expect(screen.queryAllByText('chave_pix inválida para o tipo cpf')).toHaveLength(0),
+    );
+    expect(campoChave().props['aria-invalid']).toBeFalsy();
+  });
+
+  it('400 "tipo_chave_pix deve ser …" vai ao campo do tipo (a chave fica sem erro)', async () => {
+    servidor.use(
+      http.put(urlMock('/motorista/chave-pix'), () =>
+        respostaErros(400, ['tipo_chave_pix deve ser cpf, cnpj, email, telefone ou aleatoria']),
+      ),
+    );
+    await abrirPronto();
+    await cadastrar('cpf', '12345678901');
+
+    expect((await screen.findAllByText(/^tipo_chave_pix deve ser /)).length).toBeGreaterThan(0);
+    expect(campoChave().props['aria-invalid']).toBeFalsy();
+  });
+
+  it.each([
+    [403, 'perfil sem permissão para chave Pix'],
+    [404, 'perfil de motorista não encontrado'],
+    [409, 'chave Pix em uso por outra conta'],
+  ])(
+    '%i no envio: a mensagem da API vai ao resumo e o formulário continua preenchido',
+    async (status, mensagem) => {
+      servidor.use(http.put(urlMock('/motorista/chave-pix'), () => respostaErro(status, mensagem)));
+      await abrirPronto();
+      await cadastrar('email', 'a@b.com');
+
+      expect((await screen.findAllByText(mensagem)).length).toBeGreaterThan(0);
+      expect(campoChave().props.value).toBe('a@b.com');
+      expect(screen.queryByText('Chave Pix salva.')).not.toBeOnTheScreen();
+    },
+  );
 
   it('formulário vazio: erros locais, sem requisição', async () => {
     let puts = 0;
