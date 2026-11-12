@@ -13,6 +13,7 @@ import { Titulo } from '@/components/atoms/Titulo';
 import { BotaoConversa } from '@/components/molecules/BotaoConversa';
 import { formatarDataHora, formatarMoeda, type NumeroEntrada } from '@/lib/formatacao';
 import { paraNumero } from '@/lib/numeros';
+import { QUEBRA_ONDE_PRECISAR } from '@/lib/quebraDeTexto';
 import { rotuloStatusProposta, type StatusProposta, type TipoProposta } from '@/lib/rotulos';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
@@ -151,10 +152,12 @@ export function CartaoMinhaProposta({
         { backgroundColor: colors.bg.surface, borderColor: colors.border.subtle },
       ]}
     >
-      <Titulo nivel={2} nativeID={idTitulo}>
+      <Titulo nivel={2} nativeID={idTitulo} style={QUEBRA_ONDE_PRECISAR}>
         {tipoCarga}
       </Titulo>
-      <Texto cor="secundario">{`Empresa: ${empresa}`}</Texto>
+      <Texto cor="secundario" style={QUEBRA_ONDE_PRECISAR}>
+        {`Empresa: ${empresa}`}
+      </Texto>
       <View style={estilos.linha}>
         <Etiqueta icone={ICONE_TIPO[tipo]}>{ROTULO_TIPO[tipo]}</Etiqueta>
         <Etiqueta variante={VARIANTE_STATUS[status]} icone={ICONE_STATUS[status]}>

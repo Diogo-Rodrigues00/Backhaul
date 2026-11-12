@@ -7,6 +7,7 @@ import { entrarComoPerfil, expect, test } from './fixtures';
 // projetos (1280 e 320 px), e o foco ao "Cancelar reenvio". Cada estado é forçado com `page.route` sobre o
 // mock sem estado do token `mock-motorista`. O axe só roda depois de o corpo da tela carregar (não só o h1).
 const TAGS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+const API = 'http://localhost:4010';
 const CORS = { 'access-control-allow-origin': '*' };
 const NOME_MOPP_8 = 'MOPP - Classe 8 Corrosivos';
 
@@ -31,6 +32,12 @@ async function abrir(page: Page) {
 }
 
 async function violacoes(page: Page) {
+  // Espera as transições terminarem (o axe mediria um quadro no meio do fade) e volta ao topo: o clique
+  // do teste rolou a página, e uma rolagem qualquer pode deixar um campo sob o cabeçalho ou a barra fixos.
+  await page.waitForFunction(() =>
+    document.getAnimations().every((animacao) => animacao.playState !== 'running'),
+  );
+  await page.evaluate(() => window.scrollTo(0, 0));
   const resultado = await new AxeBuilder({ page }).withTags(TAGS_WCAG).analyze();
   return resultado.violations.map(
     (v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(' | ')})`,
@@ -45,7 +52,7 @@ const estados: {
   {
     nome: 'lista vazia',
     preparar: (page) =>
-      responder(page, '**/certificacoes/minhas', 'GET', 200, { certificacoes: [] }),
+      responder(page, `${API}/certificacoes/minhas`, 'GET', 200, { certificacoes: [] }),
     pronto: async (page) => {
       await expect(page.getByText('Você ainda não enviou certificações')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Enviar para aprovação' })).toBeVisible();
@@ -54,14 +61,15 @@ const estados: {
   {
     nome: 'erro ao carregar a lista',
     preparar: (page) =>
-      responder(page, '**/certificacoes/minhas', 'GET', 500, { erro: 'erro interno' }),
+      responder(page, `${API}/certificacoes/minhas`, 'GET', 500, { erro: 'erro interno' }),
     pronto: async (page) => {
       await expect(page.getByRole('button', { name: 'Tentar de novo' })).toBeVisible();
     },
   },
   {
     nome: 'erro ao carregar o catálogo',
-    preparar: (page) => responder(page, '**/certificacoes', 'GET', 500, { erro: 'erro interno' }),
+    preparar: (page) =>
+      responder(page, `${API}/certificacoes`, 'GET', 500, { erro: 'erro interno' }),
     pronto: async (page) => {
       await expect(
         page.getByRole('heading', { level: 2, name: 'Suas certificações' }),
@@ -81,7 +89,7 @@ const estados: {
   {
     nome: 'erro 409 no envio',
     preparar: (page) =>
-      responder(page, '**/certificacoes/minhas', 'POST', 409, {
+      responder(page, `${API}/certificacoes/minhas`, 'POST', 409, {
         erro: 'certificação já aprovada e dentro da validade',
       }),
     pronto: async (page) => {

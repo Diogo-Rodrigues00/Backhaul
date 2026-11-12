@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { useMovimentoReduzido } from '@/hooks/useMovimentoReduzido';
+import { QUEBRA_ONDE_PRECISAR } from '@/lib/quebraDeTexto';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
@@ -265,7 +266,11 @@ export function Botao({
             <Texto
               peso="bold"
               cor={cor}
-              style={[estilos.rotulo, variante === 'texto' && estilos.sublinhado]}
+              style={[
+                estilos.rotulo,
+                QUEBRA_ONDE_PRECISAR,
+                variante === 'texto' && estilos.sublinhado,
+              ]}
             >
               {rotulo}
             </Texto>

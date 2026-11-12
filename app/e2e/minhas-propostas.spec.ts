@@ -329,7 +329,7 @@ test.describe('reflow em 320 px com texto longo e a conversa aberta', () => {
     await abrirMinhasPropostas(page);
     const lista = page.getByRole('list', { name: 'Propostas' });
     await expect(lista.getByRole('article')).toHaveCount(8);
-    await expect(page.getByRole('link', { name: /Ver frete de/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Ver frete de/ }).first()).toBeVisible();
 
     const largura = () => page.evaluate(() => document.documentElement.scrollWidth);
     expect(await largura()).toBeLessThanOrEqual(320);
