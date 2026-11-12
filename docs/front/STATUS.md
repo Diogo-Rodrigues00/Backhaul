@@ -50,7 +50,7 @@ Bug crítico de "Cargas próximas" (036) corrigido e publicado: deploy de produ�
 | 045 | #118 | Roteiro, contas e ensaio | haiku | features + seeds no Neon | 3 | aguardando |
 | 047 | #138 | Chave Pix do motorista | sonnet | backend de pagamentos | 2 | **mergeado** (#138, 12/11); ressalvas → 046 |
 | 048 | #139 | Pagamento por Pix da empresa | sonnet | 047 | 2 | **mergeado** (#139, 12/11); ressalvas → 046 |
-| 046 | #119 | E2E + auditoria final | sonnet | features | 3 | **PR aberto** (`feat/046-e2e-auditoria-fase6`): ver "Resultado do card 046" |
+| 046 | #119 | E2E + auditoria final | sonnet | features | 3 | **mergeado** (#140, 12/11): ver "Resultado do card 046" |
 
 Ordem de merge (arquivos compartilhados): Onda 0: 036 → INT → 037 → 038 · Onda 1: 040 → 026 → 031 → 042 · Onda 2: 041 → 032 → 043 → 035 (+ 033/034/044 se as rotas saírem) · Onda 3: 046 por último.
 
@@ -80,7 +80,7 @@ Site publicado: https://backhaul-front.vercel.app (último deploy de produção 
 360 KiB (368.640 bytes), medido em bytes, por rota (adendo 3 do ADR 0011). **Após o PR #93 (TanStack só nas áreas logadas, adendo ao ADR 0004):** log do CI de 339,1 a 342,1 KiB por rota (antes: 355,0 a 357,9); `/entrar` 342,1 (antes 357,9). O TanStack ficou num chunk próprio de 18,0 KiB (`consultas-*.js`), aberto por `import()` junto com o corpo de cada tela de dados. Telas pesadas usam casca na rota + corpo em `src/telas` via `React.lazy` depois da hidratação (ADR 0003). Pendente da meta do adendo 3: alias mais enxuto do TanStack (opcional, o ganho já cumpriu ≤ 345 KiB).
 
 ## CI
-- Em 12/11 o job `web` foi dividido (ADR 0013, adendo de 12/11): `qualidade` → `build` → `e2e` + `lighthouse-mobile` + `lighthouse-desktop` em paralelo → `web` (portão que falha se qualquer um deles não passar; o nome `web` continua o mesmo). Antes: ~35 min só no `web` (~38 min no total). Depois: TEMPO_NOVO. Os relatórios seguem em `relatorios-web` e por job.
+- Em 12/11 o job `web` foi dividido (ADR 0013, adendo de 12/11): `qualidade` → `build` → `e2e` + `lighthouse-mobile` + `lighthouse-desktop` em paralelo → `web` (portão que falha se qualquer um deles não passar; o nome `web` continua o mesmo). Antes: ~35 min só no `web` (~38 min no total). Depois (run 43196217283 do PR #141): ~19 min no total (qualidade 3,2, build 1,4, e2e 7,5, lighthouse-desktop 13,7, lighthouse-mobile 14,0 em paralelo, web 0,2); o caminho crítico é o Lighthouse. Timeouts por job: build 15, e2e 25, lighthouse 25, web 10 (antes: web 50). Contagem conferida: E2E 461 passam e 83 pulados, 21 rotas por dispositivo no Lighthouse, orçamento no `build`. Os relatórios seguem em `relatorios-web` e por job.
 
 ## Dívida técnica conhecida (detalhes em `auditoria-final.md`)
 - `BarraAbas` sticky sobrepõe alvos da primeira dobra no mobile (`target-size`); contornado na tela de publicar disponibilidade e na fixture da lista. Precisa de folga de rolagem sob a barra no template.
