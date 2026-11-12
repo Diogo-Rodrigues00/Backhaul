@@ -432,3 +432,13 @@ export type UsuarioAdmin = {
   nome: string | null;
 };
 export type RespostaUsuariosAdmin = { usuarios: UsuarioAdmin[] };
+
+// Chave Pix do motorista (card 047): GET e PUT /motorista/chave-pix. Dado pessoal: nunca em log,
+// armazenamento, URL ou analytics.
+export type TipoChavePix = 'cpf' | 'cnpj' | 'email' | 'telefone' | 'aleatoria';
+/** Sem chave cadastrada os dois campos vêm `null`. */
+export type RespostaChavePix = {
+  chave_pix: string | null;
+  tipo_chave_pix: TipoChavePix | null;
+};
+export type CorpoChavePix = { tipo_chave_pix: TipoChavePix; chave_pix: string };

@@ -38,6 +38,11 @@ function mensagemDoErro(erro: unknown): string {
   return erro instanceof ErroApi ? erro.mensagens.join(' ') : MENSAGEM_FALHA;
 }
 
+/** O 409 de "cadastre sua chave Pix antes de concluir a entrega": a API não manda um código, só o texto. */
+function pedeChavePix(erro: unknown): boolean {
+  return erro instanceof ErroApi && erro.mensagens.some((m) => /chave pix/i.test(m));
+}
+
 function eStatus(erro: unknown, status: number): boolean {
   return erro instanceof ErroApi && erro.status === status;
 }
@@ -145,7 +150,14 @@ export default function CorpoMeusFretesMotorista() {
       if (eStatus(erro, 409)) {
         // Transição que a API não permite (o frete já andou em outro aparelho): mostra o motivo e recarrega.
         retornoDoFoco.current = cartoes.current.get(freteId) ?? null;
-        definirAviso(freteId, { variante: 'erro', texto: mensagemDoErro(erro) });
+        // O texto é o da API, sem troca; quando é a chave Pix que falta, o aviso ganha o atalho para a tela.
+        definirAviso(freteId, {
+          variante: 'erro',
+          texto: mensagemDoErro(erro),
+          acao: pedeChavePix(erro) ? (
+            <Link href="/motorista/chave-pix">Cadastrar chave Pix</Link>
+          ) : undefined,
+        });
         setAberto(false);
         void atualizar();
       } else {
