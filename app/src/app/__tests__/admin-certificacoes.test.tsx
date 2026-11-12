@@ -216,6 +216,8 @@ describe('Aprovações de certificações (admin)', () => {
     }
     expect(cache).not.toMatch(/"cpf"|"cnh"/);
     expect(screen.queryByText(/CPF|CNH/i)).toBeNull();
+    // Também pelo rótulo acessível (aria-label / label de campo), não só pelo texto visível.
+    expect(screen.queryByLabelText(/cpf|cnh|senha/i)).toBeNull();
     consoles.forEach((espia) => espia.mockRestore());
   });
 

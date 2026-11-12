@@ -89,7 +89,9 @@ async function abrir() {
 
 // A 1ª e a 3ª proposta do fixture (026) dividem empresa e tipo de carga, então o nome do botão se
 // repete: o primeiro é o da proposta pendente do João, a que os casos abaixo usam.
-const botao = (nome: string) => screen.getAllByRole('button', { name: nome })[0]!;
+// O nome acessível termina com ", enviada em <data>" (único por proposta): o teste casa o começo.
+const comecaCom = (texto: string) => new RegExp(`^${texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+const botao = (nome: string) => screen.getAllByRole('button', { name: comecaCom(nome) })[0]!;
 const abrirConversa = async (nome: string) => {
   await fireEvent.press(botao(`Abrir conversa com ${nome}`));
 };

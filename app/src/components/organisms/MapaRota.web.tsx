@@ -14,7 +14,10 @@ import {
   ATRIBUICAO,
   LETRA_DO_TIPO,
   legendaDoMapa,
+  MENSAGEM_FUNDO_INDISPONIVEL,
   montarCena,
+  RAIO_MARCADOR,
+  todosOsLadrilhosFalharam,
   type PropsMapaRota,
 } from './MapaRota.logica';
 
@@ -31,6 +34,8 @@ export function MapaRota(props: PropsMapaRota) {
   const { colors } = useTema();
   const area = useRef<HTMLDivElement>(null);
   const [largura, setLargura] = useState(0);
+  // Ladrilhos que não carregaram (`onError`): se forem todos, o texto avisa que só o fundo faltou.
+  const [falhas, setFalhas] = useState<ReadonlySet<string>>(new Set());
 
   useEffect(() => {
     const no = area.current;
@@ -46,6 +51,7 @@ export function MapaRota(props: PropsMapaRota) {
   // Barato (poucas dezenas de pontos): recalcula a cada render, sem useMemo.
   const cena = largura > 0 ? montarCena(props, largura, ALTURA_MAPA) : null;
   const legenda = legendaDoMapa(props);
+  const semFundo = cena !== null && todosOsLadrilhosFalharam(cena.ladrilhos, falhas);
 
   return (
     <View style={{ gap: 8 }}>
@@ -73,7 +79,15 @@ export function MapaRota(props: PropsMapaRota) {
                 height={256}
                 decoding="async"
                 draggable={false}
-                style={{ position: 'absolute', left: l.esquerda, top: l.topo, maxWidth: 'none' }}
+                onError={() => setFalhas((atuais) => new Set(atuais).add(l.chave))}
+                style={{
+                  position: 'absolute',
+                  left: l.esquerda,
+                  top: l.topo,
+                  maxWidth: 'none',
+                  // Sem o ícone de imagem quebrada por cima do desenho.
+                  visibility: falhas.has(l.chave) ? 'hidden' : 'visible',
+                }}
               />
             ))
           : null}
@@ -124,7 +138,7 @@ export function MapaRota(props: PropsMapaRota) {
                   <circle
                     cx={p.x}
                     cy={p.y}
-                    r={grande ? 12 : 6}
+                    r={grande ? RAIO_MARCADOR : 6}
                     fill={p.tipo === 'destino' ? TINTA : ALERTA}
                     stroke={p.tipo === 'destino' ? CONTORNO : TINTA}
                     strokeWidth={2}
@@ -148,6 +162,11 @@ export function MapaRota(props: PropsMapaRota) {
           </svg>
         ) : null}
       </div>
+      {semFundo ? (
+        <Texto cor="secundario" nivel="caption">
+          {MENSAGEM_FUNDO_INDISPONIVEL}
+        </Texto>
+      ) : null}
       {legenda ? <Texto cor="secundario" nivel="caption">{`Legenda: ${legenda}`}</Texto> : null}
       <Texto cor="secundario" nivel="caption">
         {ATRIBUICAO}

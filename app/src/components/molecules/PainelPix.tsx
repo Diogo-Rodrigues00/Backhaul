@@ -197,7 +197,7 @@ export function PainelPix({
             {copiado ? <Texto nivel="sm">Código Pix copiado.</Texto> : null}
             {COPIA_POR_CODIGO ? null : (
               <Texto nivel="sm" cor="secundario">
-                Toque e segure o código para copiar.
+                Toque e segure o código, escolha Selecionar tudo e depois Copiar.
               </Texto>
             )}
             <View style={estilos.espera}>

@@ -15,7 +15,10 @@ import {
   ATRIBUICAO,
   LETRA_DO_TIPO,
   legendaDoMapa,
+  MENSAGEM_FUNDO_INDISPONIVEL,
   montarCena,
+  RAIO_MARCADOR,
+  todosOsLadrilhosFalharam,
   type PropsMapaRota,
 } from './MapaRota.logica';
 
@@ -30,10 +33,13 @@ const ALERTA = CLARO.action.fill;
 export function MapaRota(props: PropsMapaRota) {
   const { colors } = useTema();
   const [largura, setLargura] = useState(0);
+  // Ladrilhos que não carregaram (`onError`): se forem todos, o texto avisa que só o fundo faltou.
+  const [falhas, setFalhas] = useState<ReadonlySet<string>>(new Set());
 
   // Barato (poucas dezenas de pontos): recalcula a cada render, sem useMemo.
   const cena = largura > 0 ? montarCena(props, largura, ALTURA_MAPA) : null;
   const legenda = legendaDoMapa(props);
+  const semFundo = cena !== null && todosOsLadrilhosFalharam(cena.ladrilhos, falhas);
   const pontosDaLinha = cena?.linha.map((p) => `${p.x},${p.y}`).join(' ') ?? '';
 
   return (
@@ -60,6 +66,7 @@ export function MapaRota(props: PropsMapaRota) {
                 key={l.chave}
                 source={{ uri: l.url }}
                 accessible={false}
+                onError={() => setFalhas((atuais) => new Set(atuais).add(l.chave))}
                 style={{
                   position: 'absolute',
                   left: l.esquerda,
@@ -115,7 +122,7 @@ export function MapaRota(props: PropsMapaRota) {
                   <Circle
                     cx={p.x}
                     cy={p.y}
-                    r={grande ? 12 : 6}
+                    r={grande ? RAIO_MARCADOR : 6}
                     fill={p.tipo === 'destino' ? TINTA : ALERTA}
                     stroke={p.tipo === 'destino' ? CONTORNO : TINTA}
                     strokeWidth={2}
@@ -138,6 +145,11 @@ export function MapaRota(props: PropsMapaRota) {
           </Svg>
         ) : null}
       </View>
+      {semFundo ? (
+        <Texto cor="secundario" nivel="caption">
+          {MENSAGEM_FUNDO_INDISPONIVEL}
+        </Texto>
+      ) : null}
       {legenda ? <Texto cor="secundario" nivel="caption">{`Legenda: ${legenda}`}</Texto> : null}
       <Texto cor="secundario" nivel="caption">
         {ATRIBUICAO}

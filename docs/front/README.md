@@ -52,6 +52,8 @@
 | [0013](adr/0013-ci-e-portoes.md) | CI e portões do PR |
 | [0014](adr/0014-deploy-vercel-e-pwa.md) | Deploy na Vercel e PWA |
 | [0015](adr/0015-formatacao-pt-br-e-textos.md) | Formatação pt-BR e textos |
+| [0016](adr/0016-chat-da-proposta.md) | Chat da proposta: componente, atualização automática e anúncio |
+| [0017](adr/0017-mapa-sob-demanda.md) | Mapa de visualização sob demanda (ladrilhos OSM + SVG, sem biblioteca) |
 
 ## Cards
 

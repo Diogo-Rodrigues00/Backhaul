@@ -320,7 +320,7 @@ export default function FormularioCertificacao({
               <CampoDataPartes
                 id="certificacao-validade"
                 rotulo={ROTULOS.validade}
-                ajuda={`Data de vencimento do documento. Exemplo: ${exemploDeData()}. Pode ser hoje ou depois.`}
+                ajuda={`Data de vencimento. Exemplo: ${exemploDeData()}. Não pode ser anterior a hoje.`}
                 valor={field.value}
                 aoMudar={field.onChange}
                 onBlur={field.onBlur}

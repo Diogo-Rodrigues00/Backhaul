@@ -9,6 +9,10 @@ import { entrarComoPerfil, expect, test } from './fixtures';
 const TAGS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 const NOME_MOPP_8 = 'MOPP - Classe 8 Corrosivos';
 
+// O clique que dispara os erros rola a página; um campo parado sob a barra fixa do celular (320 px)
+// reprova o `target-size` por geometria da rolagem, não por falha da tela. O axe mede a partir do topo.
+const voltarAoTopo = (page: Page) => page.evaluate(() => window.scrollTo(0, 0));
+
 const h1 = (page: Page) => page.getByRole('heading', { level: 1 });
 
 async function abrir(page: Page) {
@@ -171,6 +175,7 @@ test.describe('minhas certificações', () => {
     await page.getByRole('button', { name: 'Enviar para aprovação' }).click();
     await expect(page.getByRole('alert').first()).toContainText('Corrija 3 campos');
 
+    await voltarAoTopo(page);
     const resultado = await new AxeBuilder({ page }).withTags(TAGS_WCAG).analyze();
     expect(
       resultado.violations.map(
@@ -187,6 +192,7 @@ test.describe('minhas certificações', () => {
       await page.getByRole('button', { name: 'Enviar para aprovação' }).click();
       await expect(page.getByRole('alert').first()).toContainText('Corrija 3 campos');
 
+      await voltarAoTopo(page);
       const resultado = await new AxeBuilder({ page }).withTags(TAGS_WCAG).analyze();
       expect(
         resultado.violations.map(

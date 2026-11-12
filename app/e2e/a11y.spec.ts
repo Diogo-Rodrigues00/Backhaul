@@ -33,6 +33,9 @@ test.describe('reflow em 320 px', () => {
       await entrarComoPerfil(page, perfil);
       await page.goto(caminho);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      // O h1 aparece antes da lista: sem esperar a rede quieta, o teste media a página vazia (e o
+      // estouro de /motorista/propostas só aparecia "às vezes").
+      await page.waitForLoadState('networkidle');
 
       const largura = await page.evaluate(() => document.documentElement.scrollWidth);
       expect(largura).toBeLessThanOrEqual(LARGURA_ESTREITA);

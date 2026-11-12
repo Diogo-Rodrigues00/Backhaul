@@ -2,7 +2,7 @@
 // disponibilidade ativa e a lista vem na ordem da API (urgência, depois distância); o front não
 // reordena. Carregado por React.lazy a partir de `app/motorista/cargas.tsx` (ADR 0011), por isso
 // fica fora do JS inicial da rota.
-import { lazy, Suspense, useCallback, useMemo } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
 import { useCargasProximas } from '@/api/cargas.hooks';
@@ -73,6 +73,14 @@ export default function CorpoCargasProximas() {
     [lat, lng, raio],
   );
   const cargas = useCargasProximas(parametros, { habilitado });
+
+  // Quando a lista esvazia o painel do mapa geral some; sem fechar, ele reabriria sozinho (e sem o clique
+  // em "Ver no mapa") assim que a próxima atualização trouxesse cargas.
+  const { aberto: mapaAberto, fechar: fecharMapa } = mapa;
+  const quantidadeDeCargas = cargas.data?.cargas.length ?? 0;
+  useEffect(() => {
+    if (mapaAberto === MAPA_GERAL && quantidadeDeCargas === 0) fecharMapa();
+  }, [mapaAberto, quantidadeDeCargas, fecharMapa]);
 
   // D-PO-05 e MVP-13: a lista real de propostas prevalece; sem ela (404, erro), vale o que
   // este aparelho guardou ao enviar. Falha aqui nunca impede a lista, só deixa de marcar.

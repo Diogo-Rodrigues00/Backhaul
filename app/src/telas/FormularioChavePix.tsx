@@ -80,13 +80,14 @@ export default function FormularioChavePix({
   const estilos = useEstilos(criarEstilos);
   const salvarChave = useSalvarChavePix();
 
-  const { control, handleSubmit, setError, setFocus, reset, formState } = useForm<Valores>({
-    defaultValues: valoresDe(atual),
-    mode: 'onSubmit',
-    reValidateMode: 'onChange',
-    // O foco vai ao resumo de erros (CT-03), não ao primeiro campo.
-    shouldFocusError: false,
-  });
+  const { control, handleSubmit, setError, clearErrors, setFocus, reset, formState } =
+    useForm<Valores>({
+      defaultValues: valoresDe(atual),
+      mode: 'onSubmit',
+      reValidateMode: 'onChange',
+      // O foco vai ao resumo de erros (CT-03), não ao primeiro campo.
+      shouldFocusError: false,
+    });
   const { isSubmitting } = formState;
   const tipo = useWatch({ control, name: 'tipo' });
   const campo = configuracaoDoCampoPix(tipo);
@@ -167,7 +168,13 @@ export default function FormularioChavePix({
                 textoVazio="Escolha o tipo da chave"
                 opcoes={OPCOES_DE_TIPO}
                 valor={field.value}
-                aoMudar={field.onChange}
+                aoMudar={(valor) => {
+                  field.onChange(valor);
+                  // O erro da chave (ex.: "inválida para o tipo cpf") era do tipo anterior: não vale
+                  // mais, nem no campo (aria-invalid) nem no resumo. A API revalida no próximo envio.
+                  clearErrors('chave');
+                  resumo.limpar();
+                }}
                 onBlur={field.onBlur}
                 ref={field.ref}
                 erro={fieldState.error?.message}

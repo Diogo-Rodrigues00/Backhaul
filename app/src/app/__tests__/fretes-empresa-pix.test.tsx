@@ -146,6 +146,28 @@ describe('Meus fretes (empresa): pagamento por Pix', () => {
     expect(screen.queryByRole('heading', { name: 'Pagamento por Pix' })).toBeNull();
   });
 
+  it('Pix malformado com transação pendente: não anuncia "Pagamento registrado"', async () => {
+    servidor.use(
+      http.post(urlMock(`/fretes/${FRETE_ACEITO_ID}/pagamento`), async () => {
+        const resposta = await respostaPix().json();
+        return HttpResponse.json(
+          { ...resposta, pix: { ...resposta.pix, copia_e_cola: '' } },
+          { status: 201 },
+        );
+      }),
+    );
+    await abrir();
+    await pedirPagamento();
+
+    expect(
+      await screen.findByText(/O código Pix desta cobrança não está mais disponível/),
+    ).toBeOnTheScreen();
+    expect(anunciar).toHaveBeenCalledWith(
+      'Pagamento iniciado. O código Pix não ficou disponível; aguarde a confirmação.',
+    );
+    expect(anunciar).not.toHaveBeenCalledWith('Pagamento registrado');
+  });
+
   it('lista com pagamento pendente e sem Pix em memória: rótulo e explicação, sem "Ver Pix"', async () => {
     listaComStatus('pendente');
     await abrirFretesDaEmpresa();

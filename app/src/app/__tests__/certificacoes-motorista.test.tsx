@@ -258,6 +258,26 @@ describe('lista de certificações (MVP-19)', () => {
     expect(alvo.current.props.children).toBe('Suas certificações');
   });
 
+  it('"Tentar de novo" que dá certo com a lista VAZIA leva o foco ao título do formulário (card 046)', async () => {
+    let falhar = true;
+    servidor.use(
+      http.get(urlMock('/certificacoes/minhas'), () =>
+        falhar ? respostaErro(500, 'erro interno') : HttpResponse.json({ certificacoes: [] }),
+      ),
+    );
+    await abrir();
+    expect(await screen.findByText(MENSAGEM_FALHA)).toBeOnTheScreen();
+
+    falhar = false;
+    await fireEvent.press(screen.getByRole('button', { name: 'Tentar de novo' }));
+    expect(await screen.findByText('Você ainda não enviou certificações')).toBeOnTheScreen();
+    await waitFor(() => expect(focoMovido).toHaveBeenCalled());
+    const alvo = focoMovido.mock.calls.at(-1)?.[0] as {
+      current: { props: { children?: unknown } };
+    };
+    expect(alvo.current.props.children).toBe('Enviar certificação');
+  });
+
   it('catálogo 500 com "minhas" 200: a lista aparece e, no lugar do formulário, o erro com "Tentar de novo"', async () => {
     let falhar = true;
     servidor.use(

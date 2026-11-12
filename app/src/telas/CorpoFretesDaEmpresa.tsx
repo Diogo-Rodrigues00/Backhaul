@@ -25,6 +25,9 @@ import { useEstilos } from '@/state/tema/useEstilos';
 
 const ANUNCIO_PAGAMENTO = 'Pagamento registrado';
 const ANUNCIO_PIX_GERADO = 'Pix gerado. Aguardando confirmação do pagamento';
+// Transação pendente mas o Pix veio malformado (`lerPix` recusou): o pagamento não está "registrado".
+const ANUNCIO_PIX_INDISPONIVEL =
+  'Pagamento iniciado. O código Pix não ficou disponível; aguarde a confirmação.';
 const INTERVALO_PIX_MS = 5_000;
 
 /** Só a mensagem de erro de negócio (403, 404, 409 com `erro`) aparece; 500 e falhas usam o padrão. */
@@ -93,8 +96,15 @@ export default function CorpoFretesDaEmpresa() {
           : undefined,
       },
     }));
-    // Com Pix, o painel é o aviso (ainda não pagou); sem Pix (modo simulado), o pagamento já está feito.
-    anunciar(pix ? ANUNCIO_PIX_GERADO : ANUNCIO_PAGAMENTO);
+    // Com Pix, o painel é o aviso (ainda não pagou); sem Pix (modo simulado), o pagamento já está feito,
+    // salvo se a transação seguiu `pendente` (Pix ilegível): aí o aviso é o do cartão, não "registrado".
+    anunciar(
+      pix
+        ? ANUNCIO_PIX_GERADO
+        : transacao.status_pagamento === 'pendente'
+          ? ANUNCIO_PIX_INDISPONIVEL
+          : ANUNCIO_PAGAMENTO,
+    );
   }
 
   function aoConflito(mensagem: string) {
