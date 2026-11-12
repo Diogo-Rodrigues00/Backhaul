@@ -84,11 +84,18 @@ async function pedirPagamento(page: Page) {
   await page.getByRole('alertdialog').getByRole('button', { name: 'Pagar frete' }).click();
 }
 
-async function axeSemViolacoes(page: Page) {
+async function axeSemViolacoes(page: Page, dialogoAberto = false) {
+  // O diálogo some com transição e os botões trocam de cor com transição: o axe mede o contraste do que
+  // está na tela naquele instante, então espera tudo assentar antes.
+  if (!dialogoAberto) await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  await page.waitForTimeout(600);
   const resultado = await new AxeBuilder({ page }).withTags(TAGS_WCAG).analyze();
   expect(
     resultado.violations.map(
-      (v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(' | ')})`,
+      (v) =>
+        `${v.id}: ${v.help} (${v.nodes
+          .map((n) => `${n.target.join(' ')} ${JSON.stringify(n.any[0]?.data ?? {})} ${n.html}`)
+          .join(' | ')})`,
     ),
   ).toEqual([]);
 }
@@ -136,9 +143,6 @@ for (const esquema of ['light', 'dark'] as const) {
       await expect(painel.getByText('Código Pix copiado.')).toBeVisible();
       await expect(copiar).toBeFocused();
       expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(CODIGO_LONGO);
-      // Espera as transições de cor do botão (foco/pressionado) acabarem: o axe mede o contraste
-      // do que está na tela naquele instante.
-      await page.waitForTimeout(600);
       await axeSemViolacoes(page);
     });
 
@@ -173,7 +177,7 @@ for (const esquema of ['light', 'dark'] as const) {
       ).toBeVisible();
       await expect(dialogo.getByRole('button', { name: 'Tentar de novo' })).toBeVisible();
       await semRolagemHorizontal(page, info.project.name);
-      await axeSemViolacoes(page);
+      await axeSemViolacoes(page, true);
     });
   });
 }
