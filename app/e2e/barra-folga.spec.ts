@@ -50,4 +50,14 @@ test.describe('folga sob a barra de abas inferior', () => {
     });
     expect(baseDoAlvo).toBeLessThanOrEqual(topoDaBarra);
   });
+
+  test('focar ou clicar numa aba da própria barra não rola a página', async ({ page }) => {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const mais = page.getByRole('button', { name: 'Mais' });
+    await mais.focus();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await mais.click();
+    await expect(page.getByRole('link', { name: 'Disponibilidade' })).toBeVisible();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  });
 });

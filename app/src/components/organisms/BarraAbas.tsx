@@ -82,7 +82,7 @@ export function BarraAbas({ itens }: PropsBarraAbas) {
     <Responsivo bp="so-barra" style={estiloGrudado()}>
       <AreaSegura
         lado="base"
-        dataSet={{ anel: 'inverso' }}
+        dataSet={{ anel: 'inverso', barra: 'abas' }}
         onLayout={publicarAltura}
         style={[estilos.barra, { backgroundColor: colors.bg.inverse }]}
       >

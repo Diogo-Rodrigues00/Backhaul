@@ -90,7 +90,7 @@ describe('gerarCssGlobal', () => {
   it('inclui números tabulares, scroll-padding da barra inferior e movimento reduzido', () => {
     expect(css).toContain('[data-num]{font-variant-numeric:tabular-nums}');
     expect(css).toContain(
-      `@media (max-width:${breakpoints.tabbar}px){html{scroll-padding-bottom:calc(var(--altura-barra,63px) + 12px)}}`,
+      `@media (max-width:${breakpoints.tabbar}px){html{scroll-padding-bottom:calc(var(--altura-barra,63px) + 12px)}[data-barra="abas"] *{scroll-margin-bottom:calc(-1 * calc(var(--altura-barra,63px) + 12px))}}`,
     );
     expect(css).toContain('@media (prefers-reduced-motion:reduce)');
   });
