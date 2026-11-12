@@ -40,15 +40,17 @@ Bug crítico de "Cargas próximas" (036) corrigido e publicado: deploy de produ�
 | 026 | #37 | Minhas propostas (tela) + "Mais" na barra | haiku | 036, PROTO | 1 | **mergeado** (#124, 05/11) |
 | 031 | #46 | Certificações do motorista | sonnet | INT, PROTO | 1 | **mergeado** (#126, 09/11); ressalvas da auditoria → 046 |
 | 042 | #115 | Chat (empresa) | sonnet | INT, PROTO | 1 | **mergeado** (#127, 05/11); reauditoria aprovada |
-| 032 | #47 | Admin aprova certificações | haiku | 040, INT, PROTO | 2 | aguardando |
-| 041 | #114 | Admin: fretes e usuários | haiku | 040, INT | 2 | aguardando |
+| 032 | #47 | Admin aprova certificações | haiku | 040, INT, PROTO | 2 | **mergeado** (`front`); ressalvas → 046 |
+| 041 | #114 | Admin: fretes e usuários | haiku | 040, INT | 2 | **mergeado** (`front`); ressalvas → 046 |
 | 043 | #116 | Chat (motorista) | sonnet | 026, 042 | 2 | **mergeado** (#133, 09/11); revisão aprovada com ressalvas → 046 |
-| 035 | #50 | Mapa sob demanda | sonnet | PROTO | 2 | aguardando |
+| 035 | #50 | Mapa sob demanda | sonnet | PROTO | 2 | **mergeado** (`front`, ADR 0017); ressalvas → 046 |
 | 033 | #48 | Cancelar carga | haiku | ROTA-P1 | 2 | bloqueado externo |
 | 034 | #49 | Cancelar disponibilidade | haiku | ROTA-P2 | 2 | bloqueado externo |
 | 044 | #117 | Comissão/origem/destino em fretes | haiku | ROTA-P4 | 2 | bloqueado externo |
 | 045 | #118 | Roteiro, contas e ensaio | haiku | features + seeds no Neon | 3 | aguardando |
-| 046 | #119 | E2E + auditoria final | sonnet | features | 3 | aguardando |
+| 047 | #138 | Chave Pix do motorista | sonnet | backend de pagamentos | 2 | **mergeado** (#138, 12/11); ressalvas → 046 |
+| 048 | #139 | Pagamento por Pix da empresa | sonnet | 047 | 2 | **mergeado** (#139, 12/11); ressalvas → 046 |
+| 046 | #119 | E2E + auditoria final | sonnet | features | 3 | **PR aberto** (`feat/046-e2e-auditoria-fase6`): ver "Resultado do card 046" |
 
 Ordem de merge (arquivos compartilhados): Onda 0: 036 → INT → 037 → 038 · Onda 1: 040 → 026 → 031 → 042 · Onda 2: 041 → 032 → 043 → 035 (+ 033/034/044 se as rotas saírem) · Onda 3: 046 por último.
 
@@ -110,3 +112,20 @@ Site publicado: https://backhaul-front.vercel.app (último deploy de produção 
 - 031: ajuda estática da validade contradiz o erro noturno ("Pode ser hoje ou depois"); nota de a11y do Lighthouse depende da posição dos botões sobre a barra (target-size); lista vazia depois de "Tentar de novo" sem alvo de foco; estados sem axe (vazio, erro, reenvio, 409); VoiceOver lê "Validade" duas vezes; opção "(já aprovada)" selecionável no iOS; mensagens 400 da API sem tradução.
 - 043: sem E2E de reflow em 320 px com a conversa aberta em `/motorista/propostas`; nome do botão repetido para a mesma empresa e carga; salto h2 → h4 no painel da conversa; constante nomeada para `maxWidth: 360`.
 - Backend (main, 09/11): só pagamentos (chave Pix do motorista em `/motorista/chave-pix`, provedor Asaas/simulado, migração 001). As rotas pedidas ao Diogo (cancelar carga e disponibilidade, `GET /disponibilidades/minhas`, extensões de fretes e propostas) seguem ausentes: 033, 034 e 044 bloqueados.
+
+## Resultado do card 046 (12/11)
+**Feito neste PR**
+- **Estouro de 364 px em `/motorista/propostas` (causa):** o `Botao` (`Pressable` do react-native-web nasce com `flex-shrink: 0`) com rótulo longo, como o link "Ver frete de <carga>", passava da largura do cartão numa linha `flexWrap`. Só aparecia **depois** de a lista chegar; o teste de reflow só esperava o `h1` e por isso falhava "às vezes". Correção na causa: `maxWidth: '100%'` e `overflow-wrap: anywhere` no `Botao`, quebra de texto no título e na empresa do `CartaoMinhaProposta`; o reflow agora espera a rede quieta, e `e2e/minhas-propostas.spec.ts` tem o caso com texto longo sem espaços e a conversa aberta.
+- 048: foco do painel Pix (vai ao resumo ou ao título quando o painel some ou expira e o foco se perdeu), anúncio coerente do Pix malformado (e aviso no cartão), instrução de cópia no iPhone.
+- 047: trocar o tipo da chave limpa o erro da chave (campo e resumo); testes de `tipo_chave_pix`, 403, 404 e 409.
+- 031: ajuda da validade sem contradição, foco ao título do formulário com a lista vazia após "Tentar de novo", E2E de axe nos estados (vazio, erro da lista, erro do catálogo, reenvio, 409) e do foco de "Cancelar reenvio".
+- 043 e 041: nome do botão de conversa único (data de envio), `maxWidth` nomeado, teste do `overflow-wrap` da `ListaDeFatos`, privacidade das telas admin também por rótulo.
+- 035: aviso quando todos os ladrilhos falham, A e B lado a lado quando origem = destino, mapa geral fecha com a lista vazia; card 035, ADR 0017 (chunk de 2,2 KiB, IP exposto ao OSM, CSP futura) e índice de ADRs atualizados.
+- E2E da Fase 6 em `e2e/fluxo-completo.spec.ts` (certificação enviada e aprovada pelo admin, proposta, conversa nos dois lados, Pix) e aba oculta em "Minhas propostas" e "Propostas da carga" com a conversa aberta.
+
+**Ficou de fora / pendente**
+- `auditoria-final.md` (seção "Fase 6"), Lighthouse de todas as rotas novas, tabela de JS por rota e checklist manual WCAG: ficam para o CI e para o auditor (o Lighthouse não roda local).
+- Dobrar a altura do bloco "Sua chave Pix" (`minHeight: 300` em `CorpoChavePixMotorista.tsx`) como contorno do `target-size` sob a barra fixa: **mantido**. A causa é a barra sticky sem folga no `TemplateTela` (dívida já registrada); nos testes de axe em 320 px o teste volta ao topo antes de medir (`window.scrollTo(0, 0)`), porque o clique rola a página e um campo parado sob a barra reprova por geometria da rolagem.
+- iPhone/Expo Go, VoiceOver e Dynamic Type: **não verificados**.
+- Pendências antigas de 036, 037 e 038 (comentários, título do teste, placa sem `ajuda`, aviso de perfil, `refAviso` por render): não tocadas.
+- Dynamic Type 2× da barra, `accessibilityHint` do "Mais", salto h2 → h4 no painel da conversa, VoiceOver lendo "Validade" duas vezes e opção "(já aprovada)" selecionável no iOS: não tratados.
