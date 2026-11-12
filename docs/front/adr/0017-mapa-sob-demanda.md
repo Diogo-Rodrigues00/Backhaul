@@ -6,7 +6,7 @@
 ## Decisão
 O mapa "Ver no mapa" é feito **sem biblioteca de mapa**: ladrilhos (tiles) do OpenStreetMap em `<img>` (web) ou `Image` (iPhone) com um `<svg>`/`react-native-svg` por cima para a rota, o círculo do raio de busca e os marcadores. A matemática (Web Mercator, zoom que enquadra os pontos, ladrilhos que cobrem a área) fica em `MapaRota.logica.ts`, pura e testada em Jest.
 
-- Carregado por `React.lazy` + `import()` (`MapaRota.carregar.ts`) só depois do clique; chunk próprio de ~1 KiB gzip.
+- Carregado por `React.lazy` + `import()` (`MapaRota.carregar.ts`) só depois do clique; chunk próprio de 2,2 KiB gzip (medido em `npm run orcamento`).
 - Um código só para web e iPhone (`MapaRota.web.tsx` e `MapaRota.native.tsx` mudam só o desenho). **Sem `react-native-maps`** e sem Leaflet: nenhuma dependência nova, nada a mudar na regra de lint do ADR 0001.
 - Sem interação (sem pan, zoom ou controles): nada prende o Tab ou o foco do VoiceOver, e não há animação (`prefers-reduced-motion` atendido por construção).
 - Acessibilidade: contêiner `role="img"` com rótulo ("Mapa da rota de A a B"), legenda e atribuição "© OpenStreetMap contributors" em texto; a informação do mapa (origem, destino, distância, local e raio) já está em texto no cartão e na barra de contexto.
@@ -18,4 +18,7 @@ O `leaflet.js` minificado tem ~42 KiB gzip, mais os ~4 KiB de CSS e a imagem de 
 - Rede só ao clicar: ~4 a 12 ladrilhos de `tile.openstreetmap.org` (sem token). Política de uso do OSM: uso leve de demonstração, com atribuição visível. Em produção de verdade seria preciso um provedor de tiles próprio.
 - Offline ou bloqueado: os ladrilhos não aparecem (fundo neutro), mas rota, legenda e texto continuam; falha ao baixar o chunk mostra um aviso em texto e a tela segue funcionando (`LimiteDeErro`).
 - No iPhone, `Image` envia o User-Agent padrão do sistema; o OSM pode limitar. Verificar no Expo Go.
+- **Privacidade e CSP:** cada ladrilho é uma requisição direta do navegador (ou do iPhone) a `tile.openstreetmap.org`, que por isso recebe o **IP** de quem abriu o mapa e a região consultada (via o número do ladrilho). O OSM não pede token nem cookie. Uma CSP futura precisa liberar `img-src https://tile.openstreetmap.org` (hoje não há CSP). Se isso for um problema para a Mostra, a saída é um provedor de tiles próprio.
+- Fundo indisponível: se **todos** os ladrilhos falham (`onError` de cada imagem), a tela mostra "Fundo do mapa indisponível; a rota e o texto continuam valendo." (card 046). Ladrilhos que falham um a um ficam ocultos, sem o ícone de imagem quebrada.
+- Origem e destino no mesmo ponto: o marcador A e o B são afastados na horizontal para as duas letras ficarem legíveis (card 046).
 - Teste: o CI intercepta `tile.openstreetmap.org` com `page.route` (E2E `mapa.spec.ts`); Jest troca `MapaRota.carregar` por um mock.

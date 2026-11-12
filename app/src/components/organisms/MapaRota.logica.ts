@@ -109,6 +109,41 @@ export interface CenaMapa {
   circulo: { x: number; y: number; raio: number } | null;
 }
 
+/** Raio do marcador grande (A e B) em pixels; os dois não podem ficar um sobre o outro. */
+export const RAIO_MARCADOR = 12;
+const AFASTAMENTO_ORIGEM_DESTINO = RAIO_MARCADOR + 2;
+
+/**
+ * Origem e destino no mesmo lugar (ou a menos de dois raios) escondiam o "A" sob o "B": afasta os dois
+ * na horizontal, lado a lado, para as duas letras continuarem legíveis. O centro do mapa não muda.
+ */
+export function afastarOrigemDoDestino<T extends { x: number; y: number; tipo: TipoPonto }>(
+  pontos: T[],
+): T[] {
+  const origem = pontos.find((p) => p.tipo === 'origem');
+  const destino = pontos.find((p) => p.tipo === 'destino');
+  if (!origem || !destino) return pontos;
+  if (Math.hypot(origem.x - destino.x, origem.y - destino.y) >= 2 * RAIO_MARCADOR) return pontos;
+  return pontos.map((p) =>
+    p === origem
+      ? { ...p, x: p.x - AFASTAMENTO_ORIGEM_DESTINO }
+      : p === destino
+        ? { ...p, x: p.x + AFASTAMENTO_ORIGEM_DESTINO }
+        : p,
+  );
+}
+
+export const MENSAGEM_FUNDO_INDISPONIVEL =
+  'Fundo do mapa indisponível; a rota e o texto continuam valendo.';
+
+/** Todos os ladrilhos da cena falharam (sem rede, bloqueio ou o serviço de mapas fora do ar). */
+export function todosOsLadrilhosFalharam(
+  ladrilhos: readonly Ladrilho[],
+  falhas: ReadonlySet<string>,
+): boolean {
+  return ladrilhos.length > 0 && ladrilhos.every((l) => falhas.has(l.chave));
+}
+
 /** Tudo o que o desenho precisa, em pixels da área (0,0 no canto superior esquerdo). */
 export function montarCena(props: PropsMapaRota, largura: number, altura: number): CenaMapa {
   const limites = limitesDe(props);
@@ -145,7 +180,7 @@ export function montarCena(props: PropsMapaRota, largura: number, altura: number
   return {
     zoom,
     ladrilhos,
-    pontos: props.pontos.map((p) => ({ ...emTela(p), tipo: p.tipo })),
+    pontos: afastarOrigemDoDestino(props.pontos.map((p) => ({ ...emTela(p), tipo: p.tipo }))),
     linha: (props.linha ?? []).map(emTela),
     circulo: props.circulo
       ? {

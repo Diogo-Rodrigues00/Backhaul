@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -8,6 +8,7 @@ import { BarraContexto } from './BarraContexto';
 import { CartaoCargaEmpresa } from './CartaoCargaEmpresa';
 import { CartaoCargaProxima } from './CartaoCargaProxima';
 import { MapaRota } from './MapaRota';
+import { MENSAGEM_FUNDO_INDISPONIVEL } from './MapaRota.logica';
 import { BotaoMapa, idDoMapa } from './MapaSobDemanda';
 
 const agora = new Date('2026-10-21T12:00:00-03:00');
@@ -126,5 +127,35 @@ describe('MapaRota (iPhone)', () => {
     expect(bloco?.props.importantForAccessibility).toBe('no-hide-descendants');
     expect(screen.getByText('Legenda: A: coleta · B: entrega')).toBeOnTheScreen();
     expect(screen.getByText('© OpenStreetMap contributors')).toBeOnTheScreen();
+  });
+
+  it('avisa em texto quando todos os ladrilhos falham (a rota e a legenda continuam)', async () => {
+    await renderizarComRota(
+      <MapaRota
+        descricao="Mapa da rota de A a B"
+        pontos={[
+          { ...uberlandia, tipo: 'origem' },
+          { ...uberaba, tipo: 'destino' },
+        ]}
+        linha={[uberlandia, uberaba]}
+      />,
+    );
+    const [bloco] = screen.container.queryAll(
+      (el) => el.props.accessibilityLabel === 'Mapa da rota de A a B',
+    );
+    await act(async () => {
+      bloco?.props.onLayout({ nativeEvent: { layout: { width: 320, height: 240 } } });
+    });
+    const imagens = screen.container.queryAll((el) => typeof el.props.onError === 'function');
+    expect(imagens.length).toBeGreaterThan(1);
+    expect(screen.queryByText(MENSAGEM_FUNDO_INDISPONIVEL)).toBeNull();
+
+    for (const imagem of imagens) {
+      await act(async () => {
+        imagem.props.onError();
+      });
+    }
+    expect(screen.getByText(MENSAGEM_FUNDO_INDISPONIVEL)).toBeOnTheScreen();
+    expect(screen.getByText('Legenda: A: coleta · B: entrega')).toBeOnTheScreen();
   });
 });

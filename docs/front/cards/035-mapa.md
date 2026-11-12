@@ -1,5 +1,15 @@
 # 035 — Mapa de visualização sob demanda
 
+## Revisão 2026-11-09 (implementação: ver [ADR 0017](../adr/0017-mapa-sob-demanda.md))
+Os critérios abaixo foram escritos para Leaflet e `react-native-maps`; **a implementação não usa nenhum dos dois** (ADR 0017). O que mudou nos critérios:
+- **Sem Leaflet, sem CSS de mapa, sem `public/vendor/`:** ladrilhos do OpenStreetMap em `<img>`/`Image` com SVG por cima (rota, círculo, marcadores A/B). A regra de lint do ADR 0001 não mudou.
+- **Sem `react-native-maps`:** o iPhone usa os mesmos ladrilhos e `react-native-svg`; roda no Expo Go sem módulo nativo extra.
+- **Sem interação:** nada de `keyboard: false`, `zoomAnimation` ou `fadeAnimation`; não há controle que prenda o Tab ou o VoiceOver, nem animação.
+- **Orçamento:** chunk sob demanda de 2,2 KiB gzip (o Leaflet sozinho estouraria os 30 KiB do chunk de rota); o JS inicial das rotas não muda.
+- **Teste:** o E2E intercepta `tile.openstreetmap.org` e confere que nada de mapa é baixado antes do clique.
+- Acrescentado no card 046: aviso em texto quando todos os ladrilhos falham, marcadores A e B lado a lado quando origem = destino e fechamento do mapa geral quando a lista esvazia.
+- Os ladrilhos expõem o IP a `tile.openstreetmap.org`; uma CSP futura precisa de `img-src https://tile.openstreetmap.org`.
+
 ## Revisão 2026-11-04
 - **Escopo menor:** só **"Cargas próximas"** (motorista) e **"Minhas cargas"** (empresa), que já recebem `origem` e `destino` da API. Mapa em "Meus fretes" (027/028) **só depois do P4/A4** (`origem`/`destino` em `GET /fretes/meus`), dentro do card 044 ou num card próprio.
 - Bloqueios atualizados: 020, 021, 024, 027, 028 já estão em `front`; fica só **PROTO** (039: estado fechado/aberto e equivalente em texto).

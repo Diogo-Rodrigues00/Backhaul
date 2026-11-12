@@ -1,8 +1,10 @@
 import {
+  afastarOrigemDoDestino,
   legendaDoMapa,
   limitesDe,
   montarCena,
   projetar,
+  todosOsLadrilhosFalharam,
   urlDoLadrilho,
   type PropsMapaRota,
 } from './MapaRota.logica';
@@ -87,5 +89,40 @@ describe('MapaRota.logica', () => {
     ).toBe(
       '●: sua disponibilidade · pontos pequenos: coleta das cargas da lista · círculo: raio de busca',
     );
+  });
+
+  it('origem e destino no mesmo lugar ficam lado a lado (A à esquerda de B)', () => {
+    const cena = montarCena(
+      {
+        descricao: 'x',
+        pontos: [
+          { ...uberlandia, tipo: 'origem' },
+          { ...uberlandia, tipo: 'destino' },
+        ],
+      },
+      320,
+      240,
+    );
+    const [a, b] = cena.pontos;
+    expect(b!.x - a!.x).toBeGreaterThanOrEqual(24);
+    expect(a!.y).toBe(b!.y);
+  });
+
+  it('origem e destino distantes não são mexidos', () => {
+    const pontos = [
+      { x: 10, y: 10, tipo: 'origem' as const },
+      { x: 200, y: 90, tipo: 'destino' as const },
+    ];
+    expect(afastarOrigemDoDestino(pontos)).toBe(pontos);
+  });
+
+  it('só avisa quando TODOS os ladrilhos falharam', () => {
+    const ladrilhos = [
+      { chave: '1/0/0', url: '', esquerda: 0, topo: 0 },
+      { chave: '1/1/0', url: '', esquerda: 256, topo: 0 },
+    ];
+    expect(todosOsLadrilhosFalharam(ladrilhos, new Set(['1/0/0']))).toBe(false);
+    expect(todosOsLadrilhosFalharam(ladrilhos, new Set(['1/0/0', '1/1/0']))).toBe(true);
+    expect(todosOsLadrilhosFalharam([], new Set())).toBe(false);
   });
 });

@@ -8,5 +8,6 @@ export function useMapaUnico() {
     (chave: string) => setAberto((atual) => (atual === chave ? null : chave)),
     [],
   );
-  return { aberto, alternar };
+  const fechar = useCallback(() => setAberto(null), []);
+  return { aberto, alternar, fechar };
 }
