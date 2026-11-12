@@ -111,8 +111,13 @@ export default function CorpoChavePixMotorista() {
     );
   }
 
+  // O formulário vem primeiro: no celular o botão "Salvar chave Pix" fica acima da barra inferior fixa
+  // (um alvo de toque sob a barra reprova no Lighthouse), e ele já vem preenchido com a chave atual.
   return (
     <View style={estilos.grade}>
+      <View style={estilos.formulario}>
+        <FormularioChavePix atual={dados} aoSalvar={aoSalvar} refTitulo={tituloDoFormulario} />
+      </View>
       <View style={estilos.atual}>
         <Titulo nivel={2} ref={tituloDaChave} tabIndex={-1}>
           Sua chave Pix
@@ -123,9 +128,6 @@ export default function CorpoChavePixMotorista() {
           </Banner>
         ) : null}
         <ChaveAtual dados={dados} />
-      </View>
-      <View style={estilos.formulario}>
-        <FormularioChavePix atual={dados} aoSalvar={aoSalvar} refTitulo={tituloDoFormulario} />
       </View>
     </View>
   );
