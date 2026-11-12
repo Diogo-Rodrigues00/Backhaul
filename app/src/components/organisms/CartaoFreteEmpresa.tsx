@@ -14,6 +14,7 @@ import { ResumoFrete } from '@/components/molecules/ResumoFrete';
 import { ResumoPagamento } from '@/components/molecules/ResumoPagamento';
 import { anunciar, moverFoco } from '@/lib/a11y';
 import { ErroApi, MENSAGEM_FALHA } from '@/lib/erros';
+import { focoNoCorpo } from '@/lib/focoNoCorpo';
 import { formatarMoeda, type NumeroEntrada } from '@/lib/formatacao';
 import type { StatusEntrega, StatusPagamento } from '@/lib/rotulos';
 import type { TemaVisual } from '@/state/tema/montarTema';
@@ -136,6 +137,14 @@ export function CartaoFreteEmpresa({
     if (confirmado) anunciar(ANUNCIO_PAGAMENTO_CONFIRMADO);
   }, [confirmado]);
 
+  // Card 046 (WCAG 2.4.3): o painel Pix some (pagamento confirmado) ou perde os botões (Pix expirado) sem
+  // ação do usuário. Se o foco estava neles, cai no `body`: devolve ao resumo do pagamento ou ao título do
+  // painel. Foco em outro lugar da página não é mexido.
+  useEffect(() => {
+    if (!confirmado && !pixExpirado) return;
+    if (focoNoCorpo()) moverFoco(confirmado ? refResumo : refPix);
+  }, [confirmado, pixExpirado]);
+
   useEffect(() => {
     if (focoApos.current === 'botao') moverFoco(refVerPix);
     if (focoApos.current === 'painel') moverFoco(refPix);
@@ -255,6 +264,7 @@ export function CartaoFreteEmpresa({
             valorComissao={pagamento.valorComissao}
             statusPagamento={status ?? pagamento.statusPagamento}
           />
+          {pendente && !pix ? <Texto cor="secundario">{TEXTO_PIX_SEM_CODIGO}</Texto> : null}
         </>
       ) : pendente ? (
         <Texto cor="secundario">{TEXTO_PIX_SEM_CODIGO}</Texto>
