@@ -22,6 +22,9 @@ async function abrir(page: Page) {
 }
 
 async function violacoes(page: Page) {
+  // O clique que dispara os erros rola a página, e um campo parado sob a barra fixa do celular (320 px)
+  // reprova o `target-size` por geometria da rolagem. O axe mede a partir do topo (card 049).
+  await page.evaluate(() => window.scrollTo(0, 0));
   const resultado = await new AxeBuilder({ page }).withTags(TAGS_WCAG).analyze();
   return resultado.violations.map(
     (v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(' | ')})`,

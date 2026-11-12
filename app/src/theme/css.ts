@@ -1,11 +1,15 @@
-import { breakpoints, colors, fonts, shadow, type } from './tokens';
+import {
+  barraInferior,
+  breakpoints,
+  colors,
+  fonts,
+  shadow,
+  type,
+  VARIAVEL_ALTURA_BARRA,
+} from './tokens';
 import { achatar } from './variaveis';
 
 // Roda só no build estático (+html.tsx, em Node): não entra no bundle do navegador.
-
-/** Altura da barra inferior (DS seção 8) mais uma folga para o anel de foco. */
-const ALTURA_BARRA_INFERIOR = 60;
-const FOLGA_FOCO = 12;
 
 /** Nome em português de cada ponto de quebra, usado no `data-bp` (ver `responsivo.ts`). */
 const NOMES_BP = {
@@ -101,6 +105,7 @@ function regrasDePontoDeQuebra(): string {
  * acessibilidade. Vai em um `<style>` do +html.tsx, então a primeira pintura já usa o tema certo.
  */
 export function gerarCssGlobal(): string {
+  const folgaDaBarra = `calc(var(${VARIAVEL_ALTURA_BARRA},${barraInferior.altura + barraInferior.borda}px) + ${barraInferior.folgaFoco}px)`;
   const claro = variaveisDoTema('light');
   const escuro = variaveisDoTema('dark');
   return [
@@ -125,7 +130,11 @@ export function gerarCssGlobal(): string {
     '[data-num]{font-variant-numeric:tabular-nums}',
     regrasDePontoDeQuebra(),
     regraDoTituloDeTela(),
-    `@media (max-width:${breakpoints.tabbar}px){html{scroll-padding-bottom:${ALTURA_BARRA_INFERIOR + FOLGA_FOCO}px}}`,
+    // Foco por teclado e `scrollIntoView` param acima da barra inferior: a altura real (`--altura-barra`, medida
+    // por `BarraAbas`) mais a folga do anel de foco. Antes da hidratação vale o mínimo do token.
+    // A própria barra é grudada no pé da janela, dentro dessa folga: sem a margem negativa abaixo, focar ou
+    // clicar numa aba rolaria a página à toa (o painel do "Mais" então cobriria outros alvos).
+    `@media (max-width:${breakpoints.tabbar}px){html{scroll-padding-bottom:${folgaDaBarra}}[data-barra="abas"] *{scroll-margin-bottom:calc(-1 * ${folgaDaBarra})}}`,
     '@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}',
   ].join('\n');
 }

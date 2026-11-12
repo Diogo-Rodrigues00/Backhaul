@@ -8,7 +8,7 @@ import { Texto } from '@/components/atoms/Texto';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
-import { brand } from '@/theme/tokens';
+import { barraInferior, brand } from '@/theme/tokens';
 
 import { Responsivo } from './Responsivo';
 
@@ -37,7 +37,6 @@ export interface PropsAbaNavegacao extends ItemNavegacao {
 // DS 5.2 (NavTab) e protótipo (.hdr nav a / .tabbar a).
 const BARRA_ATUAL_CABECALHO = 4;
 const BARRA_ATUAL_INFERIOR = 3;
-const ALTURA_BARRA = 60;
 
 function criarEstilos({ radius, space, touch }: TemaVisual) {
   return {
@@ -56,7 +55,7 @@ function criarEstilos({ radius, space, touch }: TemaVisual) {
       alignItems: 'center',
       justifyContent: 'center',
       gap: space[1],
-      minHeight: ALTURA_BARRA,
+      minHeight: barraInferior.altura,
       paddingVertical: space[2],
       paddingHorizontal: space[1],
       borderTopWidth: BARRA_ATUAL_INFERIOR,
