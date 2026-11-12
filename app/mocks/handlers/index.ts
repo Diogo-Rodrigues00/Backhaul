@@ -4,6 +4,7 @@
 import { criarHandlersAdmin } from './admin';
 import { criarHandlersCargas } from './cargas';
 import { criarHandlersCertificacoes } from './certificacoes';
+import { criarHandlersChavePix } from './chavePix';
 import { criarHandlersDisponibilidades } from './disponibilidades';
 import { criarHandlersFretes } from './fretes';
 import { criarHandlersMensagens } from './mensagens';
@@ -17,6 +18,7 @@ export function criarHandlers(baseUrl: string) {
     ...criarHandlersSaude(base),
     ...criarHandlersSessao(base),
     ...criarHandlersCertificacoes(base),
+    ...criarHandlersChavePix(base),
     ...criarHandlersCargas(base),
     ...criarHandlersDisponibilidades(base),
     ...criarHandlersPropostas(base),
