@@ -64,6 +64,9 @@ const ROTULO_TIPO: Record<TipoProposta, string> = {
   contraproposta: 'Contraproposta',
 };
 
+// Teto do botão de conversa em telas largas (no celular ele só estica até o cartão).
+const LARGURA_MAXIMA_DA_ACAO = 360;
+
 function criarEstilos({ border, radius, space }: TemaVisual) {
   return {
     cartao: {
@@ -80,7 +83,11 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
       alignItems: 'center',
       gap: space[3],
     } satisfies ViewStyle,
-    acaoConversa: { alignSelf: 'stretch', minWidth: 0, maxWidth: 360 } satisfies ViewStyle,
+    acaoConversa: {
+      alignSelf: 'stretch',
+      minWidth: 0,
+      maxWidth: LARGURA_MAXIMA_DA_ACAO,
+    } satisfies ViewStyle,
     conversa: {
       minWidth: 0,
       paddingTop: space[4],
@@ -174,7 +181,9 @@ export function CartaoMinhaProposta({
         <View style={estilos.acaoConversa}>
           <BotaoConversa
             aberta={conversaAberta}
-            nome={`${empresa} sobre ${tipoCarga}`}
+            // A data de envio (que o cartão já mostra) torna o nome único mesmo com duas propostas da
+            // mesma empresa para a mesma carga (WCAG 2.4.6); o texto visível segue "Abrir conversa".
+            nome={`${empresa} sobre ${tipoCarga}, enviada em ${formatarDataHora(criadoEm)}`}
             idDoPainel={idConversa}
             aoAlternar={aoAlternarConversa}
           />

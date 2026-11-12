@@ -96,6 +96,8 @@ describe('Fretes do admin', () => {
     expect(screen.queryByText(/123\.456\.789-09/)).toBeNull();
     expect(screen.queryByText(/98765432100/)).toBeNull();
     expect(screen.queryByText(/segredo/)).toBeNull();
+    // Também pelo rótulo acessível (aria-label / label de campo), não só pelo texto visível.
+    expect(screen.queryByLabelText(/cpf|cnh|senha/i)).toBeNull();
   });
 
   it('com 100 fretes avisa "Mostrando os 100 mais recentes."; com menos, não', async () => {

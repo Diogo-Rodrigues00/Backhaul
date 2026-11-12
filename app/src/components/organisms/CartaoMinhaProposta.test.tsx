@@ -147,7 +147,7 @@ describe('CartaoMinhaProposta: conversa (card 043)', () => {
     const aoAlternar = jest.fn();
     await renderizar({ idConversa: 'conversa-1', aoAlternarConversa: aoAlternar });
     const botao = screen.getByRole('button', {
-      name: 'Abrir conversa com Transportes Rápidos LTDA sobre Grãos',
+      name: /^Abrir conversa com Transportes Rápidos LTDA sobre Grãos, enviada em \d{2}\/\d{2}\/\d{4}/,
     });
     expect(botao).toBeCollapsed();
     expect(botao.props['aria-controls']).toBe('conversa-1');
@@ -175,7 +175,7 @@ describe('CartaoMinhaProposta: conversa (card 043)', () => {
     expect(screen.getByText('painel da conversa')).toBeOnTheScreen();
     expect(
       screen.getByRole('button', {
-        name: 'Fechar conversa com Transportes Rápidos LTDA sobre Grãos',
+        name: /^Fechar conversa com Transportes Rápidos LTDA sobre Grãos, enviada em /,
       }),
     ).toBeExpanded();
   });

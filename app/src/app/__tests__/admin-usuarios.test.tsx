@@ -84,6 +84,8 @@ describe('Usuários do admin', () => {
     expect(screen.queryByText(/123\.456\.789-09/)).toBeNull();
     expect(screen.queryByText(/98765432100/)).toBeNull();
     expect(screen.queryByText(/abc123/)).toBeNull();
+    // Também pelo rótulo acessível (aria-label / label de campo), não só pelo texto visível.
+    expect(screen.queryByLabelText(/cpf|cnh|senha/i)).toBeNull();
   });
 
   it('com 200 usuários avisa "Mostrando os 200 mais recentes."', async () => {

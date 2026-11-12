@@ -95,9 +95,12 @@ export default function CorpoCertificacoesMotorista() {
 
   useEffect(() => {
     if (!focarListaAoCarregar.current || estado === 'erro' || estado === 'carregando') return;
+    // Lista vazia: o título "Suas certificações" não existe; o foco vai ao título do formulário (o
+    // mesmo destino do botão "Enviar certificação"), quando ele já está na tela.
+    if (estado === 'vazio' && !catalogoPronto && !catalogoComErro) return;
     focarListaAoCarregar.current = false;
-    moverFoco(tituloDaLista);
-  }, [estado]);
+    moverFoco(estado === 'vazio' ? tituloDoFormulario : tituloDaLista);
+  }, [estado, catalogoPronto, catalogoComErro]);
 
   useEffect(() => {
     if (!focarFormularioAoCarregar.current || !catalogoPronto) return;

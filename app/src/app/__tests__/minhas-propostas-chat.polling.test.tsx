@@ -109,7 +109,9 @@ async function abrir() {
 }
 
 async function abrirConversa(nome: string) {
-  await fireEvent.press(screen.getAllByRole('button', { name: `Abrir conversa com ${nome}` })[0]!);
+  await fireEvent.press(
+    screen.getAllByRole('button', { name: new RegExp(`^Abrir conversa com ${nome}`) })[0]!,
+  );
   await avancar(0);
 }
 
@@ -165,7 +167,9 @@ describe('chat do motorista: atualização automática', () => {
 
     await abrirConversa(PENDENTE);
     expect(leiturasDeMensagens()).toBe(1);
-    await fireEvent.press(screen.getByRole('button', { name: `Fechar conversa com ${PENDENTE}` }));
+    await fireEvent.press(
+      screen.getAllByRole('button', { name: new RegExp(`^Fechar conversa com ${PENDENTE}`) })[0]!,
+    );
     await avancar(0);
     const depoisDeFechar = leiturasDeMensagens();
     await avancar(30_000);
