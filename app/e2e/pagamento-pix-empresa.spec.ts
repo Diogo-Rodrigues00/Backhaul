@@ -86,9 +86,11 @@ async function pedirPagamento(page: Page) {
 
 async function axeSemViolacoes(page: Page) {
   const resultado = await new AxeBuilder({ page }).withTags(TAGS_WCAG).analyze();
-  expect(resultado.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.length} nó(s))`)).toEqual(
-    [],
-  );
+  expect(
+    resultado.violations.map(
+      (v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(' | ')})`,
+    ),
+  ).toEqual([]);
 }
 
 async function semRolagemHorizontal(page: Page, projeto: string) {
@@ -134,6 +136,9 @@ for (const esquema of ['light', 'dark'] as const) {
       await expect(painel.getByText('Código Pix copiado.')).toBeVisible();
       await expect(copiar).toBeFocused();
       expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(CODIGO_LONGO);
+      // Espera as transições de cor do botão (foco/pressionado) acabarem: o axe mede o contraste
+      // do que está na tela naquele instante.
+      await page.waitForTimeout(600);
       await axeSemViolacoes(page);
     });
 
@@ -147,7 +152,11 @@ for (const esquema of ['light', 'dark'] as const) {
 
       // A empresa pagou no banco: a próxima leitura (a cada 5 s) já traz `retido`.
       situacao.statusPagamento = 'retido';
-      await expect(page.getByText('Pagamento confirmado')).toBeVisible({ timeout: 15_000 });
+      // O texto também está na região viva do anúncio: o banner é o que fica na lista.
+      const banner = page
+        .getByRole('list', { name: 'Fretes da empresa' })
+        .getByText('Pagamento confirmado');
+      await expect(banner).toBeVisible({ timeout: 15_000 });
       await expect(page.getByRole('group', { name: 'Pagamento por Pix' })).toHaveCount(0);
       await expect(page.getByRole('group', { name: 'Resumo do pagamento' })).toBeVisible();
       await semRolagemHorizontal(page, info.project.name);
