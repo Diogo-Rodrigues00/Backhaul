@@ -24,6 +24,8 @@ import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 
 const ANUNCIO_PAGAMENTO = 'Pagamento registrado';
+const ANUNCIO_PIX_GERADO = 'Pix gerado. Aguardando confirmação do pagamento';
+const INTERVALO_PIX_MS = 5_000;
 
 /** Só a mensagem de erro de negócio (403, 404, 409 com `erro`) aparece; 500 e falhas usam o padrão. */
 function mensagemDeErro(erro: unknown): string | undefined {
@@ -37,14 +39,26 @@ function criarEstilos({ space }: TemaVisual) {
 export default function CorpoFretesDaEmpresa() {
   const { habilitado } = useCasca();
   const estilos = useEstilos(criarEstilos);
-  const consulta = useMeusFretes({ automatico: true, habilitado });
   const pagar = usePagarFrete();
+  // O Pix e o pagamento ficam só neste estado de tela: somem ao sair ou recarregar (dado de cobrança).
+  const [pagamentos, setPagamentos] = useState<Record<string, PagamentoRegistrado>>({});
+  // Enquanto algum Pix espera confirmação a lista vem a cada 5 s (e não 10 s); só com a aba visível.
+  const [pixPendente, setPixPendente] = useState(false);
+  const consulta = useMeusFretes({
+    automatico: true,
+    habilitado,
+    intervaloMs: pixPendente ? INTERVALO_PIX_MS : undefined,
+  });
   const fretes = useMemo(
     () => (consulta.data?.fretes ?? []).filter(eFreteDaEmpresa),
     [consulta.data],
   );
-
-  const [pagamentos, setPagamentos] = useState<Record<string, PagamentoRegistrado>>({});
+  const aguardandoPix = fretes.some(
+    (frete) =>
+      pagamentos[frete.id]?.pix !== undefined &&
+      (frete.status_pagamento ?? pagamentos[frete.id]?.statusPagamento) === 'pendente',
+  );
+  if (aguardandoPix !== pixPendente) setPixPendente(aguardandoPix);
   const [conflito, setConflito] = useState<string | null>(null);
   const [novidade, setNovidade] = useState<string | undefined>(undefined);
 
@@ -61,7 +75,7 @@ export default function CorpoFretesDaEmpresa() {
 
   async function pagarFrete(freteId: string) {
     setConflito(null);
-    const { transacao } = await pagar.mutateAsync(freteId);
+    const { transacao, pix } = await pagar.mutateAsync(freteId);
     // Valores exatamente como a API devolveu (D-PO-06); o resumo monta antes de o diálogo fechar.
     setPagamentos((atuais) => ({
       ...atuais,
@@ -70,9 +84,17 @@ export default function CorpoFretesDaEmpresa() {
         percentualComissao: transacao.percentual_comissao,
         valorComissao: transacao.valor_comissao,
         statusPagamento: transacao.status_pagamento,
+        pix: pix
+          ? {
+              copiaECola: pix.copia_e_cola,
+              qrCodeBase64: pix.qr_code_base64,
+              expiraEm: pix.expira_em,
+            }
+          : undefined,
       },
     }));
-    anunciar(ANUNCIO_PAGAMENTO);
+    // Com Pix, o painel é o aviso (ainda não pagou); sem Pix (modo simulado), o pagamento já está feito.
+    anunciar(pix ? ANUNCIO_PIX_GERADO : ANUNCIO_PAGAMENTO);
   }
 
   function aoConflito(mensagem: string) {

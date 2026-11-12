@@ -91,7 +91,7 @@ describe('rotuloPagamento (D-PO-07)', () => {
   it('rotula retido, liberado e os demais valores do enum', () => {
     expect(rotuloPagamento('retido')).toBe('Pago, retido até a entrega');
     expect(rotuloPagamento('liberado')).toBe('Liberado ao motorista');
-    expect(rotuloPagamento('pendente')).toBe('Pendente');
+    expect(rotuloPagamento('pendente')).toBe('Pagamento pendente');
     expect(rotuloPagamento('estornado')).toBe('Estornado');
   });
 });

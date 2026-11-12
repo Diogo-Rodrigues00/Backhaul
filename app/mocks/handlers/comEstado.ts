@@ -15,6 +15,10 @@ import { certificacoesMock } from '../fixtures/certificacoes';
 import {
   calcularComissao,
   cargaAbertaENaoVencida,
+  ID_CARGA_GRAOS_FLUXO,
+  ID_EMPRESA_FLUXO,
+  ID_MOTORISTA_MOPP_FLUXO,
+  modoPixDesligado,
   distanciaKm,
   DOMINIO_FLUXO,
   estado,
@@ -35,6 +39,7 @@ import {
   type FreteFluxo,
   type MensagemFluxo,
   type PropostaFluxo,
+  type TransacaoFluxo,
   type UsuarioFluxo,
 } from '../estado';
 import { respostaErro, respostaErros } from '../respostas';
@@ -46,6 +51,26 @@ import { validarTextoMensagem } from './mensagens';
 import { validarCadastroMotorista } from './sessao';
 
 const TAMANHO_MINIMO_SENHA = 8;
+
+// PNG 1x1 válido: o mock não gera QR de verdade, só precisa de uma imagem que o navegador decodifique.
+const PNG_1X1_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+// Copia e cola de mentira (formato EMV parecido com o do Asaas, mas sem validade real).
+const CODIGO_PIX_MOCK =
+  '00020126580014br.gov.bcb.pix0136mock-0000-4000-8000-backhaul-sandbox520400005303986540535005802BR5909BACKHAUL6009SAO PAULO62070503***6304ABCD';
+
+function codigoPix(tamanho: number | null): string {
+  if (tamanho === null) return CODIGO_PIX_MOCK;
+  return 'A1b2C3d4'.repeat(Math.ceil(tamanho / 8)).slice(0, tamanho);
+}
+
+/** O "webhook" do gateway: confirma (pendente → retido) o Pix da transação. */
+function confirmarPix(transacao: { status_pagamento: string; leiturasAteConfirmar?: number }) {
+  if (transacao.status_pagamento === 'pendente') {
+    transacao.status_pagamento = 'retido';
+    delete transacao.leiturasAteConfirmar;
+  }
+}
 const STATUS_ENTREGA = ['aceito', 'em_transito', 'entregue', 'cancelado'];
 
 type Resolucao =
@@ -306,6 +331,47 @@ export function criarHandlersComEstado(baseUrl: string) {
     http.post(`${baseUrl}/__mock/reset`, () => {
       reiniciarEstado();
       return HttpResponse.json({ ok: true });
+    }),
+
+    // ---- Pix de teste (card 048); só o servidor de mocks e os testes chamam ----
+    http.post(`${baseUrl}/__mock/pix`, async ({ request }) => {
+      const corpo = await lerCorpo(request);
+      const modo = { ...modoPixDesligado(), ativo: corpo.ativo !== false };
+      if (typeof corpo.leituras === 'number') modo.leiturasAteConfirmar = corpo.leituras;
+      if (corpo.falharGateway === true) modo.falharGateway = true;
+      if (typeof corpo.tamanhoCodigo === 'number') modo.tamanhoCodigo = corpo.tamanhoCodigo;
+      if (typeof corpo.expiraEmSegundos === 'number')
+        modo.expiraEmSegundos = corpo.expiraEmSegundos;
+      estado.pix = modo;
+      return HttpResponse.json({ ok: true });
+    }),
+
+    // A empresa "paga" o Pix no banco: o webhook do gateway confirma tudo que está pendente.
+    http.post(`${baseUrl}/__mock/pix/pagar`, () => {
+      for (const transacao of estado.transacoes) confirmarPix(transacao);
+      return HttpResponse.json({ ok: true });
+    }),
+
+    // Cria um frete aceito (carga "Grãos") entre a empresa e o motorista do fluxo, sem passar pelo funil.
+    http.post(`${baseUrl}/__mock/fretes`, async ({ request }) => {
+      const corpo = await lerCorpo(request);
+      const frete: FreteFluxo = {
+        id: novoId(),
+        propostaId: novoId(),
+        cargaId: ID_CARGA_GRAOS_FLUXO,
+        empresaId: ID_EMPRESA_FLUXO,
+        motoristaId: ID_MOTORISTA_MOPP_FLUXO,
+        valor_final: typeof corpo.valor === 'number' ? corpo.valor : 3500,
+        status_entrega:
+          corpo.status_entrega === 'entregue' || corpo.status_entrega === 'em_transito'
+            ? corpo.status_entrega
+            : 'aceito',
+        coleta_em: null,
+        entrega_em: null,
+        criado_em: agoraIso(),
+      };
+      estado.fretes.push(frete);
+      return HttpResponse.json({ id: frete.id }, { status: 201 });
     }),
 
     http.post(`${baseUrl}/login`, async ({ request }) => {
@@ -806,6 +872,14 @@ export function criarHandlersComEstado(baseUrl: string) {
       if (deOutro) return undefined;
       if (resposta) return resposta;
       const doMotorista = usuario.tipo === 'motorista';
+      if (!doMotorista) {
+        // Modo Pix: a cada leitura da empresa, o "webhook" pode chegar (N leituras depois do POST).
+        for (const transacao of estado.transacoes) {
+          if (transacao.leiturasAteConfirmar === undefined) continue;
+          transacao.leiturasAteConfirmar -= 1;
+          if (transacao.leiturasAteConfirmar <= 0) confirmarPix(transacao);
+        }
+      }
       const meus = estado.fretes.filter((f) =>
         doMotorista ? f.motoristaId === usuario.id : f.empresaId === usuario.id,
       );
@@ -871,20 +945,43 @@ export function criarHandlersComEstado(baseUrl: string) {
       if (estado.transacoes.some((t) => t.freteId === frete.id)) {
         return respostaErro(409, 'frete já foi pago');
       }
-      const transacao = {
+      const modoPix = estado.pix;
+      if (modoPix.ativo && frete.status_entrega === 'entregue') {
+        return respostaErro(409, 'frete entregue não pode ser pago');
+      }
+      if (modoPix.ativo && modoPix.falharGateway) {
+        return respostaErro(502, 'falha ao gerar a cobrança Pix');
+      }
+      const transacao: TransacaoFluxo = {
         id: novoId(),
         freteId: frete.id,
         valor_frete: frete.valor_final,
         percentual_comissao: PERCENTUAL_COMISSAO_FLUXO,
         valor_comissao: calcularComissao(frete.valor_final, PERCENTUAL_COMISSAO_FLUXO),
         // Retido até a entrega; se já foi entregue, nasce liberado.
-        status_pagamento:
-          frete.status_entrega === 'entregue' ? ('liberado' as const) : ('retido' as const),
+        status_pagamento: modoPix.ativo
+          ? 'pendente'
+          : frete.status_entrega === 'entregue'
+            ? 'liberado'
+            : 'retido',
         criado_em: agoraIso(),
+        ...(modoPix.ativo
+          ? {
+              pix: {
+                copia_e_cola: codigoPix(modoPix.tamanhoCodigo),
+                qr_code_base64: PNG_1X1_BASE64,
+                expira_em: new Date(Date.now() + modoPix.expiraEmSegundos * 1000).toISOString(),
+              },
+              ...(modoPix.leiturasAteConfirmar !== null
+                ? { leiturasAteConfirmar: modoPix.leiturasAteConfirmar }
+                : {}),
+            }
+          : {}),
       };
       estado.transacoes.push(transacao);
       return HttpResponse.json(
         {
+          ...(transacao.pix ? { pix: transacao.pix } : {}),
           transacao: {
             id: transacao.id,
             frete_id: transacao.freteId,

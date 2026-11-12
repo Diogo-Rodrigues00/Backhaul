@@ -10,12 +10,18 @@ export type OpcoesLeitura = {
   automatico?: boolean;
   /** Falso mantém a consulta parada (sem sessão ou servidor ainda não pronto, ADR 0005). */
   habilitado?: boolean;
+  /** Intervalo da atualização automática, no lugar dos 10 s (ex.: 5 s enquanto espera um Pix). */
+  intervaloMs?: number;
 };
 
 /** Opções de polling e habilitação comuns aos hooks de leitura. */
-export function opcoesDeLeitura({ automatico = false, habilitado = true }: OpcoesLeitura = {}) {
+export function opcoesDeLeitura({
+  automatico = false,
+  habilitado = true,
+  intervaloMs = INTERVALO_ATUALIZACAO_MS,
+}: OpcoesLeitura = {}) {
   return {
     enabled: habilitado,
-    refetchInterval: automatico ? INTERVALO_ATUALIZACAO_MS : (false as const),
+    refetchInterval: automatico ? intervaloMs : (false as const),
   };
 }

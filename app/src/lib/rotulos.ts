@@ -58,7 +58,7 @@ const ROTULOS_STATUS_ENTREGA: Record<StatusEntrega, string> = {
 
 // D-PO-07: null (ainda não pago) tem rótulo próprio; os demais valores do enum saem em pt-BR.
 const ROTULOS_PAGAMENTO: Record<StatusPagamento, string> = {
-  pendente: 'Pendente',
+  pendente: 'Pagamento pendente',
   retido: 'Pago, retido até a entrega',
   liberado: 'Liberado ao motorista',
   estornado: 'Estornado',

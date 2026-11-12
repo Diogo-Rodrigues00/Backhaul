@@ -287,7 +287,19 @@ export type Transacao = {
   status_pagamento: StatusPagamento;
   criado_em: string;
 };
-export type RespostaPagamento = { transacao: Transacao };
+/**
+ * Cobrança Pix devolvida só no modo de teste do servidor (`PAGAMENTOS_MODO=sandbox`); no modo simulado
+ * não vem. Dado de cobrança: fica só em estado de tela (nunca em storage, cache persistente, URL ou log).
+ */
+export type PixPagamento = {
+  /** Código "copia e cola" (texto longo, sem espaços). */
+  copia_e_cola: string;
+  /** PNG do QR Code em base64 (sem o prefixo `data:`). */
+  qr_code_base64: string;
+  /** ISO: quando o código deixa de valer. */
+  expira_em: string;
+};
+export type RespostaPagamento = { transacao: Transacao; pix?: PixPagamento };
 
 // ---------- Certificações do motorista (contrato: GET e POST /certificacoes/minhas) ----------
 /** `pendente` aguarda o admin · `aprovada` libera cargas que exigem certificação · `vencida` passou da validade. */
