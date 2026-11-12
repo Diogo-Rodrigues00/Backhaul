@@ -186,6 +186,14 @@ export const space = {
 export const radius = { sm: 6, md: 10, lg: 14, pill: 999 } as const;
 export const border = { width: 2, widthStrong: 3, widthInvalid: 3 } as const;
 export const touch = { min: 44, control: 48, primary: 56, absoluteMin: 24 } as const;
+/**
+ * Barra de abas inferior (DS seção 8). `altura` e `borda` são o mínimo; com rótulos que quebram em 320 px
+ * ou texto ampliado ela cresce, então a altura real é medida (`--altura-barra`, ver `BarraAbas`). Este mínimo
+ * é a fonte única de `BarraAbas`, `AbaNavegacao` e do `scroll-padding-bottom` do CSS global.
+ */
+export const barraInferior = { altura: 60, borda: 3, folgaFoco: 12 } as const;
+/** Variável CSS (no `<html>`) com a altura medida da barra inferior, em px. */
+export const VARIAVEL_ALTURA_BARRA = '--altura-barra';
 export const breakpoints = { compact: 420, phone: 720, tabbar: 960, wide: 1240 } as const; // largura máxima do contêiner da app para cada regra
 
 export const shadow = {

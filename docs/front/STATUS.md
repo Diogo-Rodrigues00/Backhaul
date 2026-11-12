@@ -125,7 +125,7 @@ Site publicado: https://backhaul-front.vercel.app (último deploy de produção 
 
 **Ficou de fora / pendente**
 - `auditoria-final.md` (seção "Fase 6"), Lighthouse de todas as rotas novas, tabela de JS por rota e checklist manual WCAG: ficam para o CI e para o auditor (o Lighthouse não roda local).
-- Dobrar a altura do bloco "Sua chave Pix" (`minHeight: 300` em `CorpoChavePixMotorista.tsx`) como contorno do `target-size` sob a barra fixa: **mantido**. A causa é a barra sticky sem folga no `TemplateTela` (dívida já registrada); nos testes de axe em 320 px o teste volta ao topo antes de medir (`window.scrollTo(0, 0)`), porque o clique rola a página e um campo parado sob a barra reprova por geometria da rolagem.
+- Dobrar a altura do bloco "Sua chave Pix" (`minHeight: 300` em `CorpoChavePixMotorista.tsx`) e `window.scrollTo(0, 0)` antes do axe (certificações e chave Pix): **mantidos** (card 049). Medido: a barra sticky já termina no fluxo (sem alvo sob ela no fim da página), e o axe reprova alvo que pare sob ela depois da rolagem do clique; só uma barra fora da rolagem do documento (contêiner `100dvh`) elimina o caso, com risco para ~15 specs de reflow e iOS Safari: card próprio. O card 049 corrigiu a altura do `scroll-padding-bottom` (medida em `--altura-barra`, era 72 px fixos contra 90 px reais em 320 px) e unificou o token.
 - iPhone/Expo Go, VoiceOver e Dynamic Type: **não verificados**.
 - Pendências antigas de 036, 037 e 038 (comentários, título do teste, placa sem `ajuda`, aviso de perfil, `refAviso` por render): não tocadas.
 - Dynamic Type 2× da barra, `accessibilityHint` do "Mais", salto h2 → h4 no painel da conversa, VoiceOver lendo "Validade" duas vezes e opção "(já aprovada)" selecionável no iOS: não tratados.
