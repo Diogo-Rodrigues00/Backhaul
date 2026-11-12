@@ -2,6 +2,8 @@
 
 _Executada em 2026-10-23, sobre `origin/front` (commit 6ddab38) + PR #89 do card 030. **Números do CI** (Linux, `ubuntu-latest`): run 39922814359, commit b372346, que tem o mesmo código do app do HEAD do PR (o commit seguinte só altera este documento). Os números marcados como "local" vêm da máquina Windows 11 do desenvolvedor, **não estão em nenhum log do CI** e são só referência. `#88` (só docs) entrou em `front` depois do run citado e não muda o JS; o `#90` ainda não estava em `front`: depois que entrar, rode `npm run orcamento` de novo (a home nova mexe em `/`; `/entrar` tem só 0,4 KiB de folga)._
 
+_A auditoria da Fase 6 (card 046) está no fim deste arquivo, em "Fase 6 (backend novo)"._
+
 ## Resumo
 
 | Item | Resultado |
@@ -177,3 +179,221 @@ npm run orcamento && npm run lhci:mobile && npm run lhci:desktop
 ```
 
 Os tempos do fluxo saem no log como `FLUXO {...}` e no anexo `tempos-do-fluxo.json` do relatório do Playwright.
+
+
+---
+
+# Fase 6 (backend novo): auditoria do card 046
+
+_Executada em 2026-11-12, sobre `origin/front` no commit `2387dd2` (merge do PR #140, card 046). **Números do CI** (Linux, `ubuntu-latest`): run 43171714333, head `2387dd2`, conclusão `success`, lidos do log do run (`gh run view 43171714333 --log`). Nada aqui vem da máquina do desenvolvedor. Esta seção acrescenta à auditoria do card 030 acima; as seções 1 a 7 continuam valendo para o fluxo da Fase 5 e **os números delas não foram atualizados**._
+
+## Resumo (Fase 6)
+
+| Item | Resultado |
+|---|---|
+| Jest | 198 suítes, 1823 testes, todos passaram (57,6 s) |
+| E2E (Playwright, axe incluído) | 544 testes: **461 passaram, 83 pularam, 0 falharam**; nenhuma repetição ("flaky") no log |
+| Fluxo da Fase 6 (certificação aprovada pelo admin, proposta, conversa nos dois lados, Pix) | **passa** no CI (29,0 s) |
+| Aba oculta por 30 s | **0 requisições** em "Meus fretes" (empresa e motorista), "Propostas da carga" e "Minhas propostas", estes dois também com a conversa aberta |
+| Lighthouse desktop, 21 rotas | **100 / 100 / 100 / 100** |
+| Lighthouse mobile, 21 rotas | Acessibilidade, Boas práticas e SEO **100**; Performance **92 a 99** (aviso, não reprova) |
+| Orçamento de JS inicial (360 KiB) | **respeitado** nas 21 rotas: 345,6 a 348,6 KiB, folga de 11,4 a 14,4 KiB |
+| Job `web` | 32 min 23 s |
+| iPhone / Expo Go, VoiceOver, Dynamic Type, leitor de tela real, zoom 200 % manual | **não verificados** (ver seção 3) |
+
+## 1. Escopo entregue
+
+Fonte: `docs/front/STATUS.md` e `gh pr list --state merged --base front` (data do merge entre parênteses). Todos em `front`.
+
+| Card | PR | Estado |
+|---|---|---|
+| INT (contrato das rotas novas) | #108 | mergeado (04/11) |
+| 036 Minhas propostas no formato real | #122 | mergeado (04/11) |
+| 037 Validação de CPF, CNPJ e placa | #123 | mergeado (04/11) |
+| 038 409 de disponibilidade, 404 de perfil, tetos, `nome` nulo | #121 | mergeado (05/11) |
+| 040 Admin: casca e resumo | #125 | mergeado (05/11) |
+| 026 Minhas propostas (tela) e "Mais" na barra | #124 | mergeado (05/11) |
+| 042 Chat da proposta (empresa) | #127 | mergeado (05/11) |
+| 031 Certificações do motorista | #126 | mergeado (09/11) |
+| 043 Chat da proposta (motorista) | #133 | mergeado (09/11) |
+| 032 Admin aprova certificações | #134 | mergeado (10/11) |
+| 041 Admin: fretes e usuários | #135 | mergeado (10/11) |
+| 035 Mapa sob demanda | #136 | mergeado (10/11) |
+| 047 Chave Pix do motorista | #138 | mergeado (12/11) |
+| 048 Pagamento por Pix da empresa | #139 | mergeado (12/11) |
+| 046 E2E e auditoria da Fase 6 | #140 | mergeado (12/11) |
+
+**Bloqueados pelo Diogo (rota ausente na `main`):** 033 Cancelar carga, 034 Cancelar disponibilidade e 044 Comissão, `proposta_id`, origem e destino em "Meus fretes". Contratos e erros em `docs/front/pedido-ao-diogo.md`; resumo e dúvidas novas em `docs/front/pedido-ao-diogo-2.md`. O 039 (protótipos) foi aprovado pelo Pedro e não tem código. O 045 (roteiro, contas e ensaio) segue aguardando as features e os seeds no Neon.
+
+## 2. Portões no último CI do `front`
+
+### Jest e E2E
+
+| Portão | Resultado |
+|---|---|
+| Jest (`npm test -- --ci --coverage`) | 198 suítes, 1823 testes, 0 falhas, 57,6 s |
+| E2E e axe | 461 passaram, 83 pularam, 0 falharam, 7,1 min (544 testes, projetos `desktop` e `estreito`) |
+
+Os pulados são testes de um só projeto (`test.skip` por projeto: o fluxo e a aba oculta rodam no `desktop`; o reflow, no `estreito`).
+
+Tempos do E2E em `e2e/fluxo-completo.spec.ts`. A linha `FLUXO` do log do CI é do fluxo da Fase 5; o teste da Fase 6 (linha 524) não imprime os reflexos.
+
+| | CI (run 43171714333) |
+|---|---|
+| Fluxo da Fase 5, completo | 50,1 s |
+| Reflexo: proposta chega à empresa (polling real) | 8,5 s |
+| Reflexo: andamento muda na empresa (polling real) | 8,9 s |
+| Reflexo: entrega chega à empresa (polling real) | 7,4 s |
+| Reflexo: frete e pagamento chegam ao motorista (relógio acelerado) | 50 ms e 27 ms |
+| Teste "Fase 6: certificação ... conversa nos dois lados e pagamento por Pix" | 29,0 s (cada reflexo com limite de 15 s por `expect.poll`) |
+
+### Lighthouse (mediana de 3 execuções, 21 rotas)
+
+Acessibilidade, Boas práticas e SEO: **100 em todas as 21 rotas, nos dois formatos**. Desktop: Performance **100 em todas**. Mobile (4G simulado, CPU 4x mais lenta): Performance como abaixo. A nota abaixo de 100 é `warn` (adendo do ADR 0011) e não reprova o PR.
+
+| Rota | Performance mobile |
+|---|---|
+| / | 92 |
+| /cadastro | 99 |
+| /cadastro/empresa | 99 |
+| /entrar | 99 |
+| /cadastro/motorista | 98 |
+| /admin | 99 |
+| /admin/certificacoes | 97 |
+| /admin/fretes | 99 |
+| /admin/usuarios | 96 |
+| /empresa/cargas | 98 |
+| /empresa/fretes | 97 |
+| /empresa/cargas/nova | 96 |
+| /empresa/cargas/detalhe | 97 |
+| /motorista/cargas | 94 |
+| /motorista/disponibilidades | 97 |
+| /motorista/disponibilidades/nova | 98 |
+| /motorista/propostas | 96 |
+| /motorista/fretes | 96 |
+| /motorista/certificacoes | 99 |
+| /motorista/chave-pix | 99 |
+| /nao-existe | 99 |
+
+Em `/`, uma das 3 execuções deu 0,53 (as outras, 0,92 e 0,95); a mediana é 0,92. Não trate uma execução isolada como regressão (ver a variação já registrada na seção 5 da Fase 5).
+
+### Orçamento de JS inicial (`npm run orcamento`, KiB gzip, limite 360 KiB)
+
+| Rota | JS inicial | Folga |
+|---|---|---|
+| /+not-found | 345,6 | 14,4 |
+| /cadastro | 345,9 | 14,1 |
+| /admin/certificacoes | 346,1 | 13,9 |
+| /admin/fretes | 346,1 | 13,9 |
+| /admin | 346,1 | 13,9 |
+| /admin/usuarios | 346,1 | 13,9 |
+| /empresa/cargas | 346,1 | 13,9 |
+| /empresa/fretes | 346,1 | 13,9 |
+| /empresa/cargas/detalhe | 346,2 | 13,8 |
+| /empresa/cargas/nova | 346,2 | 13,8 |
+| / | 346,3 | 13,7 |
+| /cadastro/empresa | 346,7 | 13,3 |
+| /cadastro/motorista | 347,5 | 12,5 |
+| /motorista/cargas | 347,8 | 12,2 |
+| /motorista/certificacoes | 347,8 | 12,2 |
+| /motorista/chave-pix | 347,8 | 12,2 |
+| /motorista/disponibilidades/nova | 347,8 | 12,2 |
+| /motorista/fretes | 347,8 | 12,2 |
+| /motorista/propostas | 347,8 | 12,2 |
+| /motorista/disponibilidades | 348,0 | 12,0 |
+| /entrar | 348,6 | 11,4 |
+
+Outros limites (mesmo log): CSS 0,0 de 15 KiB; fontes (2 woff2) 25,2 de 40 KiB; HTML por rota 8,9 a 10,8 KiB de 40; o maior chunk de rota é `consultas-*.js` (TanStack), com 18,0 KiB de 30; os demais têm 11 KiB ou menos. O pacote inicial passou de 339 a 342 KiB (depois do PR #93, segundo o `STATUS.md`) para 345,6 a 348,6 KiB com as telas da Fase 6; a folga de 11 a 14 KiB comporta uma tela nova pequena, não várias.
+
+### Tempo de cada passo do job `web` (run 43171714333)
+
+| Passo | Tempo |
+|---|---|
+| Set up job, checkout e setup-node | 7 s |
+| `npm ci` | 42 s |
+| Exportar web | 33 s |
+| `npm run orcamento` | 1 s |
+| `npx playwright install --with-deps chromium` | 24 s |
+| E2E e axe | 7 min 7 s |
+| Lighthouse mobile | 11 min 47 s |
+| Lighthouse desktop | 11 min 37 s |
+| Resumo das notas e relatórios | 5 s |
+| **Total do job** | **32 min 23 s** |
+
+O job `qualidade` levou 1 min 51 s (`npm ci` 29 s, lint 10 s, typecheck 4 s, format 4 s, Jest 58 s). O card 046 pede para registrar o tempo do `web` e só mexer no workflow se passar de 35 min: ficou 2 min 37 s abaixo. O `timeout-minutes` do job é 50 (`.github/workflows/front.yml:54`). Os dois Lighthouse somam 23 min 24 s, cerca de 72 % do job.
+
+## 3. Checklist manual WCAG 2.2 AA da Fase 6
+
+**Ninguém fez este checklist à mão nesta rodada.** O que está como verificado foi lido no código ou provado por teste automatizado no CI do run acima; o que depende de aparelho ou de pessoa está como "não verificado".
+
+| Item | Verificado por código e CI | Não verificado |
+|---|---|---|
+| Teclado | Specs por tela usam `page.keyboard` (certificações, admin, chat, "Minhas propostas", chave Pix, mapa, diálogos): foco preso, Esc, retorno do foco. O foco de "Cancelar reenvio" volta a "Reenviar" (`e2e/certificacoes-estados.spec.ts:124`). O foco do painel Pix vai ao resumo ou ao título quando o painel some (`components/molecules/PainelPix.tsx`, usado em `CartaoFreteEmpresa.tsx:230`; passo Pix de `fluxo-completo.spec.ts`) | Percorrer cada tela nova só com Tab, de ponta a ponta, por uma pessoa |
+| Foco visível e não coberto pela barra | `e2e/sessao.spec.ts:178` (WCAG 2.4.11), herdado da Fase 5 | Nas telas novas sob a barra de 4 colunas, só o que o axe e o E2E enxergam |
+| Contraste e `target-size` | axe (`wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa`) nas 21 rotas, tema claro e escuro, 1280 e 320 px (`e2e/a11y.spec.ts`), e nos estados: certificações (vazio, erro da lista, erro do catálogo, reenvio, 409), admin, chat, mapa, Pix | `target-size` sob a barra fixa foi **contornado**, não resolvido (achado 3) |
+| Reflow em 320 px | Rolagem horizontal ≤ 320 px nas 21 rotas (`a11y.spec.ts:29`), mais casos com texto longo sem espaços em certificações do admin, listas do admin, "Minhas propostas" com a conversa aberta e o mapa | **Zoom de 200 % feito no navegador por uma pessoa: não verificado.** A rolagem de `tema.spec.ts:163` (320 × 100) é só uma aproximação |
+| Leitor de tela | Roles e `aria-*` por axe e `getByRole`; anúncios da região viva conferidos no E2E (chat, proposta, pagamento, entrega, Pix) | **VoiceOver, NVDA, JAWS e TalkBack: não verificado.** `Banner role=alert` não anuncia no iOS (achado 4); "Validade" lida duas vezes e a opção "(já aprovada)" selecionável no iOS são pendências **vistas na revisão do código, não confirmadas no aparelho** |
+| Dynamic Type e fonte grande | — | **Dynamic Type 2× não verificado.** Risco conhecido pelo código: rótulos quebram no meio da palavra na barra de 4 colunas e no painel "Mais" (`minWidth` fixo de 236) |
+| iPhone / Expo Go | — | **Não verificado.** O E2E é web (react-native-web); nada foi aberto no aparelho na Fase 6 |
+| Movimento reduzido | `portao.spec.ts`, herdado da Fase 5 | Sem teste específico das telas novas (mapa, painel Pix, conversa) |
+| Erros associados aos campos | Specs de certificações, chave Pix, pagamento e chat (telefone recusado no campo) | — |
+| Privacidade na tela | O passo 3 do fluxo da Fase 6 afirma que nem CPF nem CNH do motorista aparecem na tela do admin (`fluxo-completo.spec.ts:573-590`) | O console do navegador do admin não é inspecionado por esse passo |
+| Navegador | Chromium (Playwright) | Safari, Firefox, Chrome Android |
+| API real | — | Tudo roda contra o mock de `mocks/servidor-http.ts`; Render, Neon e o modo de teste do Pix não foram exercitados |
+
+## 4. Achados da Fase 6 e como foram resolvidos
+
+A coluna "Rastro" aponta o PR ou o código. Nenhum achado abaixo tem issue ou card `fix:` com número em `gh issue list` de 12/11 (só as issues dos cards 026 a 046 e a #1). Onde a tabela diz "card `fix:` a criar/confirmar", o número **não foi confirmado**.
+
+| # | Achado | Estado | Rastro |
+|---|---|---|---|
+| 1 | **Estouro intermitente de 320 px em `/motorista/propostas` (364 px).** Causa: o `Botao` (`Pressable` do react-native-web nasce com `flex-shrink: 0`) com rótulo longo, como "Ver frete de ...", passava da largura do cartão numa linha `flexWrap`. O teste de reflow só esperava o `h1` e media a página vazia, por isso falhava "às vezes". Correção na causa: `maxWidth: '100%'` no `Botao`, quebra de texto no título e na empresa do cartão, e o reflow passou a esperar a rede quieta | corrigido | #140; `components/atoms/Botao.tsx:136-139`; `e2e/a11y.spec.ts:36-38`; `e2e/minhas-propostas.spec.ts` (caso com texto longo e conversa aberta) |
+| 2 | **Texto longo sem espaços no chat** estourava a largura. `overflow-wrap: anywhere` nos balões; reaproveitado em `ListaDeFatos`, no cartão de certificação pendente e em "Minhas propostas" | corrigido | #127 e #140; `lib/quebraDeTexto.ts`; `components/organisms/ConversaDaProposta.tsx:83-88` |
+| 3 | **`target-size` (WCAG 2.5.8) reprova quando um campo ou botão para sob a barra inferior fixa.** Causa: a barra é `position: sticky` sem folga de rolagem no `TemplateTela`. **Contornado, não corrigido:** o bloco "Sua chave Pix" tem `minHeight` (`telas/CorpoChavePixMotorista.tsx:51-59`), a tela de publicar disponibilidade e a fixture da lista foram ajustadas, e os testes de axe em 320 px voltam ao topo (`window.scrollTo(0, 0)`) antes de medir | contornado; card `fix:` a criar/confirmar (a folga de rolagem está em outro PR, número não confirmado) | `e2e/certificacoes-estados.spec.ts:40`; dívida da seção 5 acima |
+| 4 | **`Banner role="alert"` não anuncia no iOS** (achado A1 da auditoria do 040) | **pendente** | `components/molecules/Banner.tsx:68`; só se confirma em VoiceOver |
+| 5 | **Foco do painel Pix se perdia** (caía no `body`) quando o painel some ou expira. Agora vai ao resumo do pagamento ou ao título | corrigido | #140; `PainelPix.tsx`; passo Pix de `fluxo-completo.spec.ts` |
+| 6 | **Pix malformado** (resposta sem código de cópia): anúncio incoerente. Agora o anúncio e o aviso no cartão dizem o que aconteceu; há instrução de cópia no iPhone | corrigido | #140 |
+| 7 | **Trocar o tipo da chave Pix mantinha o erro da chave** (campo e resumo); faltavam testes de `tipo_chave_pix`, 403, 404 e 409 | corrigido | #140 (commit `4a69cc3`) |
+| 8 | **Certificações (031):** a ajuda da validade contradizia o erro noturno ("Pode ser hoje ou depois"); lista vazia depois de "Tentar de novo" sem alvo de foco; estados sem axe | corrigido | #140; `e2e/certificacoes-estados.spec.ts:114` |
+| 9 | **Mapa (035):** falha dos ladrilhos sem aviso; A e B sobrepostos quando origem = destino; mapa geral não fechava com a lista vazia | corrigido | #140 (commit `134ddc9`); ADR 0017 |
+| 10 | **Chat (043) e admin (041):** botão de conversa com o mesmo nome para a mesma empresa e carga (agora leva a data de envio); `maxWidth` sem nome; privacidade das telas admin conferida também por rótulo | corrigido | #140 |
+| 11 | **`GET /certificacoes/pendentes` devolve `cpf` e `cnh` ao admin** (conferido em `origin/main` em 12/11, `backend/src/rotas/certificacoes.ts:93-94`). O app descarta os dois campos e o E2E afirma que não aparecem | contornado no front; o backend ainda envia | `fluxo-completo.spec.ts:573-590`; `pedido-ao-diogo-2.md` (P3) |
+
+## 5. Pendências e dívida técnica restantes
+
+Itens de `docs/front/STATUS.md` que seguem abertos depois do #140, mais o que esta rodada acrescentou.
+
+**Acessibilidade e aparelho (nada disso foi verificado em aparelho)**
+- **Dynamic Type 2× na barra de 4 colunas** e no painel "Mais" (rótulos quebram no meio da palavra, `minWidth` fixo de 236).
+- **`accessibilityHint` do "Mais"** quando a página atual está dentro dele.
+- **Salto h2 → h4 no painel da conversa** (card 043).
+- **VoiceOver lê "Validade" duas vezes** (card 031).
+- **Opção "(já aprovada)" selecionável no iOS** (card 031).
+- **Copiar o Pix no iPhone:** sem `expo-clipboard`, o app só dá a instrução de copiar à mão (card 048).
+- **`Banner role=alert` no iOS** (achado 4).
+- **iPhone / Expo Go, VoiceOver e Dynamic Type** seguem sem sessão no aparelho; é ação do Pedro.
+
+**Layout e privacidade**
+- **Barra sticky sem folga de rolagem** (achado 3): o contorno do `minHeight` do bloco "Sua chave Pix" continua no lugar.
+- **Privacidade do IP no OSM:** o mapa baixa ladrilhos de um servidor do OpenStreetMap, o que expõe o IP do usuário a ele; só carrega depois do clique, e a CSP futura está no ADR 0017.
+- **`cpf` e `cnh` em `GET /certificacoes/pendentes`:** o dado sai do backend, o front só o descarta (achado 11).
+
+**Backend e escopo**
+- **Cards 033, 034 e 044** sem rota na `main`; "Minhas disponibilidades" segue no plano B do aparelho e a **comissão some ao recarregar** (Q3 do PRD).
+- **Pix:** as duas telas (chave e pagamento) estão no ar e esperam o modo de teste do servidor para mostrar o QR. A parte do backend é o PR #137, aberto como rascunho na data desta auditoria. Dúvidas de contrato em `pedido-ao-diogo-2.md`.
+- **Seeds no Neon** (`seed-demo.sql`, `seed-admin.sql`) sem confirmação de que rodaram.
+
+**Testes e CI**
+- **Performance mobile do Lighthouse** entre 92 e 99 nesta rodada (85 a 93 na Fase 5); varia de um run para outro, e o portão só avisa.
+- **Pendências de baixa severidade das ondas 0 e 1** não tocadas: comentários desatualizados em `usePropostasDoMotorista.ts` e `tipos.ts`, título do teste "recusada ou aceita", campo Placa sem `ajuda`, aviso de perfil sem instrução, `refAviso` recriado a cada render.
+- **Lighthouse não roda local:** a fonte das notas é o CI; as portas fixas 4173 e 4010 impedem E2E em paralelo entre worktrees.
+- **Cada falha virou card `fix:`?** O critério de aceite do 046 pede número e link; ver a nota da seção 4.
+
+## 6. Como conferir esta seção
+
+```bash
+gh run view 43171714333 --log    # Jest, E2E, orçamento, Lighthouse e tempos
+gh run view 43171714333 --json jobs --jq '.jobs[].steps[] | [.name,.startedAt,.completedAt] | @tsv'   # tempo por passo
+```
+
+O resumo das notas do Lighthouse sai do passo "Resumo das notas do Lighthouse" (`app/scripts/lhci-resumo.mjs`); o relatório completo está no artefato `relatorios-web` do run.
