@@ -3,7 +3,7 @@ import { ErroApi, MENSAGEM_SESSAO_EXPIRADA } from '@/lib/erros';
 
 import { obterBaseUrl } from './config';
 
-export type MetodoHttp = 'GET' | 'POST' | 'PATCH';
+export type MetodoHttp = 'GET' | 'POST' | 'PATCH' | 'PUT';
 
 export type OpcoesRequisicao = {
   corpo?: unknown;

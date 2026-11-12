@@ -22,6 +22,7 @@ const ITENS: Record<TipoPerfil, readonly ItemNavegacao[]> = {
     { href: '/motorista/propostas', rotulo: 'Minhas propostas', icone: 'file' },
     { href: '/motorista/fretes', rotulo: 'Meus fretes', icone: 'truck' },
     { href: '/motorista/certificacoes', rotulo: 'Certificações', icone: 'award', noMais: true },
+    { href: '/motorista/chave-pix', rotulo: 'Chave Pix', icone: 'banknote', noMais: true },
   ],
   // Itens do admin, na ordem do menu. O item da fila de certificações chama "Aprovações" (decisão de 04/11).
   admin: [

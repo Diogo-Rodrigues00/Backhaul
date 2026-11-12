@@ -1,7 +1,7 @@
 // Cartão de frete do motorista (FreteCard, DS 5.2, card 027): empresa, resumo do frete com o andamento
 // e um único botão com o próximo passo (D-PO-09). Não busca nem envia nada: a tela entrega o frete
 // por props e recebe o pedido de avançar; a confirmação é do `DialogoConfirmacao` da tela.
-import { useId, useRef, type Ref } from 'react';
+import { useId, useRef, type ReactNode, type Ref } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
 import { Botao } from '@/components/atoms/Botao';
@@ -20,6 +20,8 @@ export interface AvisoFrete {
   variante: 'ok' | 'erro';
   titulo?: string;
   texto: string;
+  /** Atalho no fim do aviso (ex.: link "Cadastrar chave Pix" quando a API pede a chave). */
+  acao?: ReactNode;
 }
 
 export interface PropsCartaoFreteMotorista {
@@ -115,6 +117,7 @@ export function CartaoFreteMotorista({
         <Banner
           variante={aviso.variante}
           titulo={aviso.titulo}
+          acao={aviso.acao}
           anunciar={aviso.variante === 'erro'}
         >
           {aviso.texto}

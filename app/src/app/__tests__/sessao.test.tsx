@@ -511,20 +511,21 @@ describe('cabeçalho e abas da área (web)', () => {
     }
   });
 
-  it('motorista: o cabeçalho tem os 5 destinos; a barra tem 3 e o "Mais" com Disponibilidade e Certificações', async () => {
+  it('motorista: o cabeçalho tem os 6 destinos; a barra tem 3 e o "Mais" com Disponibilidade, Certificações e Chave Pix', async () => {
     await gravar(CHAVES.token, 'mock-motorista');
     await abrir('/motorista/cargas');
     await waitFor(() => expect(sonda()).toContain('autenticado'));
 
     // Cabeçalho (acima de 960 px): a lista inteira, na ordem do protótipo.
     const [cabecalho, barra] = navegacoes();
-    expect(within(cabecalho!).getAllByRole('link')).toHaveLength(5);
+    expect(within(cabecalho!).getAllByRole('link')).toHaveLength(6);
     for (const rotulo of [
       'Cargas próximas',
       'Disponibilidade',
       'Minhas propostas',
       'Meus fretes',
       'Certificações',
+      'Chave Pix',
     ]) {
       expect(within(cabecalho!).getByRole('link', { name: rotulo })).toBeOnTheScreen();
     }
@@ -532,12 +533,13 @@ describe('cabeçalho e abas da área (web)', () => {
       within(cabecalho!).getByRole('link', { name: 'Cargas próximas' }).props['aria-current'],
     ).toBe('page');
 
-    // Barra inferior (até 960 px): Disponibilidade e Certificações saem da barra e vão para o "Mais" (fechado: sem link).
+    // Barra inferior (até 960 px): Disponibilidade, Certificações e Chave Pix saem da barra e vão para o "Mais" (fechado: sem link).
     expect(within(barra!).getAllByRole('link')).toHaveLength(3);
     expect(within(barra!).getByRole('link', { name: 'Minhas propostas' })).toBeOnTheScreen();
     expect(within(barra!).getByRole('link', { name: 'Meus fretes' })).toBeOnTheScreen();
     expect(within(barra!).queryByRole('link', { name: 'Disponibilidade' })).toBeNull();
     expect(within(barra!).queryByRole('link', { name: 'Certificações' })).toBeNull();
+    expect(within(barra!).queryByRole('link', { name: 'Chave Pix' })).toBeNull();
     const mais = within(barra!).getByRole('button', { name: 'Mais' }).props;
     expect(mais['aria-expanded'] ?? mais.accessibilityState?.expanded).toBe(false);
   });

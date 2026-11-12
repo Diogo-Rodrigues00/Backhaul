@@ -33,6 +33,9 @@ export const chaves = {
   fretes: {
     meus: () => ['fretes', 'meus'] as const,
   },
+  motorista: {
+    chavePix: () => ['motorista', 'chavePix'] as const,
+  },
   admin: {
     resumo: () => ['admin', 'resumo'] as const,
     fretes: () => ['admin', 'fretes'] as const,

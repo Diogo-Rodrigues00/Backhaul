@@ -26,5 +26,6 @@ export const rotas = [
   { caminho: '/motorista/propostas', perfil: 'motorista' as const },
   { caminho: '/motorista/fretes', perfil: 'motorista' as const },
   { caminho: '/motorista/certificacoes', perfil: 'motorista' as const },
+  { caminho: '/motorista/chave-pix', perfil: 'motorista' as const },
   { caminho: '/nao-existe', perfil: null, naoEncontrada: true },
 ];
