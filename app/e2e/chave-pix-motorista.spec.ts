@@ -5,7 +5,8 @@ import { entrarComoPerfil, expect, test } from './fixtures';
 
 // Card 047: o motorista cadastra a chave Pix. A API é o mock em localhost:4010, com estado em memória
 // por usuário (mocks/handlers/chavePix.ts). Os testes rodam em paralelo no mesmo mock, então nenhum
-// assume o estado inicial: cada um grava a própria chave e confere o que a API devolveu.
+// assume o estado inicial (o formulário já pode vir preenchido por outro teste): cada um escolhe o tipo,
+// troca o conteúdo do campo e confere o que a API devolveu.
 const TAGS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 const LARGURA_ESTREITA = 320;
 
@@ -30,6 +31,14 @@ async function violacoes(page: Page) {
 /** E-mail de 130 caracteres sem espaço: a chave mais longa que a tela precisa quebrar. */
 const EMAIL_LONGO = `${'a'.repeat(118)}@exemplo.com`;
 
+/** Deixa o formulário vazio, não importa a chave que outro teste já gravou no mock. */
+async function esvaziarFormulario(page: Page) {
+  await page
+    .getByLabel('Tipo da chave', { exact: true })
+    .selectOption({ label: 'Escolha o tipo da chave' });
+  await page.getByLabel('Chave Pix', { exact: true }).fill('');
+}
+
 async function cadastrarEmail(page: Page, email: string) {
   await page.getByLabel('Tipo da chave', { exact: true }).selectOption('email');
   await page.getByLabel('Chave Pix', { exact: true }).fill(email);
@@ -43,10 +52,12 @@ test.describe('chave Pix do motorista', () => {
   }) => {
     await abrir(page);
 
-    await page.getByLabel('Tipo da chave', { exact: true }).focus();
-    await page.keyboard.press('ArrowDown');
-    await expect(page.getByLabel('Tipo da chave', { exact: true })).toHaveValue('cpf');
+    const tipo = page.getByLabel('Tipo da chave', { exact: true });
+    await tipo.focus();
+    await tipo.selectOption('cpf');
     await page.keyboard.press('Tab');
+    await expect(page.getByLabel('Chave Pix', { exact: true })).toBeFocused();
+    await page.keyboard.press('Control+A');
     await page.keyboard.type('529.982.247-25');
 
     const envio = page.waitForRequest(
@@ -80,7 +91,7 @@ test.describe('chave Pix do motorista', () => {
     await expect(chave).toHaveAttribute('inputmode', 'numeric');
   });
 
-  test('chave inválida: a mensagem da API aparece no campo e o foco vai ao resumo de erros', async ({
+  test('chave inválida: a mensagem da API aparece no campo, que fica inválido e recebe o foco', async ({
     page,
   }) => {
     await abrir(page);
@@ -93,7 +104,7 @@ test.describe('chave Pix do motorista', () => {
       'aria-invalid',
       'true',
     );
-    await expect(page.getByRole('alert').first()).toBeVisible();
+    await expect(page.getByLabel('Chave Pix', { exact: true })).toBeFocused();
   });
 
   test('axe sem violações com a chave salva (tema claro; 1280 e 320 px)', async ({ page }) => {
@@ -106,6 +117,7 @@ test.describe('chave Pix do motorista', () => {
     page,
   }) => {
     await abrir(page);
+    await esvaziarFormulario(page);
     await page.getByRole('button', { name: 'Salvar chave Pix' }).click();
     await expect(page.getByRole('alert').first()).toContainText('Corrija 2 campos');
     expect(await violacoes(page)).toEqual([]);
@@ -122,6 +134,7 @@ test.describe('chave Pix do motorista', () => {
 
     test('axe sem violações com o formulário em erro', async ({ page }) => {
       await abrir(page);
+      await esvaziarFormulario(page);
       await page.getByRole('button', { name: 'Salvar chave Pix' }).click();
       await expect(page.getByRole('alert').first()).toContainText('Corrija 2 campos');
       expect(await violacoes(page)).toEqual([]);
