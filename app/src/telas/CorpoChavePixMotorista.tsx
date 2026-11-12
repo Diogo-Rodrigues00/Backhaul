@@ -38,6 +38,7 @@ function mensagemDeErro(erro: unknown): string | undefined {
 const BASE_ATUAL = 320;
 const BASE_FORMULARIO = 380;
 const ALTURA_MINIMA = 360;
+const ALTURA_MINIMA_DA_CHAVE = 300;
 
 function criarEstilos({ space }: TemaVisual) {
   return {
@@ -47,7 +48,17 @@ function criarEstilos({ space }: TemaVisual) {
       alignItems: 'flex-start',
       gap: space[6],
     } satisfies ViewStyle,
-    atual: { flexGrow: 1, flexShrink: 1, flexBasis: BASE_ATUAL, minWidth: 0, gap: space[4] },
+    // `minHeight`: no celular o botão "Salvar chave Pix" desce para além da primeira tela, em vez de
+    // cair sob a barra inferior fixa (alvo de toque coberto reprova no axe e no Lighthouse), seja a
+    // chave curta, longa ou ainda inexistente.
+    atual: {
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: BASE_ATUAL,
+      minWidth: 0,
+      minHeight: ALTURA_MINIMA_DA_CHAVE,
+      gap: space[4],
+    },
     formulario: { flexGrow: 1, flexShrink: 1, flexBasis: BASE_FORMULARIO, minWidth: 0 },
     // Mesma altura do esqueleto da casca: carregando e erro não empurram a tela.
     reserva: { minHeight: ALTURA_MINIMA } satisfies ViewStyle,
@@ -111,13 +122,8 @@ export default function CorpoChavePixMotorista() {
     );
   }
 
-  // O formulário vem primeiro: no celular o botão "Salvar chave Pix" fica acima da barra inferior fixa
-  // (um alvo de toque sob a barra reprova no Lighthouse), e ele já vem preenchido com a chave atual.
   return (
     <View style={estilos.grade}>
-      <View style={estilos.formulario}>
-        <FormularioChavePix atual={dados} aoSalvar={aoSalvar} refTitulo={tituloDoFormulario} />
-      </View>
       <View style={estilos.atual}>
         <Titulo nivel={2} ref={tituloDaChave} tabIndex={-1}>
           Sua chave Pix
@@ -128,6 +134,9 @@ export default function CorpoChavePixMotorista() {
           </Banner>
         ) : null}
         <ChaveAtual dados={dados} />
+      </View>
+      <View style={estilos.formulario}>
+        <FormularioChavePix atual={dados} aoSalvar={aoSalvar} refTitulo={tituloDoFormulario} />
       </View>
     </View>
   );
