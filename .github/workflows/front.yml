@@ -47,11 +47,14 @@ jobs:
           # Secret opcional (lista de e-mails de demo separada por vírgula). Vazio = verificação pulada.
           DEMO_EMAILS: ${{ secrets.DEMO_EMAILS }}
 
-  web:
+  # Divisão do antigo job `web` (ADR 0013, adendo de 12/11): o export é feito uma vez (`build`) e
+  # E2E, Lighthouse mobile e Lighthouse desktop rodam em runners diferentes, em paralelo.
+  # Mock (4010) e servidor estático (4173) sobem dentro de cada job, então não há conflito de porta.
+  # Tempos medidos: build ~2 min; Lighthouse ~12 min cada (21 rotas x 3 execuções); E2E ~8 min.
+  build:
     needs: qualidade
     runs-on: ubuntu-latest
-    # O job leva ~23 min (Lighthouse: 3 execuções x 15 rotas x mobile e desktop); 25 não deixava folga.
-    timeout-minutes: 50
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -65,13 +68,130 @@ jobs:
         env:
           EXPO_PUBLIC_API_URL: http://localhost:4010
       - run: npm run orcamento
+      - name: Publicar dist
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-web
+          path: app/dist
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-web
+          path: app/dist
       - run: npx playwright install --with-deps chromium
       - name: E2E e axe
         run: npm run e2e
+      - name: Relatórios do E2E
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: relatorios-e2e
+          path: |
+            app/playwright-report
+            app/test-results
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+
+  lighthouse-mobile:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-web
+          path: app/dist
       - name: Lighthouse mobile
         run: npm run lhci:mobile
+      - name: Relatórios do Lighthouse mobile
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: relatorios-lighthouse-mobile
+          path: app/.lighthouseci/mobile
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+
+  lighthouse-desktop:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-web
+          path: app/dist
       - name: Lighthouse desktop
         run: npm run lhci:desktop
+      - name: Relatórios do Lighthouse desktop
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: relatorios-lighthouse-desktop
+          path: app/.lighthouseci/desktop
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Portão único: mantém o nome `web` (check obrigatório da proteção de `front`). Roda sempre
+  # (`always()`), consolida o resumo e os relatórios e FALHA se qualquer job anterior não terminou
+  # em `success` (falha, cancelado ou pulado). Pular conta como falha de propósito: um check
+  # obrigatório "pulado" seria aceito pelo GitHub.
+  web:
+    needs: [qualidade, build, e2e, lighthouse-mobile, lighthouse-desktop]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+      - name: Baixar relatórios
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          pattern: relatorios-*
+          path: app/relatorios-baixados
+      - name: Consolidar relatórios
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p .lighthouseci playwright-report test-results
+          [ -d relatorios-baixados/relatorios-lighthouse-mobile ] && cp -r relatorios-baixados/relatorios-lighthouse-mobile .lighthouseci/mobile || true
+          [ -d relatorios-baixados/relatorios-lighthouse-desktop ] && cp -r relatorios-baixados/relatorios-lighthouse-desktop .lighthouseci/desktop || true
+          [ -d relatorios-baixados/relatorios-e2e ] && cp -r relatorios-baixados/relatorios-e2e/. . || true
       - name: Resumo das notas do Lighthouse
         if: ${{ !cancelled() }}
         run: node scripts/lhci-resumo.mjs mobile desktop
@@ -87,3 +207,15 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7
+      - name: Falhar se algum portão não passou
+        if: ${{ always() }}
+        env:
+          RESULTADOS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Resultados (qualidade build e2e lighthouse-mobile lighthouse-desktop): $RESULTADOS"
+          for r in $RESULTADOS; do
+            if [ "$r" != "success" ]; then
+              echo "::error::Algum portão não terminou em success."
+              exit 1
+            fi
+          done

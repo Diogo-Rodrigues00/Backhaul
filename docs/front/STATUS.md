@@ -79,6 +79,9 @@ Site publicado: https://backhaul-front.vercel.app (último deploy de produção 
 ## Limite de JS inicial
 360 KiB (368.640 bytes), medido em bytes, por rota (adendo 3 do ADR 0011). **Após o PR #93 (TanStack só nas áreas logadas, adendo ao ADR 0004):** log do CI de 339,1 a 342,1 KiB por rota (antes: 355,0 a 357,9); `/entrar` 342,1 (antes 357,9). O TanStack ficou num chunk próprio de 18,0 KiB (`consultas-*.js`), aberto por `import()` junto com o corpo de cada tela de dados. Telas pesadas usam casca na rota + corpo em `src/telas` via `React.lazy` depois da hidratação (ADR 0003). Pendente da meta do adendo 3: alias mais enxuto do TanStack (opcional, o ganho já cumpriu ≤ 345 KiB).
 
+## CI
+- Em 12/11 o job `web` foi dividido (ADR 0013, adendo de 12/11): `qualidade` → `build` → `e2e` + `lighthouse-mobile` + `lighthouse-desktop` em paralelo → `web` (portão que falha se qualquer um deles não passar; o nome `web` continua o mesmo). Antes: ~35 min só no `web` (~38 min no total). Depois: TEMPO_NOVO. Os relatórios seguem em `relatorios-web` e por job.
+
 ## Dívida técnica conhecida (detalhes em `auditoria-final.md`)
 - `BarraAbas` sticky sobrepõe alvos da primeira dobra no mobile (`target-size`); contornado na tela de publicar disponibilidade e na fixture da lista. Precisa de folga de rolagem sob a barra no template.
 - Comissão some ao recarregar a página (`GET /fretes/meus` não a devolve); aparece só logo após o pagamento.
