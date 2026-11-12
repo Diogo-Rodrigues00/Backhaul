@@ -284,3 +284,59 @@ for (const esquema of ['light', 'dark'] as const) {
     });
   });
 }
+
+// Card 046: reflow em 320 px com texto longo e sem espaços, e com a conversa aberta. O estouro de 364 px
+// que apareceu de vez em quando era o botão "Ver frete de <carga>" (flex-shrink 0 do Pressable numa
+// linha com `flexWrap`); só aparecia depois que a lista chegava, por isso parecia intermitente (o teste
+// de a11y.spec.ts media antes ou depois dela). Aqui o nome da carga, a empresa e a mensagem são longos
+// e a lista é esperada antes de medir.
+test.describe('reflow em 320 px com texto longo e a conversa aberta', () => {
+  const CORS = { 'access-control-allow-origin': '*' };
+  const LONGO = 'ExtraordinariamenteLongoSemEspacosParaForcarQuebraDeLinhaNoCartaoDeProposta';
+
+  test('sem rolagem horizontal com a lista e a conversa abertas', async ({ page }, info) => {
+    test.skip(info.project.name !== 'estreito', 'só vale na largura de 320 px');
+    await page.route('**/propostas/minhas', async (rota) => {
+      if (rota.request().method() === 'OPTIONS') return rota.fallback();
+      const resposta = await rota.fetch();
+      const corpo = (await resposta.json()) as { propostas?: Record<string, unknown>[] };
+      const propostas = (corpo.propostas ?? []).map((p) => ({
+        ...p,
+        tipo_carga: `${LONGO} ${String(p.tipo_carga)}`,
+        empresa: `${LONGO}${String(p.empresa)}`,
+      }));
+      return rota.fulfill({ status: 200, headers: CORS, json: { ...corpo, propostas } });
+    });
+    await page.route('**/propostas/*/mensagens', async (rota) => {
+      if (rota.request().method() === 'OPTIONS') return rota.fallback();
+      return rota.fulfill({
+        status: 200,
+        headers: CORS,
+        json: {
+          mensagens: [
+            {
+              id: 'eeeeeeee-0000-4000-8000-0000000000f1',
+              remetente_id: '11111111-1111-4111-8111-111111111111',
+              texto: `${LONGO}${LONGO}${LONGO}`,
+              criado_em: new Date().toISOString(),
+            },
+          ],
+        },
+      });
+    });
+    await abrirMinhasPropostas(page);
+    const lista = page.getByRole('list', { name: 'Propostas' });
+    await expect(lista.getByRole('article')).toHaveCount(8);
+    await expect(page.getByRole('link', { name: /Ver frete de/ })).toBeVisible();
+
+    const largura = () => page.evaluate(() => document.documentElement.scrollWidth);
+    expect(await largura()).toBeLessThanOrEqual(320);
+
+    await page
+      .getByRole('button', { name: /^Abrir conversa com / })
+      .first()
+      .click();
+    await expect(page.getByText(`${LONGO}${LONGO}${LONGO}`)).toBeVisible();
+    expect(await largura()).toBeLessThanOrEqual(320);
+  });
+});
