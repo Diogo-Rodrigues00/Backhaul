@@ -19,7 +19,7 @@ Workflow único `.github/workflows/front.yml` (raiz do repositório), `defaults.
 - Artefatos: relatório do Playwright e `.lighthouseci/` via `actions/upload-artifact` (7 dias).
 - `pull_request_template.md` (raiz `.github/`): card, critérios marcados, checklist manual WCAG, checklist iPhone (VoiceOver, Dynamic Type), o que não foi verificado.
 - **Proteção da branch `front`:** exigir os checks `qualidade` e `web` e PR antes do merge. Configuração feita pelo Pedro (o devops entrega o comando `gh api` pronto; agentes não mexem em configuração do repositório).
-- Meta de duração: ≤ 15 min por PR.
+- Meta de duração: ≤ 15 min por PR (superada com a cobertura crescente; ver o adendo de 12/11).
 - Vercel faz o preview por PR pela integração com o GitHub (ADR 0014), fora do Actions.
 
 ## Alternativas
@@ -41,3 +41,9 @@ Workflow único `.github/workflows/front.yml` (raiz do repositório), `defaults.
 
 ## Adendo — 2026-11-04 (Fase 6.0)
 - **Lighthouse desktop:** por decisão do Pedro na Fase 6.0 (`decisoes.md`), a categoria Performance desktop também passa a `warn` em `lighthouserc.desktop.cjs`, como no mobile: a nota aparece no log e no resumo do job e fica registrada no PR. Acessibilidade, Boas práticas e SEO seguem 100 (`error`) em mobile e desktop. A mudança de configuração entra no card 038; até lá, o portão antigo continua valendo.
+
+## Adendo — 2026-11-12 (divisão do job `web`)
+- **Motivo:** com 21 rotas, o job `web` levava ~35 min em série (Lighthouse mobile ~12,4 min, desktop ~12,2 min, E2E ~8 min, export/instalação ~2 min; run 43162800707), e o `timeout-minutes` tinha subido de 25 para 35 e depois 50.
+- **Estrutura:** `qualidade` → `build` (npm ci, `export:ci`, `orcamento`; publica `app/dist` como artefato `dist-web`) → em paralelo `e2e`, `lighthouse-mobile` e `lighthouse-desktop` (cada um com `npm ci`, baixa o `dist-web` e sobe o próprio mock em 4010 e o servidor em 4173; runners diferentes, sem conflito de porta) → `web`. Timeouts: build 15, e2e 25, lighthouse 25, web 10 min.
+- **O job `web` continua existindo** (é o check obrigatório da proteção de `front`): `needs` de todos os jobs, `if: always()`, e o último passo falha se qualquer resultado for diferente de `success` (falha, cancelado ou pulado). Também gera o "Resumo das notas do Lighthouse" e o artefato `relatorios-web` (Playwright + `.lighthouseci`). Os artefatos por job (`relatorios-e2e`, `relatorios-lighthouse-mobile`, `relatorios-lighthouse-desktop`) também ficam disponíveis. Os portões são os mesmos; só mudou onde rodam.
+- **Tempo (run 43196217283):** ~19 min no total (era ~38): qualidade 3,2 · build 1,4 · e2e 7,5 · lighthouse-desktop 13,7 · lighthouse-mobile 14,0 (paralelos) · web 0,2. Conferido: E2E 461 passam e 83 pulados, Lighthouse em 21 URLs por dispositivo, orçamento no `build`.

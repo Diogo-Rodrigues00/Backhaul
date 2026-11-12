@@ -29,6 +29,9 @@
 | [`arquitetura.md`](arquitetura.md) | Árvore de pastas, rota → tela → card, fluxo de dados, rotas da API usadas, tabela design system → código |
 | [`mapa-do-codigo.md`](mapa-do-codigo.md) | Perguntas prováveis da banca e o arquivo/linha de cada resposta |
 | [`relatorio-api-inicial.md`](relatorio-api-inicial.md) | Contrato × backend em 20/10, divergências e propostas de rotas novas (4a, 4b, 4c, 4d) |
+| [`auditoria-final.md`](auditoria-final.md) | Auditoria do MVP (card 030) e, no fim, da Fase 6 (card 046): portões do CI, Lighthouse, orçamento de JS, checklist WCAG, achados e dívida |
+| [`pedido-ao-diogo.md`](pedido-ao-diogo.md) | O que o front precisa do backend: rotas, regras, robustez, privacidade e operação (4/11) |
+| [`pedido-ao-diogo-2.md`](pedido-ao-diogo-2.md) | Segundo pedido (12/11): dúvidas de contrato do Pix, rotas ainda ausentes na `main`, robustez e operação |
 | [`design-system.md`](design-system.md) | Tokens, componentes, estados e regras visuais |
 | [`identidade/`](identidade/) | Logotipos e símbolo em SVG |
 | [`prototipos/index.html`](prototipos/index.html) | Cópia local do protótipo; versão aprovada: <https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP> |
