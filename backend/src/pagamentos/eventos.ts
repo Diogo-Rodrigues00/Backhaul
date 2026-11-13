@@ -2,7 +2,7 @@ import type { PoolClient } from "pg";
 import type { EventoPagamento } from "./tipos";
 
 // ============================================================================
-//  PARA O DIOGO ESCREVER
+//  IDEMPOTÊNCIA DO WEBHOOK
 // ============================================================================
 // O Asaas pode mandar o MESMO webhook mais de uma vez (reenvio quando a nossa API
 // demora ou responde erro). Sem proteção, o mesmo "pagamento recebido" seria
@@ -25,10 +25,18 @@ import type { EventoPagamento } from "./tipos";
 //  - O teste está em eventos.test.ts: rode `npm test` até ele passar.
 // ============================================================================
 export async function registrarEvento(
-  _client: PoolClient,
-  _gateway: string,
-  _evento: EventoPagamento,
-  _payload: unknown,
+  client: PoolClient,
+  gateway: string,
+  evento: EventoPagamento,
+  payload: unknown,
 ): Promise<boolean> {
-  throw new Error("registrarEvento ainda não foi implementado (tarefa do Diogo)");
+  // Um único comando: o banco decide se o evento é novo. Se (gateway, evento_id) já
+  // existe, o ON CONFLICT descarta o INSERT sem erro e rowCount fica 0.
+  const resultado = await client.query(
+    `INSERT INTO eventos_pagamento (gateway, evento_id, tipo, payload)
+     VALUES ($1, $2, $3, $4::jsonb)
+     ON CONFLICT (gateway, evento_id) DO NOTHING`,
+    [gateway, evento.eventoId, evento.tipo, JSON.stringify(payload)],
+  );
+  return (resultado.rowCount ?? 0) > 0;
 }
