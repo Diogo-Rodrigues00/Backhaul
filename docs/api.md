@@ -104,7 +104,7 @@ Envia uma certificação para o admin aprovar.
 
 ### GET /certificacoes/pendentes 🔒 *(só admin)*
 Fila de certificações aguardando aprovação, mais antigas primeiro.
-- **200:** `{ "certificacoes": [ { "id": "uuid", "certificacao": "MOPP - Classe 3 Inflamáveis", "numero_certificado": "123456", "validade": "2027-05-01", "criado_em": "...", "motorista": { "id", "nome_completo", "cpf", "cnh", "veiculo_placa" } } ] }`
+- **200:** `{ "certificacoes": [ { "id": "uuid", "certificacao": "MOPP - Classe 3 Inflamáveis", "numero_certificado": "123456", "validade": "2027-05-01", "criado_em": "...", "motorista": { "id", "nome_completo", "veiculo_placa" } } ] }`. CPF e CNH **não** são devolvidos (minimização de dados).
 - **401** · **403** usuário não é admin.
 
 ### POST /certificacoes/pendentes/:id/responder 🔒 *(só admin)*
