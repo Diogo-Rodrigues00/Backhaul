@@ -12,6 +12,10 @@ export function criarProvedorSimulado(): ProvedorPagamento {
       return { cobrancaId: `sim_${randomUUID()}`, copiaECola: "", qrCodeBase64: "", expiraEm: null };
     },
 
+    async consultarCobrancaPix(cobrancaId: string): Promise<CobrancaPixCriada> {
+      return { cobrancaId, copiaECola: "", qrCodeBase64: "", expiraEm: null };
+    },
+
     async solicitarRepassePix(): Promise<RepasseSolicitado> {
       // No simulado o dinheiro "chega" na hora: não há webhook para esperar.
       return { repasseId: `sim_${randomUUID()}`, status: "concluido" };

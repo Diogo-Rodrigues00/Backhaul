@@ -25,8 +25,9 @@ const GATEWAY_REAL = provedor.nome !== "simulado";
 // responde depois do COMMIT.
 type Resposta = { status: number; corpo: object };
 
-function erro(status: number, mensagem: string): Resposta {
-  return { status, corpo: { erro: mensagem } };
+// `codigo` é um texto ESTÁVEL para o front reconhecer o erro sem depender da frase.
+function erro(status: number, mensagem: string, codigo?: string): Resposta {
+  return { status, corpo: codigo ? { erro: mensagem, codigo } : { erro: mensagem } };
 }
 
 // Se o gateway falhar, a transação já voltou atrás; aqui viramos 502 (o problema está no
@@ -37,7 +38,7 @@ async function comTratamentoDeGateway(executar: () => Promise<Resposta>): Promis
   } catch (e) {
     if (e instanceof ErroGateway) {
       console.error(e.message);
-      return erro(502, "serviço de pagamento indisponível, tente novamente");
+      return erro(502, "serviço de pagamento indisponível, tente novamente", "gateway_indisponivel");
     }
     throw e;
   }
@@ -86,6 +87,8 @@ rotasFretes.get("/meus", exigirAutenticacao, exigirTipo("motorista", "empresa"),
   }
   const { rows } = await pool.query(
     `SELECT ${COLUNAS_FRETE},
+            CASE WHEN t.status_pagamento = 'pendente' THEN t.pix_copia_cola END AS pix_copia_cola,
+            CASE WHEN t.status_pagamento = 'pendente' THEN t.expira_em END AS pix_expira_em,
             json_build_object('id', m.id, 'nome_completo', m.nome_completo,
                               'veiculo_tipo', m.veiculo_tipo, 'veiculo_placa', m.veiculo_placa) AS motorista
      ${FROM_FRETES}
@@ -138,17 +141,17 @@ rotasFretes.patch("/:id/status", exigirAutenticacao, exigirTipo("motorista"), as
       );
       // Com pagamento real, o frete só sai da origem com o dinheiro JÁ retido pela plataforma.
       if (novo === "em_transito" && t?.status_pagamento !== "retido") {
-        return erro(409, "aguardando a confirmação do pagamento da empresa");
+        return erro(409, "aguardando a confirmação do pagamento da empresa", "pagamento_nao_confirmado");
       }
       if (novo === "entregue") {
-        if (t?.status_pagamento !== "retido") return erro(409, "o pagamento deste frete não está retido");
+        if (t?.status_pagamento !== "retido") return erro(409, "o pagamento deste frete não está retido", "pagamento_nao_retido");
         // Já pediu o repasse antes (ex.: tentativa anterior) e ele não falhou: não pede de novo.
         if (!t.repasse_referencia) {
           const { rows: [m] } = await client.query(
             "SELECT tipo_chave_pix, chave_pix FROM motoristas WHERE id = $1",
             [motoristaId],
           );
-          if (!m?.chave_pix) return erro(409, "cadastre sua chave Pix antes de concluir a entrega");
+          if (!m?.chave_pix) return erro(409, "cadastre sua chave Pix antes de concluir a entrega", "chave_pix_ausente");
           // Pede o repasse ao gateway DENTRO da transação: se o gateway recusar, o frete
           // continua em_transito e o motorista pode tentar de novo.
           const repasse = await provedor.solicitarRepassePix({
@@ -234,14 +237,35 @@ rotasFretes.post("/:id/pagamento", exigirAutenticacao, exigirTipo("empresa"), as
 
     // Com o frete travado, um segundo pagamento simultâneo espera aqui e, quando passa,
     // já enxerga a transação do primeiro. O UNIQUE de transacoes.frete_id é a última garantia.
-    const jaPago = await client.query("SELECT 1 FROM transacoes WHERE frete_id = $1", [frete.id]);
-    if ((jaPago.rowCount ?? 0) > 0) return erro(409, "frete já foi pago");
+    const { rows: [existente] } = await client.query(
+      "SELECT status_pagamento, gateway, gateway_referencia FROM transacoes WHERE frete_id = $1",
+      [frete.id],
+    );
+    if (existente) {
+      // Pedir de novo enquanto o Pix está pendente devolve a MESMA cobrança (idempotente):
+      // é o que a empresa precisa se recarregar a página e perder o QR Code.
+      if (GATEWAY_REAL && existente.status_pagamento === "pendente" && existente.gateway_referencia) {
+        const qr = await provedor.consultarCobrancaPix(existente.gateway_referencia);
+        const { rows: [t] } = await client.query(
+          `SELECT id, frete_id, valor_frete::float8 AS valor_frete,
+                  percentual_comissao::float8 AS percentual_comissao,
+                  valor_comissao::float8 AS valor_comissao, status_pagamento, criado_em
+             FROM transacoes WHERE frete_id = $1`,
+          [frete.id],
+        );
+        return {
+          status: 200,
+          corpo: { transacao: t, pix: { copia_e_cola: qr.copiaECola, qr_code_base64: qr.qrCodeBase64, expira_em: qr.expiraEm } },
+        };
+      }
+      return erro(409, "frete já foi pago", "frete_ja_pago");
+    }
 
     const comissao = centavosParaTexto(calcularComissaoCentavos(textoParaCentavos(frete.valor_final)));
 
     if (GATEWAY_REAL) {
       // Pagar um frete já entregue não tem como "reter e repassar": fica fora do fluxo real.
-      if (frete.status_entrega === "entregue") return erro(409, "frete já entregue não pode ser pago");
+      if (frete.status_entrega === "entregue") return erro(409, "frete já entregue não pode ser pago", "frete_entregue");
 
       const { rows: [empresa] } = await client.query(
         "SELECT razao_social, cnpj FROM empresas WHERE id = $1",
