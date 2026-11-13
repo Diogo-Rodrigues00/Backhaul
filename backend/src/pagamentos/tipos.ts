@@ -38,6 +38,8 @@ export interface RepasseSolicitado {
 export interface ProvedorPagamento {
   readonly nome: "simulado" | "asaas";
   criarCobrancaPix(pedido: PedidoCobrancaPix): Promise<CobrancaPixCriada>;
+  // Busca de novo o QR Code de uma cobrança que já existe (a empresa recarregou a página).
+  consultarCobrancaPix(cobrancaId: string): Promise<CobrancaPixCriada>;
   solicitarRepassePix(pedido: PedidoRepassePix): Promise<RepasseSolicitado>;
 }
 

@@ -144,6 +144,16 @@ export function criarProvedorAsaas(config: ConfigAsaas): ProvedorPagamento {
       };
     },
 
+    async consultarCobrancaPix(cobrancaId: string): Promise<CobrancaPixCriada> {
+      const qr = await chamar("GET", `/payments/${cobrancaId}/pixQrCode`);
+      return {
+        cobrancaId,
+        copiaECola: texto(qr.payload) ?? "",
+        qrCodeBase64: texto(qr.encodedImage) ?? "",
+        expiraEm: texto(qr.expirationDate),
+      };
+    },
+
     async solicitarRepassePix(pedido: PedidoRepassePix): Promise<RepasseSolicitado> {
       const t = await chamar("POST", "/transfers", {
         value: centavosParaReais(pedido.valorCentavos),

@@ -297,7 +297,7 @@ Fretes do usuário logado, **mais recentes primeiro**. Para o motorista: os fret
 } ] }
 ```
 - **200 (empresa):** mesmos campos, mas no lugar de `empresa` vem
-  `"motorista": { "id": "uuid", "nome_completo": "João da Silva", "veiculo_tipo": "carreta", "veiculo_placa": "ABC1D23" }`.
+  `"motorista": { "id": "uuid", "nome_completo": "João da Silva", "veiculo_tipo": "carreta", "veiculo_placa": "ABC1D23" }`, e mais dois campos: `pix_copia_cola` e `pix_expira_em`, preenchidos **só enquanto `status_pagamento` for `pendente`** (modo de teste com gateway) e `null` nos demais casos. Para o QR Code em imagem, chame de novo `POST /fretes/:id/pagamento` (idempotente enquanto pendente).
 - `coleta_em` / `entrega_em` ficam `null` até o frete ir para `em_transito` / `entregue`. `status_pagamento` é `null` enquanto a empresa não pagou. Lista vazia: `{ "fretes": [] }`.
 - **401** · **403** usuário admin · **404** usuário sem perfil de motorista/empresa.
 
@@ -320,8 +320,20 @@ Respostas:
 - **401** · **403** usuário não é motorista · **404** frete não existe **ou é de outro motorista** (mesma resposta)
 - **409** transição não permitida: `{ "erro": "não é possível mudar o frete de aceito para entregue" }`
 
+### POST /webhooks/asaas *(chamado pelo Asaas, não pelo app)*
+Recebe os avisos do gateway. Exige o header `asaas-access-token` igual a `ASAAS_WEBHOOK_TOKEN`. **Idempotente**: o mesmo evento (`id`) enviado duas vezes é aplicado uma só (tabela `eventos_pagamento`).
+- **200** `{ "resultado": "aplicado" | "ignorado" | "duplicado" }` (evento que não usamos também responde 200, para o Asaas não reenviar).
+- **401** token inválido · **503** webhook não configurado, ou repasse ainda não encontrado (o Asaas reenvia).
+- Eventos tratados: `PAYMENT_RECEIVED`/`PAYMENT_CONFIRMED` (pendente → retido), `TRANSFER_DONE` (retido → liberado), `TRANSFER_FAILED`/`TRANSFER_CANCELLED` (continua retido; permite novo pedido de repasse).
+
 ### POST /fretes/:id/pagamento 🔒 *(só a empresa dona do frete)*
-Pagamento **simulado** (não há gateway): registra a transação com a comissão da plataforma de **5%**. Sem corpo.
+Registra a transação com a comissão da plataforma de **5%**. Sem corpo. O comportamento depende de `PAGAMENTOS_MODO` no servidor:
+
+- **`simulado` (padrão):** não há gateway; a transação nasce `retido` (descrito abaixo). É o modo da demonstração.
+- **`sandbox`:** gera uma cobrança Pix no Asaas (ambiente de teste). A transação nasce **`pendente`** e a resposta traz também `pix`: `{ "copia_e_cola", "qr_code_base64", "expira_em" }`. Quando a empresa paga o Pix, o webhook muda para `retido`. Neste modo: frete `entregue` não pode ser pago (**409**); o motorista só inicia o transporte (`em_transito`) com o pagamento `retido` (**409** "aguardando a confirmação do pagamento da empresa"); e ao entregar, o repasse Pix ao motorista é solicitado ao gateway e o pagamento vira `liberado` só quando o webhook `TRANSFER_DONE` chega (**409** "cadastre sua chave Pix antes de concluir a entrega" se faltar a chave). Falha do gateway: **502**.
+  - **Idempotente enquanto `pendente`:** chamar o `POST` de novo devolve **200** com a **mesma** cobrança (`transacao` + `pix`), com o QR Code buscado outra vez. É assim que a empresa recupera o Pix ao recarregar a página. Se o frete já foi pago, **409**.
+  - **Pix não expira na prática durante a demo:** o QR do Asaas vale cerca de 1 ano (`expira_em`), e a transação continua `pendente` até o pagamento.
+  - **Erros com `codigo` estável** (o front deve usar o `codigo`, não a frase): `gateway_indisponivel` (502), `pagamento_nao_confirmado` (409, iniciar transporte sem pagamento retido), `pagamento_nao_retido` (409, entregar sem pagamento retido), `chave_pix_ausente` (409, motorista sem chave Pix ao entregar), `frete_entregue` (409, pagar frete já entregue no modo de teste), `frete_ja_pago` (409). Formato: `{ "erro": "texto", "codigo": "chave_pix_ausente" }`.
 
 - O valor fica **`retido`** pela plataforma até a entrega (o motorista sabe que o dinheiro existe, a empresa só o vê repassado quando a carga chega). Quando o frete vira `entregue`, passa para **`liberado`**.
 - Se a empresa pagar um frete que **já está** `entregue`, a transação já nasce `liberado`.
