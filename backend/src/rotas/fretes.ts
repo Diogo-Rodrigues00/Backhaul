@@ -165,6 +165,15 @@ rotasFretes.patch("/:id/status", exigirAutenticacao, exigirTipo("motorista"), as
             "UPDATE transacoes SET repasse_referencia = $2, atualizado_em = now() WHERE id = $1",
             [t.id, repasse.repasseId],
           );
+          // Repasse que já nasce concluído (modo PAGAMENTOS_REPASSE=simulado) não tem webhook
+          // para esperar: libera aqui mesmo.
+          if (repasse.status === "concluido") {
+            await client.query(
+              `UPDATE transacoes SET status_pagamento = 'liberado', repassado_em = now(), atualizado_em = now()
+                WHERE id = $1`,
+              [t.id],
+            );
+          }
         }
       }
     }
