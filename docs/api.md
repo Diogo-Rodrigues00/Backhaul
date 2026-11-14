@@ -393,6 +393,15 @@ Usuários cadastrados (até 200), mais recentes primeiro. Nunca traz senha, CPF 
 - **200:** `{ "usuarios": [ { "id", "email", "tipo", "ativo", "criado_em", "nome" } ] }`
 - **401** · **403**.
 
+### PATCH /admin/usuarios/:id/ativo 🔒 *(só admin)*
+Desativa ou reativa uma conta. **Não apaga**: fretes e transações precisam ficar guardados (histórico do dinheiro).
+Corpo: `{ "ativo": false }` ou `{ "ativo": true }`
+- **200:** `{ "usuario": { "id": "uuid", "email": "...", "tipo": "empresa", "ativo": false } }`
+- Ao desativar, as cargas/disponibilidades **abertas** da conta são canceladas e as propostas pendentes ligadas a elas viram `recusada`. Fretes em andamento não mudam.
+- Conta desativada não faz login e qualquer token dela passa a receber **401** `{ "erro": "conta desativada ou inexistente", "codigo": "conta_desativada" }` na hora (a API confere `ativo` a cada chamada).
+- A ação fica em `logs_auditoria` (`usuario_desativado` / `usuario_reativado`).
+- **400** id ou `ativo` inválidos · **401** · **403** não é admin · **404** usuário não existe · **409** admin tentando desativar a si mesmo.
+
 ### GET /motorista/chave-pix 🔒 *(só motorista)*
 Chave Pix do motorista logado (para onde o frete será repassado na entrega).
 - **200:** `{ "chave_pix": "52998224725", "tipo_chave_pix": "cpf" }`. Sem chave cadastrada: os dois campos vêm `null`.
