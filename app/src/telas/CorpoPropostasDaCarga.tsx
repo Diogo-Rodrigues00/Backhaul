@@ -1,10 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View, type ViewStyle } from 'react-native';
+import { View, type Text, type ViewStyle } from 'react-native';
 
-import { useMinhasCargas } from '@/api/cargas.hooks';
+import { useCancelarCarga, useMinhasCargas } from '@/api/cargas.hooks';
 import { usePropostasDaCarga, useResponderProposta } from '@/api/propostas.hooks';
 import type { AcaoResposta } from '@/api/tipos';
+import { Botao } from '@/components/atoms/Botao';
 import { Link } from '@/components/atoms/Link';
 import { Titulo } from '@/components/atoms/Titulo';
 import { Banner } from '@/components/molecules/Banner';
@@ -46,6 +47,7 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
     } satisfies ViewStyle,
     lista: { gap: space[4] } satisfies ViewStyle,
     secao: { gap: space[3] } satisfies ViewStyle,
+    acoes: { alignItems: 'flex-start' } satisfies ViewStyle,
   } as const;
 }
 
@@ -97,6 +99,7 @@ export default function CorpoPropostasDaCarga() {
   });
   const cargas = useMinhasCargas({ habilitado });
   const responder = useResponderProposta(cargaId ?? '');
+  const cancelar = useCancelarCarga(cargaId ?? '');
   const { refetch: recarregarPropostas } = propostas;
   const { refetch: recarregarCargas } = cargas;
 
@@ -142,6 +145,19 @@ export default function CorpoPropostasDaCarga() {
     if (freteCriado) retornoDoFoco.current = refBanner.current;
   }, [freteCriado]);
 
+  // Cancelar carga (card 033, MVP-21): diálogo próprio, com o foco inicial em "Voltar". Depois do
+  // cancelamento o botão some, então o foco vai ao aviso "Carga cancelada" (mesmo padrão do frete).
+  const [cancelarAberto, setCancelarAberto] = useState(false);
+  const [erroDoCancelamento, setErroDoCancelamento] = useState<string | undefined>();
+  const [cancelada, setCancelada] = useState(false);
+  const refBotaoCancelar = useRef<View>(null);
+  const refTituloDaCarga = useRef<Text>(null);
+  const retornoDoCancelamento = useRef<unknown>(null);
+
+  useEffect(() => {
+    if (cancelada) retornoDoCancelamento.current = refTituloDaCarga.current;
+  }, [cancelada]);
+
   const abrirDialogo = (
     proposta: { id: string; valor_proposto: NumeroEntrada; motorista: { nome_completo: string } },
     acao: AcaoResposta,
@@ -182,6 +198,37 @@ export default function CorpoPropostasDaCarga() {
       retornoDoFoco.current = cartoes.current.get(pedido.propostaId) ?? null;
       anunciar(`Proposta de ${pedido.motorista} recusada`);
     }
+  };
+
+  const abrirCancelamento = () => {
+    retornoDoCancelamento.current = refBotaoCancelar.current;
+    setErroDoCancelamento(undefined);
+    setAviso(null);
+    setCancelarAberto(true);
+  };
+
+  const confirmarCancelamento = async () => {
+    try {
+      await cancelar.mutateAsync();
+    } catch (erro) {
+      if (eStatus(erro, 404)) {
+        // Não existe ou é de outra empresa: a lista recarregada cai em "Carga não encontrada" (021).
+        setCancelarAberto(false);
+        void atualizar();
+      } else if (eStatus(erro, 409)) {
+        // Já fechada, cancelada ou vencida: a API diz o motivo e a carga e as propostas são recarregadas.
+        setAviso(mensagemDoErro(erro));
+        setCancelarAberto(false);
+        void atualizar();
+      } else {
+        // 401 já encerra a sessão no cliente; falha de rede ou 500 mostram o texto padrão.
+        setErroDoCancelamento(mensagemDoErro(erro));
+      }
+      return;
+    }
+    setCancelarAberto(false);
+    setCancelada(true);
+    anunciar('Carga cancelada');
   };
 
   const naoEncontrada =
@@ -244,8 +291,27 @@ export default function CorpoPropostasDaCarga() {
                 certificacao={carga.certificacao_exigida}
                 expiraEm={carga.expira_em}
                 status={carga.status}
+                idTitulo="titulo-da-carga"
+                refTitulo={refTituloDaCarga}
               />
+              {cargaAberta ? (
+                <View style={estilos.acoes}>
+                  <Botao
+                    variante="perigo"
+                    ref={refBotaoCancelar}
+                    aoPressionar={abrirCancelamento}
+                  >
+                    Cancelar carga
+                  </Botao>
+                </View>
+              ) : null}
             </View>
+
+            {cancelada ? (
+              <Banner variante="ok" titulo="Carga cancelada">
+                As propostas pendentes foram recusadas.
+              </Banner>
+            ) : null}
 
             {freteCriado ? (
               <View ref={refBanner} tabIndex={-1}>
@@ -332,6 +398,21 @@ export default function CorpoPropostasDaCarga() {
         aoConfirmar={confirmar}
         aoFechar={() => setAberto(false)}
         refRetorno={retornoDoFoco}
+      />
+
+      <DialogoConfirmacao
+        aberto={cancelarAberto}
+        titulo={`Cancelar a carga ${carga?.tipo_carga ?? ''}?`}
+        descricao="Ela sai das buscas e as propostas pendentes serão recusadas. Não dá para desfazer."
+        rotuloConfirmar="Cancelar carga"
+        rotuloCarregando="Cancelando…"
+        rotuloCancelar="Voltar"
+        variante="perigo"
+        carregando={cancelar.isPending}
+        erro={erroDoCancelamento}
+        aoConfirmar={confirmarCancelamento}
+        aoFechar={() => setCancelarAberto(false)}
+        refRetorno={retornoDoCancelamento}
       />
     </>
   );

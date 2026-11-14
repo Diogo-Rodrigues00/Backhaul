@@ -1,7 +1,12 @@
 // Hooks de cargas (TanStack Query). As chamadas ficam em `cargas.ts`.
 import { useMutation, useQuery, useQueryClient } from './tanstack';
 
-import { listarCargasProximas, listarMinhasCargas, publicarCarga } from './cargas';
+import {
+  cancelarCarga,
+  listarCargasProximas,
+  listarMinhasCargas,
+  publicarCarga,
+} from './cargas';
 import { chaves } from './chaves';
 import { opcoesDeLeitura, type OpcoesLeitura } from './leitura';
 import type { ParametrosCargasProximas } from './tipos';
@@ -12,6 +17,22 @@ export function usePublicarCarga() {
   return useMutation({
     mutationFn: publicarCarga,
     onSuccess: () => cliente.invalidateQueries({ queryKey: chaves.cargas.minhas() }),
+  });
+}
+
+/**
+ * Cancela a carga (MVP-21, card 033). Invalida: cargas.minhas (status vira "cancelado") e
+ * propostas.daCarga(cargaId) (as pendentes viram "recusada").
+ */
+export function useCancelarCarga(cargaId: string) {
+  const cliente = useQueryClient();
+  return useMutation({
+    mutationFn: () => cancelarCarga(cargaId),
+    onSuccess: () =>
+      Promise.all([
+        cliente.invalidateQueries({ queryKey: chaves.cargas.minhas() }),
+        cliente.invalidateQueries({ queryKey: chaves.propostas.daCarga(cargaId) }),
+      ]),
   });
 }
 
