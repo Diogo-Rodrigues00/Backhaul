@@ -53,8 +53,10 @@ const FROM_FRETES = `
   JOIN chamados_disponibilidade d ON d.id = p.chamado_disp_id`;
 
 const COLUNAS_FRETE = `
-  f.id, c.tipo_carga, f.valor_final::float8 AS valor_final, f.status_entrega,
-  f.coleta_em, f.entrega_em, f.criado_em, t.status_pagamento`;
+  f.id, f.proposta_id, c.tipo_carga, f.valor_final::float8 AS valor_final, f.status_entrega,
+  f.coleta_em, f.entrega_em, f.criado_em, t.status_pagamento,
+  json_build_object('lat', ST_Y(c.origem::geometry),  'lng', ST_X(c.origem::geometry))  AS origem,
+  json_build_object('lat', ST_Y(c.destino::geometry), 'lng', ST_X(c.destino::geometry)) AS destino`;
 
 // Lista os fretes de quem está logado, mais recentes primeiro. Cada lado vê os dados
 // da OUTRA parte: o motorista vê a empresa, a empresa vê o motorista e o veículo.
@@ -87,6 +89,10 @@ rotasFretes.get("/meus", exigirAutenticacao, exigirTipo("motorista", "empresa"),
   }
   const { rows } = await pool.query(
     `SELECT ${COLUNAS_FRETE},
+            CASE WHEN t.id IS NULL THEN NULL
+                 ELSE json_build_object('percentual_comissao', t.percentual_comissao::float8,
+                                        'valor_comissao', t.valor_comissao::float8,
+                                        'status_pagamento', t.status_pagamento) END AS comissao,
             CASE WHEN t.status_pagamento = 'pendente' THEN t.pix_copia_cola END AS pix_copia_cola,
             CASE WHEN t.status_pagamento = 'pendente' THEN t.expira_em END AS pix_expira_em,
             json_build_object('id', m.id, 'nome_completo', m.nome_completo,
