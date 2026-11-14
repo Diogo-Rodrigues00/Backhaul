@@ -18,12 +18,18 @@ const FK_CERTIFICACAO = "chamados_carga_certificacao_requerida_id_fkey";
 //   geometry e pegamos ST_Y (latitude) e ST_X (longitude) de volta, no formato {lat,lng}.
 // - NUMERIC chega no Node como texto ("3500.00") para não perder precisão;
 //   ::float8 transforma em número, que é o que o api.md promete.
+// Carga aberta cujo prazo já passou é devolvida como "expirado": o banco só muda o status
+// quando alguém age, então o valor cru continuaria "aberto" para sempre.
+const STATUS_CARGA_CALCULADO = `
+  CASE WHEN c.status = 'aberto' AND c.expira_em <= now()
+       THEN 'expirado'::status_chamado ELSE c.status END AS status`;
+
 const COLUNAS_CARGA = `
   c.id, c.tipo_carga,
   json_build_object('lat', ST_Y(c.origem::geometry),  'lng', ST_X(c.origem::geometry))  AS origem,
   json_build_object('lat', ST_Y(c.destino::geometry), 'lng', ST_X(c.destino::geometry)) AS destino,
   c.peso_kg::float8 AS peso_kg, c.valor_oferecido::float8 AS valor_oferecido,
-  c.urgencia, c.status, c.certificacao_requerida_id, c.expira_em, c.criado_em`;
+  c.urgencia, ${STATUS_CARGA_CALCULADO}, c.certificacao_requerida_id, c.expira_em, c.criado_em`;
 
 function responderSemPerfil(res: Response, perfil: "empresa" | "motorista") {
   res.status(404).json({ erro: `perfil de ${perfil} não encontrado` });

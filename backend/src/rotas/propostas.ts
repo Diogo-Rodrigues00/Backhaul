@@ -154,11 +154,19 @@ rotasPropostas.get("/minhas", exigirAutenticacao, exigirTipo("motorista"), async
             p.chamado_carga_id, p.chamado_disp_id,
             c.tipo_carga, c.valor_oferecido::float8 AS valor_oferecido,
             e.razao_social AS empresa,
-            f.id AS frete_id
+            f.id AS frete_id,
+            json_build_object('lat', ST_Y(c.origem::geometry),  'lng', ST_X(c.origem::geometry))  AS origem,
+            json_build_object('lat', ST_Y(c.destino::geometry), 'lng', ST_X(c.destino::geometry)) AS destino,
+            c.urgencia,
+            cert.nome AS certificacao_exigida,
+            CASE WHEN c.status = 'aberto' AND c.expira_em <= now()
+                 THEN 'expirado'::status_chamado ELSE c.status END AS carga_status,
+            c.expira_em AS carga_expira_em
        FROM propostas p
        JOIN chamados_disponibilidade d ON d.id = p.chamado_disp_id
        JOIN chamados_carga c           ON c.id = p.chamado_carga_id
        JOIN empresas e                 ON e.id = c.empresa_id
+       LEFT JOIN certificacoes cert    ON cert.id = c.certificacao_requerida_id
        LEFT JOIN fretes f              ON f.proposta_id = p.id
       WHERE d.motorista_id = $1
       ORDER BY p.criado_em DESC`,
@@ -218,11 +226,30 @@ rotasPropostas.post("/:id/responder", exigirAutenticacao, exigirTipo("empresa"),
       return erro(409, "carga não está mais aberta");
     }
 
+    // A disponibilidade do motorista também precisa estar aberta e dentro do prazo. Sem
+    // isso, o mesmo motorista acabaria com dois fretes na mesma disponibilidade: aceitar
+    // uma proposta fecha a disponibilidade, e a segunda aceitação a encontraria fechada.
+    const { rows: [disp] } = await client.query(
+      `SELECT status, expira_em > now() AS vigente
+         FROM chamados_disponibilidade WHERE id = $1 FOR UPDATE`,
+      [proposta.chamado_disp_id],
+    );
+    if (!disp || disp.status !== "aberto" || !disp.vigente) {
+      return erro(409, "disponibilidade não está mais aberta");
+    }
+
     await client.query("UPDATE propostas SET status = 'aceita' WHERE id = $1", [proposta.id]);
     await client.query(
       `UPDATE propostas SET status = 'recusada'
         WHERE chamado_carga_id = $1 AND id <> $2 AND status = 'pendente'`,
       [carga.id, proposta.id],
+    );
+    // As outras propostas PENDENTES do mesmo motorista (mesma disponibilidade) em outras
+    // cargas não podem mais ser aceitas: ele já foi contratado.
+    await client.query(
+      `UPDATE propostas SET status = 'recusada'
+        WHERE chamado_disp_id = $1 AND id <> $2 AND status = 'pendente'`,
+      [proposta.chamado_disp_id, proposta.id],
     );
     await client.query("UPDATE chamados_carga SET status = 'fechado' WHERE id = $1", [carga.id]);
     // O motorista foi contratado: a disponibilidade usada na proposta deixa de estar aberta.
