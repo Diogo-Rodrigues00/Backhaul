@@ -2,7 +2,7 @@ import { Router } from "express";
 import { pool } from "../db";
 import { exigirAutenticacao, exigirTipo } from "../middleware/autenticacao";
 import { buscarMotoristaId } from "../perfis";
-import { validarDisponibilidade } from "../validacao";
+import { validarDisponibilidade, validarId } from "../validacao";
 
 export const rotasDisponibilidades = Router();
 
@@ -67,4 +67,52 @@ rotasDisponibilidades.get("/minhas", async (req, res) => {
     [motoristaId],
   );
   res.json({ disponibilidades: rows });
+});
+
+// Motorista cancela uma disponibilidade ainda aberta. Mesma ideia do cancelamento de carga:
+// transação com FOR UPDATE, só o dono (outro motorista recebe 404) e, ao cancelar,
+// as propostas pendentes dessa disponibilidade são recusadas.
+rotasDisponibilidades.post("/:id/cancelar", async (req, res) => {
+  const id = validarId(req.params.id, "id");
+  if (!id.ok) {
+    res.status(400).json({ erros: id.erros });
+    return;
+  }
+  const motoristaId = await buscarMotoristaId(req.usuario!.id);
+  if (!motoristaId) {
+    res.status(404).json({ erro: "perfil de motorista não encontrado" });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows: [disp] } = await client.query(
+      `SELECT id, status, expira_em > now() AS vigente
+         FROM chamados_disponibilidade WHERE id = $1 AND motorista_id = $2 FOR UPDATE`,
+      [id.dados, motoristaId],
+    );
+    if (!disp) {
+      await client.query("ROLLBACK");
+      res.status(404).json({ erro: "disponibilidade não encontrada" });
+      return;
+    }
+    if (disp.status !== "aberto" || !disp.vigente) {
+      await client.query("ROLLBACK");
+      res.status(409).json({ erro: "disponibilidade não está mais aberta" });
+      return;
+    }
+    await client.query("UPDATE chamados_disponibilidade SET status = 'cancelado' WHERE id = $1", [disp.id]);
+    await client.query(
+      "UPDATE propostas SET status = 'recusada' WHERE chamado_disp_id = $1 AND status = 'pendente'",
+      [disp.id],
+    );
+    await client.query("COMMIT");
+    res.json({ disponibilidade: { id: disp.id, status: "cancelado" } });
+  } catch (erro) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw erro;
+  } finally {
+    client.release();
+  }
 });

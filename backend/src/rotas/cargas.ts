@@ -233,3 +233,52 @@ rotasCargas.get("/:id/propostas", ...soEmpresa, async (req, res) => {
   );
   res.json({ propostas: rows });
 });
+
+// Empresa cancela uma carga que ainda está aberta. Só a dona pode (outra empresa recebe 404,
+// igual a "não existe"). Numa transação: trava a carga (FOR UPDATE), confere o status e,
+// ao cancelar, recusa as propostas pendentes, que não fazem mais sentido.
+// Carga já fechada (virou frete), cancelada ou expirada responde 409.
+rotasCargas.post("/:id/cancelar", ...soEmpresa, async (req, res) => {
+  const id = validarId(req.params.id, "id");
+  if (!id.ok) {
+    res.status(400).json({ erros: id.erros });
+    return;
+  }
+  const empresaId = await buscarEmpresaId(req.usuario!.id);
+  if (!empresaId) {
+    responderSemPerfil(res, "empresa");
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows: [carga] } = await client.query(
+      `SELECT id, status, expira_em > now() AS vigente
+         FROM chamados_carga WHERE id = $1 AND empresa_id = $2 FOR UPDATE`,
+      [id.dados, empresaId],
+    );
+    if (!carga) {
+      await client.query("ROLLBACK");
+      res.status(404).json({ erro: "carga não encontrada" });
+      return;
+    }
+    if (carga.status !== "aberto" || !carga.vigente) {
+      await client.query("ROLLBACK");
+      res.status(409).json({ erro: "carga não está mais aberta" });
+      return;
+    }
+    await client.query("UPDATE chamados_carga SET status = 'cancelado' WHERE id = $1", [carga.id]);
+    await client.query(
+      "UPDATE propostas SET status = 'recusada' WHERE chamado_carga_id = $1 AND status = 'pendente'",
+      [carga.id],
+    );
+    await client.query("COMMIT");
+    res.json({ carga: { id: carga.id, status: "cancelado" } });
+  } catch (erro) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw erro;
+  } finally {
+    client.release();
+  }
+});
