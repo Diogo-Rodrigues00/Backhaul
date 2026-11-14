@@ -156,6 +156,17 @@ Cargas publicadas pela empresa logada, **mais recentes primeiro**, com a quantid
 - `status` é **calculado**: carga `aberto` cujo `expira_em` já passou volta como `"expirado"` (o banco só muda o status quando alguém age).
 - **401** · **403** · **404** como no `POST /cargas`.
 
+### POST /cargas/:id/cancelar 🔒 *(só a empresa dona da carga)*
+Cancela uma carga ainda aberta. Numa transação: a carga vira `cancelado` e as propostas **pendentes** dela viram `recusada`.
+- **200:** `{ "carga": { "id": "uuid", "status": "cancelado" } }`
+- **400** id inválido · **401** · **403** usuário não é empresa · **404** carga não existe **ou é de outra empresa**
+- **409** `"carga não está mais aberta"` (já fechada em frete, cancelada ou com prazo vencido).
+
+### POST /disponibilidades/:id/cancelar 🔒 *(só o motorista dono)*
+Cancela uma disponibilidade ainda aberta; as propostas **pendentes** dela viram `recusada`.
+- **200:** `{ "disponibilidade": { "id": "uuid", "status": "cancelado" } }`
+- **400** · **401** · **403** usuário não é motorista · **404** não existe **ou é de outro motorista** · **409** `"disponibilidade não está mais aberta"`.
+
 ### GET /disponibilidades/minhas 🔒 *(só motorista)*
 Disponibilidades do motorista logado, **mais recentes primeiro**. Serve para o app recuperar a disponibilidade depois de recarregar a página ou trocar de aparelho.
 - **200:** `{ "disponibilidades": [ { "id": "uuid", "local": { "lat": -18.9186, "lng": -48.2772 }, "raio_busca_km": 100, "urgencia": "urgente", "status": "aberto", "expira_em": "...", "criado_em": "...", "propostas_pendentes": 1 } ] }`
