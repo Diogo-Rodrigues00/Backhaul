@@ -342,7 +342,7 @@ Contagem: **18 MVP · 5 se der · 5 backlog.**
 **Critérios de aceite:**
 - [ ] Botão "Cancelar carga" só em carga aberta e não vencida, com confirmação informando que as propostas pendentes serão recusadas.
 - [ ] Dado 200, então a carga mostra "Cancelada" e as propostas pendentes "Recusada".
-- [ ] Dado 409 `carga não está aberta`, então a mensagem aparece e a carga é recarregada.
+- [ ] Dado 409 `carga não está mais aberta` (texto de `docs/api.md`), então a mensagem aparece e a carga é recarregada.
 - [ ] Atende CT.
 
 #### MVP-22 · Motorista: cancelar disponibilidade · Se der

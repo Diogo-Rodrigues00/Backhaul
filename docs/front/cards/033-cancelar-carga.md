@@ -24,7 +24,7 @@ Botão "Cancelar carga" na tela de propostas da carga, para a empresa tirar do a
 ## Rotas da API
 **P1 (proposta, conferir em `docs/api.md`)**: `POST /cargas/:id/cancelar`, sem corpo. Numa transação: carga → `cancelado`; propostas `pendente` da carga → `recusada`.
 - `200 { "carga": { "id": "uuid", "status": "cancelado" } }`
-- `400` id inválido · `401` · `403` não é empresa · `404 "carga não encontrada"` (também de outra empresa) · `409 "carga não está aberta"` (fechada, cancelada ou vencida).
+- `400` id inválido · `401` · `403` não é empresa · `404 "carga não encontrada"` (também de outra empresa) · `409 "carga não está mais aberta"` (fechada, cancelada ou vencida).
 
 O card cria fetcher, hook (`useCancelarCarga`, invalida `cargas.minhas` e `propostas.daCarga(id)`) e handler MSW no formato que estiver em `docs/api.md`.
 
