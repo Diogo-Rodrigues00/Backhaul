@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "../db";
 import { exigirAutenticacao, exigirTipo } from "../middleware/autenticacao";
+import { validarId } from "../validacao";
 
 export const rotasAdmin = Router();
 
@@ -64,4 +65,71 @@ rotasAdmin.get("/usuarios", async (_req, res) => {
       LIMIT 200`,
   );
   res.json({ usuarios: rows });
+});
+
+// Desativar (ou reativar) um usuário. Não apagamos a conta: fretes e transações têm
+// ON DELETE RESTRICT de propósito, porque o histórico do dinheiro precisa ficar guardado.
+// "ativo = false" faz o login e o middleware recusarem a conta na hora.
+// Ao desativar, as cargas/disponibilidades ABERTAS dela são canceladas (e as propostas
+// pendentes recusadas), para ninguém negociar com uma conta bloqueada. Fretes em andamento
+// não são mexidos: têm dinheiro retido e o admin resolve caso a caso.
+rotasAdmin.patch("/usuarios/:id/ativo", async (req, res) => {
+  const id = validarId(req.params.id, "id");
+  const ativo = (req.body ?? {}).ativo;
+  if (!id.ok || typeof ativo !== "boolean") {
+    res.status(400).json({ erros: [...(id.ok ? [] : id.erros), ...(typeof ativo === "boolean" ? [] : ["ativo deve ser true ou false"])] });
+    return;
+  }
+  if (id.dados === req.usuario!.id) {
+    res.status(409).json({ erro: "o admin não pode desativar a própria conta" });
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows: [u] } = await client.query(
+      "UPDATE usuarios SET ativo = $2 WHERE id = $1 RETURNING id, email, tipo, ativo",
+      [id.dados, ativo],
+    );
+    if (!u) {
+      await client.query("ROLLBACK");
+      res.status(404).json({ erro: "usuário não encontrado" });
+      return;
+    }
+
+    if (!ativo) {
+      await client.query(
+        `UPDATE propostas SET status = 'recusada'
+          WHERE status = 'pendente' AND (
+                chamado_carga_id IN (SELECT c.id FROM chamados_carga c JOIN empresas e ON e.id = c.empresa_id
+                                      WHERE e.usuario_id = $1 AND c.status = 'aberto')
+             OR chamado_disp_id  IN (SELECT d.id FROM chamados_disponibilidade d JOIN motoristas m ON m.id = d.motorista_id
+                                      WHERE m.usuario_id = $1 AND d.status = 'aberto'))`,
+        [u.id],
+      );
+      await client.query(
+        `UPDATE chamados_carga SET status = 'cancelado'
+          WHERE status = 'aberto' AND empresa_id IN (SELECT id FROM empresas WHERE usuario_id = $1)`,
+        [u.id],
+      );
+      await client.query(
+        `UPDATE chamados_disponibilidade SET status = 'cancelado'
+          WHERE status = 'aberto' AND motorista_id IN (SELECT id FROM motoristas WHERE usuario_id = $1)`,
+        [u.id],
+      );
+    }
+
+    await client.query(
+      "INSERT INTO logs_auditoria (usuario_id, acao, detalhes) VALUES ($1, $2, $3::jsonb)",
+      [req.usuario!.id, ativo ? "usuario_reativado" : "usuario_desativado", JSON.stringify({ alvo: u.id })],
+    );
+    await client.query("COMMIT");
+    res.json({ usuario: u });
+  } catch (erro) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw erro;
+  } finally {
+    client.release();
+  }
 });
