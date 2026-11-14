@@ -77,9 +77,11 @@ INSERT INTO usuarios (id, email, senha_hash, tipo) VALUES
  crypt(:'senha_sem_mopp', gen_salt('bf', 10)), 'motorista');
 
 -- ---- EMPRESA ----
+-- CNPJ com dígitos verificadores válidos: com pagamento real (Asaas) o CNPJ vai para o gateway,
+-- que recusa documento inválido.
 INSERT INTO empresas (id, usuario_id, razao_social, cnpj, cnpj_validado) VALUES
 ('00000000-0000-0000-0000-0000000d0012', '00000000-0000-0000-0000-0000000d0001',
- 'Distribuidora Triângulo LTDA', '90000000000101', TRUE);
+ 'Distribuidora Triângulo LTDA', '11222333000181', TRUE);
 
 -- ---- MOTORISTAS ----
 INSERT INTO motoristas (id, usuario_id, nome_completo, cpf, cnh, cnh_validada, veiculo_tipo, veiculo_placa, capacidade_kg) VALUES

@@ -39,6 +39,8 @@ erDiagram
         text veiculo_tipo
         text veiculo_placa
         int capacidade_kg
+        tipo_chave_pix tipo_chave_pix "para repasse via Pix"
+        text chave_pix
     }
     empresas {
         uuid id PK
@@ -108,6 +110,17 @@ erDiagram
         numeric percentual_comissao
         numeric valor_comissao
         status_pagamento status_pagamento
+        text gateway "simulado, asaas..."
+        text gateway_referencia
+        text pix_copia_cola
+        timestamptz pago_em
+        timestamptz repassado_em
+    }
+    eventos_pagamento {
+        uuid id PK
+        text gateway
+        text evento_id "UNIQUE com gateway"
+        jsonb payload
     }
     logs_auditoria {
         uuid id PK
@@ -135,6 +148,7 @@ erDiagram
 | `status_proposta` | pendente, aceita, recusada, expirada |
 | `status_entrega` | aceito, em_transito, entregue, cancelado |
 | `status_pagamento` | pendente, retido, liberado, estornado |
+| `tipo_chave_pix` | cpf, cnpj, email, telefone, aleatoria |
 
 ## Caminho do dinheiro
 

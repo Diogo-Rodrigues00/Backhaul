@@ -18,12 +18,18 @@ const FK_CERTIFICACAO = "chamados_carga_certificacao_requerida_id_fkey";
 //   geometry e pegamos ST_Y (latitude) e ST_X (longitude) de volta, no formato {lat,lng}.
 // - NUMERIC chega no Node como texto ("3500.00") para não perder precisão;
 //   ::float8 transforma em número, que é o que o api.md promete.
+// Carga aberta cujo prazo já passou é devolvida como "expirado": o banco só muda o status
+// quando alguém age, então o valor cru continuaria "aberto" para sempre.
+const STATUS_CARGA_CALCULADO = `
+  CASE WHEN c.status = 'aberto' AND c.expira_em <= now()
+       THEN 'expirado'::status_chamado ELSE c.status END AS status`;
+
 const COLUNAS_CARGA = `
   c.id, c.tipo_carga,
   json_build_object('lat', ST_Y(c.origem::geometry),  'lng', ST_X(c.origem::geometry))  AS origem,
   json_build_object('lat', ST_Y(c.destino::geometry), 'lng', ST_X(c.destino::geometry)) AS destino,
   c.peso_kg::float8 AS peso_kg, c.valor_oferecido::float8 AS valor_oferecido,
-  c.urgencia, c.status, c.certificacao_requerida_id, c.expira_em, c.criado_em`;
+  c.urgencia, ${STATUS_CARGA_CALCULADO}, c.certificacao_requerida_id, c.expira_em, c.criado_em`;
 
 function responderSemPerfil(res: Response, perfil: "empresa" | "motorista") {
   res.status(404).json({ erro: `perfil de ${perfil} não encontrado` });
@@ -226,4 +232,53 @@ rotasCargas.get("/:id/propostas", ...soEmpresa, async (req, res) => {
     [id.dados],
   );
   res.json({ propostas: rows });
+});
+
+// Empresa cancela uma carga que ainda está aberta. Só a dona pode (outra empresa recebe 404,
+// igual a "não existe"). Numa transação: trava a carga (FOR UPDATE), confere o status e,
+// ao cancelar, recusa as propostas pendentes, que não fazem mais sentido.
+// Carga já fechada (virou frete), cancelada ou expirada responde 409.
+rotasCargas.post("/:id/cancelar", ...soEmpresa, async (req, res) => {
+  const id = validarId(req.params.id, "id");
+  if (!id.ok) {
+    res.status(400).json({ erros: id.erros });
+    return;
+  }
+  const empresaId = await buscarEmpresaId(req.usuario!.id);
+  if (!empresaId) {
+    responderSemPerfil(res, "empresa");
+    return;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows: [carga] } = await client.query(
+      `SELECT id, status, expira_em > now() AS vigente
+         FROM chamados_carga WHERE id = $1 AND empresa_id = $2 FOR UPDATE`,
+      [id.dados, empresaId],
+    );
+    if (!carga) {
+      await client.query("ROLLBACK");
+      res.status(404).json({ erro: "carga não encontrada" });
+      return;
+    }
+    if (carga.status !== "aberto" || !carga.vigente) {
+      await client.query("ROLLBACK");
+      res.status(409).json({ erro: "carga não está mais aberta" });
+      return;
+    }
+    await client.query("UPDATE chamados_carga SET status = 'cancelado' WHERE id = $1", [carga.id]);
+    await client.query(
+      "UPDATE propostas SET status = 'recusada' WHERE chamado_carga_id = $1 AND status = 'pendente'",
+      [carga.id],
+    );
+    await client.query("COMMIT");
+    res.json({ carga: { id: carga.id, status: "cancelado" } });
+  } catch (erro) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw erro;
+  } finally {
+    client.release();
+  }
 });

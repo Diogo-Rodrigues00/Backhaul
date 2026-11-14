@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { pool } from "../db";
 
 // Tudo que envolve JWT fica neste arquivo: gerar o token (usado no login)
 // e conferir o token (usado nas rotas protegidas).
@@ -37,7 +38,7 @@ export function gerarToken(usuario: UsuarioToken): string {
 
 // Middleware: roda ANTES da rota. Se o token for válido, preenche req.usuario
 // e chama next() para seguir; senão, já responde 401 e a rota nem executa.
-export function exigirAutenticacao(req: Request, res: Response, next: NextFunction) {
+export async function exigirAutenticacao(req: Request, res: Response, next: NextFunction) {
   const cabecalho = req.headers.authorization ?? "";
   const [esquema, token] = cabecalho.split(" ");
 
@@ -46,14 +47,25 @@ export function exigirAutenticacao(req: Request, res: Response, next: NextFuncti
     return;
   }
 
+  let payload: jwt.JwtPayload;
   try {
     // verify confere a assinatura E a validade (exp). Se algo falhar, lança erro.
-    const payload = jwt.verify(token, JWT_SECRET!) as jwt.JwtPayload;
-    req.usuario = { id: payload.sub as string, tipo: payload.tipo as TipoUsuario };
-    next();
+    payload = jwt.verify(token, JWT_SECRET!) as jwt.JwtPayload;
   } catch {
     res.status(401).json({ erro: "token inválido ou expirado" });
+    return;
   }
+
+  // O token dura 7 dias e não pode ser "cancelado". Por isso conferimos no banco, a cada
+  // chamada, se a conta continua ativa: assim o admin desativa um usuário e o efeito é imediato.
+  const { rows } = await pool.query("SELECT ativo FROM usuarios WHERE id = $1", [payload.sub]);
+  if (rows.length === 0 || !rows[0].ativo) {
+    res.status(401).json({ erro: "conta desativada ou inexistente", codigo: "conta_desativada" });
+    return;
+  }
+
+  req.usuario = { id: payload.sub as string, tipo: payload.tipo as TipoUsuario };
+  next();
 }
 
 // Fábrica de middleware: exigirTipo("empresa") DEVOLVE uma função de middleware
