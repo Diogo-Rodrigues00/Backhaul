@@ -57,6 +57,13 @@ describe("escolherProvedor", () => {
     assert.throws(() => escolherProvedor({ PAGAMENTOS_MODO: "sandbox" }), /ASAAS_API_KEY/);
     assert.equal(escolherProvedor({ PAGAMENTOS_MODO: "sandbox", ASAAS_API_KEY: "x" }).nome, "asaas");
   });
+  it("PAGAMENTOS_REPASSE=simulado mantém a cobrança real e simula só o repasse", async () => {
+    const p = escolherProvedor({ PAGAMENTOS_MODO: "sandbox", ASAAS_API_KEY: "x", PAGAMENTOS_REPASSE: "simulado" });
+    assert.equal(p.nome, "asaas");
+    const r = await p.solicitarRepassePix({ referencia: "f", valorCentavos: 100, chave: "k", tipoChave: "cpf", descricao: "d" });
+    assert.equal(r.status, "concluido");
+    assert.match(r.repasseId, /^sim_/);
+  });
   it("modo desconhecido falha em vez de cair no gateway", () => {
     assert.throws(() => escolherProvedor({ PAGAMENTOS_MODO: "producao" }), /inválido/);
   });
