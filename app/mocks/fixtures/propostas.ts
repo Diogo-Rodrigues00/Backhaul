@@ -1,5 +1,5 @@
 // POST /propostas, GET /cargas/:id/propostas, POST /propostas/:id/responder (docs/api.md) e
-// GET /propostas/minhas.
+// GET /propostas/minhas (com os campos da carga: origem, destino, urgência, certificação e estado).
 import type {
   FreteCriado,
   MinhaProposta,
@@ -11,6 +11,14 @@ import { cargaProximaNormal, cargaProximaUrgente, CARGA_URGENTE_ID } from './car
 import { daquiAHoras, dataSemHora } from './datas';
 import { DISPONIBILIDADE_ABERTA_ID } from './disponibilidades';
 import { FRETE_ACEITO_ID } from './fretes';
+
+// Pontos das cargas de "Minhas propostas" que não estão em "Cargas próximas" (cidades do seed).
+const uberlandia = { lat: -18.9186, lng: -48.2772 };
+const uberaba = { lat: -19.7469, lng: -47.9319 };
+const araguari = { lat: -18.6456, lng: -48.1935 };
+const goiania = { lat: -16.6869, lng: -49.2648 };
+const catalao = { lat: -18.1656, lng: -47.944 };
+const araxa = { lat: -19.5902, lng: -46.9438 };
 
 export const PROPOSTA_PENDENTE_ID = 'bbbbbbbb-0000-4000-8000-000000000001';
 export const PROPOSTA_ACEITE_ID = 'bbbbbbbb-0000-4000-8000-000000000002';
@@ -149,6 +157,12 @@ export function minhaPropostaMock(parcial: Partial<MinhaProposta> = {}): MinhaPr
     valor_oferecido: cargaProximaNormal.valor_oferecido,
     empresa: cargaProximaNormal.empresa,
     frete_id: null,
+    origem: cargaProximaNormal.origem,
+    destino: cargaProximaNormal.destino,
+    urgencia: cargaProximaNormal.urgencia,
+    certificacao_exigida: cargaProximaNormal.certificacao_exigida,
+    carga_status: 'aberto',
+    carga_expira_em: cargaProximaNormal.expira_em,
     ...parcial,
   };
 }
@@ -168,6 +182,12 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_oferecido: cargaProximaUrgente.valor_oferecido,
     empresa: cargaProximaUrgente.empresa,
     frete_id: null,
+    origem: cargaProximaUrgente.origem,
+    destino: cargaProximaUrgente.destino,
+    urgencia: cargaProximaUrgente.urgencia,
+    certificacao_exigida: cargaProximaUrgente.certificacao_exigida,
+    carga_status: 'aberto',
+    carga_expira_em: cargaProximaUrgente.expira_em,
   },
   {
     id: PROPOSTA_ACEITE_ID,
@@ -181,6 +201,13 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_oferecido: cargaProximaNormal.valor_oferecido,
     empresa: cargaProximaNormal.empresa,
     frete_id: FRETE_ACEITO_ID,
+    origem: cargaProximaNormal.origem,
+    destino: cargaProximaNormal.destino,
+    urgencia: cargaProximaNormal.urgencia,
+    certificacao_exigida: cargaProximaNormal.certificacao_exigida,
+    // O aceite fechou a carga: é o esperado, e o cartão não a mostra como indisponível.
+    carga_status: 'fechado',
+    carga_expira_em: cargaProximaNormal.expira_em,
   },
   {
     id: PROPOSTA_RECUSADA_ID,
@@ -194,6 +221,12 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_oferecido: cargaProximaUrgente.valor_oferecido,
     empresa: cargaProximaUrgente.empresa,
     frete_id: null,
+    origem: cargaProximaUrgente.origem,
+    destino: cargaProximaUrgente.destino,
+    urgencia: cargaProximaUrgente.urgencia,
+    certificacao_exigida: cargaProximaUrgente.certificacao_exigida,
+    carga_status: 'aberto',
+    carga_expira_em: cargaProximaUrgente.expira_em,
   },
   // Mais cinco para somar 8 (Lighthouse e E2E de "Minhas propostas"; card 026). As cargas destas não
   // estão na lista de "Cargas próximas" do mock, então não mudam as marcações de lá.
@@ -209,6 +242,12 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_oferecido: 1850,
     empresa: 'Distribuidora Casa Forte',
     frete_id: null,
+    origem: goiania,
+    destino: catalao,
+    urgencia: 'normal',
+    certificacao_exigida: null,
+    carga_status: 'aberto',
+    carga_expira_em: daquiAHoras(40),
   },
   {
     id: 'bbbbbbbb-0000-4000-8000-0000000000a2',
@@ -222,6 +261,13 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_oferecido: 4800,
     empresa: 'Química Triângulo Ltda.',
     frete_id: null,
+    origem: uberaba,
+    destino: araxa,
+    urgencia: 'critico',
+    certificacao_exigida: 'MOPP - Classe 3 Inflamáveis',
+    // Prazo da carga vencido com a proposta ainda pendente: "Carga indisponível" (card 050).
+    carga_status: 'expirado',
+    carga_expira_em: daquiAHoras(-6),
   },
   {
     id: 'bbbbbbbb-0000-4000-8000-0000000000a3',
@@ -235,6 +281,12 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_oferecido: 2400,
     empresa: 'Transportes Rápidos LTDA',
     frete_id: 'ffffffff-0000-4000-8000-000000000004',
+    origem: uberlandia,
+    destino: catalao,
+    urgencia: 'urgente',
+    certificacao_exigida: null,
+    carga_status: 'fechado',
+    carga_expira_em: daquiAHoras(10),
   },
   {
     id: PROPOSTA_RECUSADA_JOAO_ID,
@@ -248,6 +300,13 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_oferecido: 3500,
     empresa: 'Agro Cerrado Grãos S.A.',
     frete_id: null,
+    origem: araguari,
+    destino: uberlandia,
+    urgencia: 'normal',
+    certificacao_exigida: null,
+    // Outra proposta da carga foi aceita: fechada, e a nossa ficou recusada.
+    carga_status: 'fechado',
+    carga_expira_em: daquiAHoras(20),
   },
   {
     id: 'bbbbbbbb-0000-4000-8000-0000000000a5',
@@ -261,5 +320,11 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_oferecido: 980,
     empresa: 'Expresso Cerrado ME',
     frete_id: null,
+    origem: araxa,
+    destino: uberaba,
+    urgencia: 'urgente',
+    certificacao_exigida: null,
+    carga_status: 'aberto',
+    carga_expira_em: daquiAHoras(18),
   },
 ];

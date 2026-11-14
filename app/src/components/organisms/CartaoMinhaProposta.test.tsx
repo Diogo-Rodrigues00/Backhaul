@@ -107,6 +107,62 @@ describe('CartaoMinhaProposta', () => {
   });
 });
 
+describe('CartaoMinhaProposta: dados da carga (card 050)', () => {
+  const uberlandia = { lat: -18.9186, lng: -48.2772 };
+  const uberaba = { lat: -19.7469, lng: -47.9319 };
+
+  it('mostra coleta e entrega como "Cidade - UF", a urgência e a certificação exigida', async () => {
+    await renderizar({
+      origem: uberlandia,
+      destino: uberaba,
+      urgencia: 'critico',
+      certificacao: 'MOPP - Classe 3 Inflamáveis',
+    });
+    expect(screen.getByText('Uberlândia - MG')).toBeOnTheScreen();
+    expect(screen.getByText('Uberaba - MG')).toBeOnTheScreen();
+    expect(screen.getByText('Crítico')).toBeOnTheScreen();
+    expect(screen.getByText('Certificação')).toBeOnTheScreen();
+    expect(screen.getByText('Exige MOPP - Classe 3 Inflamáveis')).toBeOnTheScreen();
+  });
+
+  it('carga sem exigência: "Sem exigência"; coordenada inválida: "Local não identificado"', async () => {
+    await renderizar({
+      origem: { lat: 999, lng: 999 },
+      destino: uberaba,
+      urgencia: 'normal',
+      certificacao: null,
+    });
+    expect(screen.getByText('Sem exigência')).toBeOnTheScreen();
+    expect(screen.getByText('Local não identificado')).toBeOnTheScreen();
+  });
+
+  it('sem os dados da carga (props ausentes), o cartão segue como antes', async () => {
+    await renderizar();
+    expect(screen.queryByText('Certificação')).toBeNull();
+    expect(screen.queryByText('Coleta em')).toBeNull();
+    expect(screen.queryByText('Carga indisponível')).toBeNull();
+  });
+
+  it('carga indisponível: selo "Carga indisponível" e o motivo em texto', async () => {
+    await renderizar({ motivoIndisponivel: 'A empresa cancelou esta carga.' });
+    expect(screen.getByText('Carga indisponível')).toBeOnTheScreen();
+    expect(screen.getByText('A empresa cancelou esta carga.')).toBeOnTheScreen();
+  });
+
+  it('carga indisponível não oferece nenhuma ação de proposta nova (só o chat e o frete)', async () => {
+    await renderizar({ motivoIndisponivel: 'O prazo desta carga acabou.' });
+    expect(
+      screen.queryByRole('button', { name: /Aceitar|Contraproposta para|Fazer proposta/ }),
+    ).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('carga disponível (motivo nulo) não mostra o selo', async () => {
+    await renderizar({ motivoIndisponivel: null });
+    expect(screen.queryByText('Carga indisponível')).toBeNull();
+  });
+});
+
 describe('fraseDaDiferenca', () => {
   it('aceite: o motorista aceitou o valor oferecido', () => {
     expect(fraseDaDiferenca('aceite', 100, 100)).toBe(

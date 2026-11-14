@@ -1,7 +1,7 @@
 // Minhas disponibilidades do motorista (MVP-11, D-PO-03, CT-01 a CT-04, CT-10). Tela real com a área
-// protegida e a API de mock (MSW), no formato exato da proposta 4b. Os botões que mudam o estado do
+// protegida e a API de mock (MSW), no formato do contrato real. Os botões que mudam o estado do
 // render (Usar esta, Atualizar, Tentar de novo) estão em arquivos próprios.
-import { screen, waitFor, within } from 'expo-router/testing-library';
+import { fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import { delay, http, HttpResponse } from 'msw';
 
 import { apagar, CHAVES, gravar, ler } from '@/lib/armazenamento';
@@ -23,6 +23,7 @@ import {
   DISPONIBILIDADE_ABERTA_ID,
   DISPONIBILIDADE_EXPIRADA_ID,
   disponibilidadePublicadaMock,
+  disponibilidadesDoMotoristaMock,
 } from '../../../mocks/fixtures/disponibilidades';
 import { servidor, urlMock } from '../../../mocks/node';
 import { respostaErro, respostaHtml } from '../../../mocks/respostas';
@@ -253,7 +254,7 @@ describe('Minhas disponibilidades', () => {
     expect(screen.queryByText('Algo deu errado. Tente de novo.')).toBeNull();
   });
 
-  describe('plano B: GET /disponibilidades/minhas ainda não existe (404)', () => {
+  describe('plano B: backend sem a rota GET /disponibilidades/minhas (404)', () => {
     it('usa a disponibilidade publicada neste aparelho como única entrada, sem erro', async () => {
       servidor.use(http.get(urlMock(ROTA_MINHAS), () => respostaHtml(404)));
       await gravar(
@@ -323,6 +324,64 @@ describe('Minhas disponibilidades', () => {
 
       expect(screen.getByText('Expirada')).toBeOnTheScreen();
       expect(textoDaAtiva()).toBe('nenhuma');
+    });
+  });
+
+  describe('plano B: rede caída ou 5xx (card 050)', () => {
+    const guardarPublicada = () =>
+      gravar(
+        CHAVES.disponibilidadeAtiva,
+        serializarEscolha({
+          id: 'dddddddd-0000-4000-8000-000000000003',
+          publicada: disponibilidadePublicadaMock,
+        }),
+      );
+
+    it('rede caída: a tela mostra o erro, mas a ativa sai da cópia guardada (Cargas próximas não para)', async () => {
+      servidor.use(http.get(urlMock(ROTA_MINHAS), () => HttpResponse.error()));
+      await guardarPublicada();
+      await abrirMinhasDisponibilidades();
+      await aguardarSessao();
+
+      expect(await screen.findByText('Algo deu errado. Tente de novo.')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeOnTheScreen();
+      await waitFor(() =>
+        expect(textoDaAtiva()).toBe(
+          'dddddddd-0000-4000-8000-000000000003|-18.9186|-48.2772|80|urgente',
+        ),
+      );
+    });
+
+    it('rede caída e nada guardado neste aparelho: sem ativa e com o erro (não inventa disponibilidade)', async () => {
+      servidor.use(http.get(urlMock(ROTA_MINHAS), () => HttpResponse.error()));
+      await abrirMinhasDisponibilidades();
+      await aguardarSessao();
+
+      expect(await screen.findByText('Algo deu errado. Tente de novo.')).toBeOnTheScreen();
+      expect(textoDaAtiva()).toBe('nenhuma');
+    });
+
+    it('a lista real prevalece assim que a rota volta a responder: a cópia local sai de cena', async () => {
+      let ligada = false;
+      servidor.use(
+        http.get(urlMock(ROTA_MINHAS), () =>
+          ligada
+            ? HttpResponse.json({ disponibilidades: disponibilidadesDoMotoristaMock })
+            : respostaErro(503, 'indisponível'),
+        ),
+      );
+      await guardarPublicada();
+      await abrirMinhasDisponibilidades();
+      await aguardarSessao();
+      await screen.findByText('Algo deu errado. Tente de novo.');
+
+      ligada = true;
+      fireEvent.press(screen.getByRole('button', { name: 'Tentar de novo' }));
+      await aguardarLista();
+
+      expect(cartoes()).toHaveLength(3);
+      expect(screen.queryByText('Algo deu errado. Tente de novo.')).toBeNull();
+      await waitFor(() => expect(textoDaAtiva().startsWith(DISPONIBILIDADE_ABERTA_ID)).toBe(true));
     });
   });
 

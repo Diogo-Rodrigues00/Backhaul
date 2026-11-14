@@ -3,14 +3,15 @@
 // `@fluxo.test`). Para os demais, o resolver devolve `undefined` e o MSW cai no próximo handler:
 // os handlers sem estado que os outros specs usam seguem exatamente como eram.
 //
-// Fiel ao backend de hoje: GET /propostas/minhas existe e responde 200 a partir do estado (formato
-// plano de docs/api.md). GET /disponibilidades/minhas (proposta 4b do relatório) NÃO existe lá, então
-// responde 404 como o Express ("Cannot GET"); o app cai no plano B (disponibilidade guardada no
-// aparelho).
+// Fiel ao backend de hoje (docs/api.md): GET /propostas/minhas (plano, com origem, destino, urgência,
+// certificação e o estado da carga) e GET /disponibilidades/minhas (com `status` calculado e
+// `propostas_pendentes`) respondem 200 a partir do estado. O fallback do app para a rota ausente (404)
+// é coberto no E2E interceptando a rota no navegador (card 050), sem mexer neste mundo.
 import { http, HttpResponse } from 'msw';
 
 import type { CargaDaEmpresa, Frete, MinhaProposta, PropostaRecebida } from '../../src/api/tipos';
 import { normalizarPlaca } from '../../src/lib/validacao';
+import { statusEfetivo } from '../../src/lib/vencimento';
 import { certificacoesMock } from '../fixtures/certificacoes';
 import {
   calcularComissao,
@@ -92,14 +93,6 @@ function autenticarFluxo(request: Request, permitidos?: UsuarioFluxo['tipo'][]):
   return { usuario };
 }
 
-/** Express sem a rota: corpo HTML, como o backend de hoje responde à proposta 4b. */
-function respostaRotaInexistente(metodo: string, caminho: string) {
-  return new HttpResponse(
-    `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Error</title></head><body><pre>Cannot ${metodo} ${caminho}</pre></body></html>`,
-    { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
-  );
-}
-
 async function emailDoCorpo(request: Request): Promise<string> {
   const corpo = await lerCorpo(request.clone());
   return textoOuVazio(corpo.email).toLowerCase();
@@ -158,9 +151,10 @@ function freteParaLista(frete: FreteFluxo, ladoMotorista: boolean): Frete {
   };
 }
 
-/** Uma linha de GET /propostas/minhas: plana, com o `frete_id` do frete criado no aceite. */
+/** Uma linha de GET /propostas/minhas: plana, com o `frete_id` do frete criado no aceite e a carga. */
 function propostaParaLista(proposta: PropostaFluxo): MinhaProposta {
   const carga = estado.cargas.find((c) => c.id === proposta.cargaId);
+  const certificacao = certificacoesMock.find((c) => c.id === carga?.certificacao_requerida_id);
   return {
     id: proposta.id,
     tipo: proposta.tipo,
@@ -173,6 +167,15 @@ function propostaParaLista(proposta: PropostaFluxo): MinhaProposta {
     valor_oferecido: carga?.valor_oferecido ?? 0,
     empresa: usuarioPorId(carga?.empresaId ?? '')?.nome ?? '',
     frete_id: estado.fretes.find((f) => f.propostaId === proposta.id)?.id ?? null,
+    origem: carga?.origem ?? { lat: 0, lng: 0 },
+    destino: carga?.destino ?? { lat: 0, lng: 0 },
+    urgencia: carga?.urgencia ?? 'normal',
+    certificacao_exigida: certificacao?.nome ?? null,
+    // Calculado, como no backend: `aberto` com prazo vencido volta como `expirado`.
+    carga_status: carga
+      ? (statusEfetivo(carga.status, carga.expira_em) as MinhaProposta['carga_status'])
+      : 'cancelado',
+    carga_expira_em: carga?.expira_em ?? proposta.criado_em,
   };
 }
 
@@ -623,10 +626,23 @@ export function criarHandlersComEstado(baseUrl: string) {
       return HttpResponse.json({ disponibilidade: publica }, { status: 201 });
     }),
 
+    // As do motorista do token, mais recentes primeiro. `status` é calculado (aberto vencido vira
+    // `expirado`) e `propostas_pendentes` conta as propostas pendentes feitas com a disponibilidade.
     http.get(`${baseUrl}/disponibilidades/minhas`, ({ request }) => {
-      const { resposta, deOutro } = autenticarFluxo(request, ['motorista']);
+      const { usuario, resposta, deOutro } = autenticarFluxo(request, ['motorista']);
       if (deOutro) return undefined;
-      return resposta ?? respostaRotaInexistente('GET', '/disponibilidades/minhas');
+      if (resposta) return resposta;
+      const minhas = estado.disponibilidades.filter((d) => d.motoristaId === usuario.id);
+      const disponibilidades = maisRecentesPrimeiro(minhas).map(
+        ({ motoristaId: _motoristaId, ...publica }) => ({
+          ...publica,
+          status: statusEfetivo(publica.status, publica.expira_em),
+          propostas_pendentes: estado.propostas.filter(
+            (p) => p.dispId === publica.id && p.status === 'pendente',
+          ).length,
+        }),
+      );
+      return HttpResponse.json({ disponibilidades });
     }),
 
     // ---- Propostas ----
@@ -657,6 +673,9 @@ export function criarHandlersComEstado(baseUrl: string) {
       if (carga === undefined) return respostaErro(404, 'carga não encontrada');
       if (!cargaAbertaENaoVencida(carga)) {
         return respostaErro(409, 'carga não está mais aberta para propostas');
+      }
+      if (statusEfetivo(disponibilidade.status, disponibilidade.expira_em) !== 'aberto') {
+        return respostaErro(409, 'disponibilidade não está mais aberta');
       }
       if (!motoristaPodePegar(usuario, carga)) {
         return respostaErro(403, 'motorista sem a certificação exigida');
@@ -768,15 +787,22 @@ export function criarHandlersComEstado(baseUrl: string) {
         return HttpResponse.json({ proposta: { id: proposta.id, status: 'recusada' } });
       }
       if (carga.status !== 'aberto') return respostaErro(409, 'carga não está mais aberta');
-      // Numa só "transação": aceita esta, recusa as outras pendentes, fecha carga e disponibilidade.
+      const disponibilidade = estado.disponibilidades.find((d) => d.id === proposta.dispId);
+      if (
+        disponibilidade &&
+        statusEfetivo(disponibilidade.status, disponibilidade.expira_em) !== 'aberto'
+      ) {
+        return respostaErro(409, 'disponibilidade não está mais aberta');
+      }
+      // Numa só "transação": aceita esta, recusa as outras pendentes (da carga e as do mesmo motorista
+      // na mesma disponibilidade), fecha carga e disponibilidade.
       proposta.status = 'aceita';
       for (const outra of estado.propostas) {
-        if (outra.cargaId === carga.id && outra.id !== proposta.id && outra.status === 'pendente') {
+        if (outra.id === proposta.id || outra.status !== 'pendente') continue;
+        if (outra.cargaId === carga.id || outra.dispId === proposta.dispId)
           outra.status = 'recusada';
-        }
       }
       carga.status = 'fechado';
-      const disponibilidade = estado.disponibilidades.find((d) => d.id === proposta.dispId);
       if (disponibilidade) disponibilidade.status = 'fechado';
       const frete: FreteFluxo = {
         id: novoId(),
