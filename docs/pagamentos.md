@@ -1,6 +1,6 @@
 # Pagamentos — proposta de desenho (Pix)
 
-> **Status (08/11/2026): em implementação.** Já feito: migração 001 aplicada no Neon, chave Pix do motorista (`/motorista/chave-pix`) e a camada de provedor (`backend/src/pagamentos/`). Teste manual no sandbox do Asaas concluído (veja "Resultado do teste no sandbox"). Ainda **não** feito: ligar `POST /fretes/:id/pagamento` e a entrega ao provedor, e a rota do webhook. Até lá, o pagamento continua simulado (`POST /fretes/:id/pagamento` só grava a transação).
+> **Status (14/11/2026): integrado e testado no sandbox (repasse simulado na demonstração).** Histórico de 08/11: Já feito: migração 001 aplicada no Neon, chave Pix do motorista (`/motorista/chave-pix`) e a camada de provedor (`backend/src/pagamentos/`). Teste manual no sandbox do Asaas concluído (veja "Resultado do teste no sandbox"). Ainda **não** feito: ligar `POST /fretes/:id/pagamento` e a entrega ao provedor, e a rota do webhook. Até lá, o pagamento continua simulado (`POST /fretes/:id/pagamento` só grava a transação).
 
 ## Objetivo
 
@@ -68,6 +68,18 @@ Teste manual com duas contas sandbox (plataforma e empresa), usando a API do Asa
 - Em produção a conclusão do repasse depende do processamento bancário, não de ação manual.
 
 **Efeito no negócio:** a comissão é de 5% e o gateway cobra cerca de R$ 0,99 por cobrança. Num frete de R$ 3.500 a comissão é R$ 175 e a taxa pesa pouco; num frete de R$ 100 a comissão é R$ 5 e quase 20% dela vai para o gateway. Confira a tabela de taxas da conta de produção antes de definir um frete mínimo.
+
+## Integração no sistema: o que aprendemos (14/11/2026)
+
+Com `PAGAMENTOS_MODO=sandbox` no Render e o webhook cadastrado no painel do sandbox do Asaas, o fluxo foi testado pela interface:
+
+- **Funcionou:** cobrança Pix com QR Code na tela da empresa e **confirmação automática por webhook** (o frete passa a `retido` sem ação manual no site).
+- **CNPJ válido é obrigatório:** o Asaas recusa cliente com CNPJ inválido (`400: O CPF/CNPJ informado é inválido`). O seed da demonstração tinha um CNPJ com dígitos verificadores errados e foi corrigido.
+- **Limite Pix noturno:** no período noturno o gateway limita o valor por transação (no sandbox, R$ 3.500 por transação). Um repasse de R$ 4.750 falhou à noite com `400`. A falha acontece dentro da transação do banco, então o frete continua em trânsito e o pagamento continua retido: dá para tentar de novo. Em produção o limite depende do banco, da conta e do horário; a plataforma precisa tratar o caso (reenvio no horário comercial ou valor menor).
+- **Instabilidade da transferência no sandbox:** em 14/11 a transferência Pix passou a responder `400: Ocorreu um erro desconhecido`, inclusive num pedido mínimo (valor, chave e tipo da chave), igual ao que funcionou em 08/11, e com saldo de sobra. Concluímos que o problema não está no nosso pedido.
+- **Plano B (desligado por padrão):** `PAGAMENTOS_REPASSE=simulado` mantém a cobrança e o webhook reais e simula só o repasse (`liberado` na entrega). Usado na demonstração enquanto a transferência do sandbox estiver instável.
+
+**Riscos conhecidos antes de produção:** chamada ao gateway dentro da transação do banco (um `COMMIT` que falhe depois do gateway aceitar deixa um repasse sem registro); falta um job de reconciliação periódica; um cliente novo é criado no Asaas a cada cobrança.
 
 ## Mudanças de dados previstas
 
