@@ -104,7 +104,7 @@ Envia uma certificação para o admin aprovar.
 
 ### GET /certificacoes/pendentes 🔒 *(só admin)*
 Fila de certificações aguardando aprovação, mais antigas primeiro.
-- **200:** `{ "certificacoes": [ { "id": "uuid", "certificacao": "MOPP - Classe 3 Inflamáveis", "numero_certificado": "123456", "validade": "2027-05-01", "criado_em": "...", "motorista": { "id", "nome_completo", "cpf", "cnh", "veiculo_placa" } } ] }`
+- **200:** `{ "certificacoes": [ { "id": "uuid", "certificacao": "MOPP - Classe 3 Inflamáveis", "numero_certificado": "123456", "validade": "2027-05-01", "criado_em": "...", "motorista": { "id", "nome_completo", "veiculo_placa" } } ] }`. CPF e CNH **não** são devolvidos (minimização de dados).
 - **401** · **403** usuário não é admin.
 
 ### POST /certificacoes/pendentes/:id/responder 🔒 *(só admin)*
@@ -153,7 +153,25 @@ Respostas:
 Cargas publicadas pela empresa logada, **mais recentes primeiro**, com a quantidade de propostas e o nome da certificação exigida.
 - **200:** `{ "cargas": [ { ...mesmos campos do POST /cargas, "certificacao_exigida": "MOPP - Classe 3 Inflamáveis", "total_propostas": 2 } ] }`
 - `certificacao_exigida` é `null` quando a carga não exige certificação. `total_propostas` é `0` quando ninguém fez proposta.
+- `status` é **calculado**: carga `aberto` cujo `expira_em` já passou volta como `"expirado"` (o banco só muda o status quando alguém age).
 - **401** · **403** · **404** como no `POST /cargas`.
+
+### POST /cargas/:id/cancelar 🔒 *(só a empresa dona da carga)*
+Cancela uma carga ainda aberta. Numa transação: a carga vira `cancelado` e as propostas **pendentes** dela viram `recusada`.
+- **200:** `{ "carga": { "id": "uuid", "status": "cancelado" } }`
+- **400** id inválido · **401** · **403** usuário não é empresa · **404** carga não existe **ou é de outra empresa**
+- **409** `"carga não está mais aberta"` (já fechada em frete, cancelada ou com prazo vencido).
+
+### POST /disponibilidades/:id/cancelar 🔒 *(só o motorista dono)*
+Cancela uma disponibilidade ainda aberta; as propostas **pendentes** dela viram `recusada`.
+- **200:** `{ "disponibilidade": { "id": "uuid", "status": "cancelado" } }`
+- **400** · **401** · **403** usuário não é motorista · **404** não existe **ou é de outro motorista** · **409** `"disponibilidade não está mais aberta"`.
+
+### GET /disponibilidades/minhas 🔒 *(só motorista)*
+Disponibilidades do motorista logado, **mais recentes primeiro**. Serve para o app recuperar a disponibilidade depois de recarregar a página ou trocar de aparelho.
+- **200:** `{ "disponibilidades": [ { "id": "uuid", "local": { "lat": -18.9186, "lng": -48.2772 }, "raio_busca_km": 100, "urgencia": "urgente", "status": "aberto", "expira_em": "...", "criado_em": "...", "propostas_pendentes": 1 } ] }`
+- `status` é calculado: `aberto` com prazo vencido volta como `"expirado"`. Lista vazia: `{ "disponibilidades": [] }`.
+- **401** · **403** usuário não é motorista · **404** usuário sem perfil de motorista.
 
 ### POST /disponibilidades 🔒 *(só motorista)*
 O motorista logado avisa que está livre e procurando carga numa região até um horário. O motorista é descoberto pelo token.
@@ -226,10 +244,13 @@ Propostas feitas pelo motorista logado, **mais recentes primeiro**. É por aqui 
     "criado_em": "2026-10-14T19:00:00.000Z",
     "chamado_carga_id": "uuid", "chamado_disp_id": "uuid",
     "tipo_carga": "Grãos", "valor_oferecido": 3500, "empresa": "Transportes Rápidos LTDA",
-    "frete_id": null
+    "frete_id": null,
+    "origem": { "lat": -18.9186, "lng": -48.2772 }, "destino": { "lat": -23.55, "lng": -46.63 },
+    "urgencia": "urgente", "certificacao_exigida": null,
+    "carga_status": "aberto", "carga_expira_em": "2026-10-20T12:00:00.000Z"
 } ] }
 ```
-- `status`: `pendente | aceita | recusada | expirada`. `frete_id` só vem preenchido quando a proposta foi `aceita` (use com `GET /fretes/meus`). Lista vazia: `{ "propostas": [] }`.
+- `status`: `pendente | aceita | recusada | expirada`. `frete_id` só vem preenchido quando a proposta foi `aceita` (use com `GET /fretes/meus`). `carga_status` é calculado (`aberto` vencido vira `expirado`); `certificacao_exigida` é `null` se a carga não exige. Lista vazia: `{ "propostas": [] }`.
 - **401** · **403** usuário não é motorista · **404** usuário sem perfil de motorista.
 
 ### GET /cargas/:id/propostas 🔒 *(só a empresa dona da carga)*
@@ -252,14 +273,14 @@ Propostas recebidas pela carga, com os dados do motorista. Ordem: pendentes prim
 ### POST /propostas/:id/responder 🔒 *(só a empresa dona da carga)*
 Corpo: `{ "acao": "aceitar" }` ou `{ "acao": "recusar" }`
 - **200 (recusar):** `{ "proposta": { "id": "uuid", "status": "recusada" } }`
-- **200 (aceitar):** numa única transação, a proposta vira `aceita`, as outras propostas **pendentes** da carga viram `recusada`, a carga e a disponibilidade usada pelo motorista viram `fechado` e o frete é criado:
+- **200 (aceitar):** numa única transação, a proposta vira `aceita`, as outras propostas **pendentes** da carga viram `recusada` (e também as pendentes do mesmo motorista, na mesma disponibilidade, em outras cargas), a carga e a disponibilidade usada pelo motorista viram `fechado` e o frete é criado:
 ```json
 { "frete": { "id": "uuid", "proposta_id": "uuid", "valor_final": 3200, "status_entrega": "aceito",
              "criado_em": "2026-10-14T19:00:00.000Z" } }
 ```
 - `valor_final` = `valor_proposto` da proposta aceita.
 - **400** id ou `acao` inválidos · **401** · **403** usuário não é empresa · **404** proposta não existe ou é de carga de outra empresa
-- **409** `"proposta já está aceita"` / `"... recusada"` (já respondida) · `"carga não está mais aberta"`. Duas aceitações ao mesmo tempo nunca criam dois fretes: a segunda espera a primeira terminar e recebe 409.
+- **409** `"proposta já está aceita"` / `"... recusada"` (já respondida) · `"carga não está mais aberta"` · `"disponibilidade não está mais aberta"` (já fechada ou vencida). Duas aceitações ao mesmo tempo nunca criam dois fretes: a segunda espera a primeira terminar e recebe 409.
 
 ### GET /propostas/:id/mensagens 🔒 *(só a empresa dona da carga e o motorista da proposta)*
 Histórico do chat da proposta, em **ordem cronológica** (mais antiga primeiro). Continua disponível em qualquer status, inclusive `recusada` e `expirada`.
@@ -290,14 +311,15 @@ Fretes do usuário logado, **mais recentes primeiro**. Para o motorista: os fret
 - **200 (motorista):**
 ```json
 { "fretes": [ {
-    "id": "uuid", "tipo_carga": "Grãos", "valor_final": 3500, "status_entrega": "em_transito",
+    "id": "uuid", "proposta_id": "uuid", "tipo_carga": "Grãos", "valor_final": 3500, "status_entrega": "em_transito",
+    "origem": { "lat": -18.9186, "lng": -48.2772 }, "destino": { "lat": -23.55, "lng": -46.63 },
     "coleta_em": "2026-10-15T08:00:00.000Z", "entrega_em": null, "criado_em": "2026-10-14T19:00:00.000Z",
     "status_pagamento": "retido",
     "empresa": { "id": "uuid", "razao_social": "Transportes Rápidos LTDA" }
 } ] }
 ```
 - **200 (empresa):** mesmos campos, mas no lugar de `empresa` vem
-  `"motorista": { "id": "uuid", "nome_completo": "João da Silva", "veiculo_tipo": "carreta", "veiculo_placa": "ABC1D23" }`.
+  `"motorista": { "id": "uuid", "nome_completo": "João da Silva", "veiculo_tipo": "carreta", "veiculo_placa": "ABC1D23" }`, e mais três campos: `comissao` (`{ percentual_comissao, valor_comissao, status_pagamento }`, `null` se ainda não há transação; **só a empresa vê**), `pix_copia_cola` e `pix_expira_em`, preenchidos **só enquanto `status_pagamento` for `pendente`** (modo de teste com gateway) e `null` nos demais casos. Para o QR Code em imagem, chame de novo `POST /fretes/:id/pagamento` (idempotente enquanto pendente).
 - `coleta_em` / `entrega_em` ficam `null` até o frete ir para `em_transito` / `entregue`. `status_pagamento` é `null` enquanto a empresa não pagou. Lista vazia: `{ "fretes": [] }`.
 - **401** · **403** usuário admin · **404** usuário sem perfil de motorista/empresa.
 
@@ -320,8 +342,21 @@ Respostas:
 - **401** · **403** usuário não é motorista · **404** frete não existe **ou é de outro motorista** (mesma resposta)
 - **409** transição não permitida: `{ "erro": "não é possível mudar o frete de aceito para entregue" }`
 
+### POST /webhooks/asaas *(chamado pelo Asaas, não pelo app)*
+Recebe os avisos do gateway. Exige o header `asaas-access-token` igual a `ASAAS_WEBHOOK_TOKEN`. **Idempotente**: o mesmo evento (`id`) enviado duas vezes é aplicado uma só (tabela `eventos_pagamento`).
+- **200** `{ "resultado": "aplicado" | "ignorado" | "duplicado" }` (evento que não usamos também responde 200, para o Asaas não reenviar).
+- **401** token inválido · **503** webhook não configurado, ou repasse ainda não encontrado (o Asaas reenvia).
+- Eventos tratados: `PAYMENT_RECEIVED`/`PAYMENT_CONFIRMED` (pendente → retido), `TRANSFER_DONE` (retido → liberado), `TRANSFER_FAILED`/`TRANSFER_CANCELLED` (continua retido; permite novo pedido de repasse).
+
 ### POST /fretes/:id/pagamento 🔒 *(só a empresa dona do frete)*
-Pagamento **simulado** (não há gateway): registra a transação com a comissão da plataforma de **5%**. Sem corpo.
+Registra a transação com a comissão da plataforma de **5%**. Sem corpo. O comportamento depende de `PAGAMENTOS_MODO` no servidor:
+
+- **`simulado` (padrão):** não há gateway; a transação nasce `retido` (descrito abaixo). É o modo da demonstração.
+- **`sandbox`:** gera uma cobrança Pix no Asaas (ambiente de teste). A transação nasce **`pendente`** e a resposta traz também `pix`: `{ "copia_e_cola", "qr_code_base64", "expira_em" }`. Quando a empresa paga o Pix, o webhook muda para `retido`. Neste modo: frete `entregue` não pode ser pago (**409**); o motorista só inicia o transporte (`em_transito`) com o pagamento `retido` (**409** "aguardando a confirmação do pagamento da empresa"); e ao entregar, o repasse Pix ao motorista é solicitado ao gateway e o pagamento vira `liberado` só quando o webhook `TRANSFER_DONE` chega (**409** "cadastre sua chave Pix antes de concluir a entrega" se faltar a chave). Falha do gateway: **502**.
+  - **Repasse simulado (plano B):** com `PAGAMENTOS_REPASSE=simulado` no servidor, a cobrança Pix continua real, mas o repasse ao motorista é simulado: o pagamento vira `liberado` na hora da entrega, sem chamar o gateway.
+  - **Idempotente enquanto `pendente`:** chamar o `POST` de novo devolve **200** com a **mesma** cobrança (`transacao` + `pix`), com o QR Code buscado outra vez. É assim que a empresa recupera o Pix ao recarregar a página. Se o frete já foi pago, **409**.
+  - **Pix não expira na prática durante a demo:** o QR do Asaas vale cerca de 1 ano (`expira_em`), e a transação continua `pendente` até o pagamento.
+  - **Erros com `codigo` estável** (o front deve usar o `codigo`, não a frase): `gateway_indisponivel` (502), `pagamento_nao_confirmado` (409, iniciar transporte sem pagamento retido), `pagamento_nao_retido` (409, entregar sem pagamento retido), `chave_pix_ausente` (409, motorista sem chave Pix ao entregar), `frete_entregue` (409, pagar frete já entregue no modo de teste), `frete_ja_pago` (409). Formato: `{ "erro": "texto", "codigo": "chave_pix_ausente" }`.
 
 - O valor fica **`retido`** pela plataforma até a entrega (o motorista sabe que o dinheiro existe, a empresa só o vê repassado quando a carga chega). Quando o frete vira `entregue`, passa para **`liberado`**.
 - Se a empresa pagar um frete que **já está** `entregue`, a transação já nasce `liberado`.
@@ -357,6 +392,30 @@ Todos os fretes (até 100), mais recentes primeiro, com empresa, motorista e pag
 Usuários cadastrados (até 200), mais recentes primeiro. Nunca traz senha, CPF ou CNPJ.
 - **200:** `{ "usuarios": [ { "id", "email", "tipo", "ativo", "criado_em", "nome" } ] }`
 - **401** · **403**.
+
+### PATCH /admin/usuarios/:id/ativo 🔒 *(só admin)*
+Desativa ou reativa uma conta. **Não apaga**: fretes e transações precisam ficar guardados (histórico do dinheiro).
+Corpo: `{ "ativo": false }` ou `{ "ativo": true }`
+- **200:** `{ "usuario": { "id": "uuid", "email": "...", "tipo": "empresa", "ativo": false } }`
+- Ao desativar, as cargas/disponibilidades **abertas** da conta são canceladas e as propostas pendentes ligadas a elas viram `recusada`. Fretes em andamento não mudam.
+- Conta desativada não faz login e qualquer token dela passa a receber **401** `{ "erro": "conta desativada ou inexistente", "codigo": "conta_desativada" }` na hora (a API confere `ativo` a cada chamada).
+- A ação fica em `logs_auditoria` (`usuario_desativado` / `usuario_reativado`).
+- **400** id ou `ativo` inválidos · **401** · **403** não é admin · **404** usuário não existe · **409** admin tentando desativar a si mesmo.
+
+### GET /motorista/chave-pix 🔒 *(só motorista)*
+Chave Pix do motorista logado (para onde o frete será repassado na entrega).
+- **200:** `{ "chave_pix": "52998224725", "tipo_chave_pix": "cpf" }`. Sem chave cadastrada: os dois campos vêm `null`.
+- **401** · **403** usuário não é motorista · **404** usuário sem perfil de motorista.
+
+### PUT /motorista/chave-pix 🔒 *(só motorista)*
+Cadastra ou troca a chave.
+```json
+{ "tipo_chave_pix": "cpf", "chave_pix": "529.982.247-25" }
+```
+- `tipo_chave_pix`: `cpf | cnpj | email | telefone | aleatoria`. A chave é conferida conforme o tipo e devolvida **normalizada**: CPF/CNPJ/telefone só com dígitos (telefone com 11 dígitos, aceita `+55`), e-mail e chave aleatória em minúsculas.
+- **200:** `{ "chave_pix": "52998224725", "tipo_chave_pix": "cpf" }`
+- **400** tipo desconhecido ou chave inválida para o tipo · **401** · **403** · **404** sem perfil de motorista.
+- Pré-requisito no banco: `database/migracoes/001_pagamentos_pix.sql`.
 
 ---
 

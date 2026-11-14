@@ -86,12 +86,14 @@ rotasCertificacoes.post("/minhas", exigirAutenticacao, exigirTipo("motorista"), 
 });
 
 // Fila do admin: certificações enviadas que ainda não foram aprovadas, mais antigas primeiro.
+// CPF e CNH ficam de fora de propósito: para aprovar uma certificação o admin não precisa
+// deles (minimização de dados, LGPD). Quem precisar, consulta direto no banco.
 rotasCertificacoes.get("/pendentes", exigirAutenticacao, exigirTipo("admin"), async (_req, res) => {
   const { rows } = await pool.query(
     `SELECT mc.id, c.nome AS certificacao, mc.numero_certificado,
             to_char(mc.validade, 'YYYY-MM-DD') AS validade, mc.criado_em,
-            json_build_object('id', m.id, 'nome_completo', m.nome_completo, 'cpf', m.cpf,
-                              'cnh', m.cnh, 'veiculo_placa', m.veiculo_placa) AS motorista
+            json_build_object('id', m.id, 'nome_completo', m.nome_completo,
+                              'veiculo_placa', m.veiculo_placa) AS motorista
        FROM motorista_certificacoes mc
        JOIN certificacoes c ON c.id = mc.certificacao_id
        JOIN motoristas m    ON m.id = mc.motorista_id
