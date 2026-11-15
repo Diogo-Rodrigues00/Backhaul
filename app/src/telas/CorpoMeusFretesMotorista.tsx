@@ -4,7 +4,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { View } from 'react-native';
 
-import { eFreteDoMotorista } from '@/api/fretes';
+import { eFreteDoMotorista, paraFreteDoMotorista } from '@/api/fretes';
 import { useAtualizarStatusFrete, useMeusFretes } from '@/api/fretes.hooks';
 import { useQueryClient } from '@/api/tanstack';
 import { chaves } from '@/api/chaves';
@@ -91,8 +91,12 @@ export default function CorpoMeusFretesMotorista() {
   const { refetch } = consulta;
 
   // O mesmo `GET /fretes/meus` serve a empresa; aqui só interessa a forma do motorista (`empresa`).
+  // `paraFreteDoMotorista` deixa de fora comissão e Pix: o motorista nunca vê a comissão (card 044).
   const dados = consulta.data;
-  const lista = useMemo(() => dados?.fretes.filter(eFreteDoMotorista), [dados]);
+  const lista = useMemo(
+    () => dados?.fretes.filter(eFreteDoMotorista).map(paraFreteDoMotorista),
+    [dados],
+  );
 
   // Pagamento feito pela empresa (CT-09): a frase vai à barra de novidades e à região viva.
   const [novidade, setNovidade] = useState('');
@@ -226,6 +230,8 @@ export default function CorpoMeusFretesMotorista() {
                 coletaEm={frete.coleta_em}
                 entregaEm={frete.entrega_em}
                 statusPagamento={frete.status_pagamento}
+                origem={frete.origem}
+                destino={frete.destino}
                 aviso={avisos[frete.id]}
                 aoAvancar={aoAvancar}
               />

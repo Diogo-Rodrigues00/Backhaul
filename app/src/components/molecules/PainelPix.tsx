@@ -29,7 +29,8 @@ import { ListaDeFatos } from './ListaDeFatos';
 /** Pix como a tela o guarda (mesmos dados do `pix` da API, em camelCase). */
 export interface PixDaTela {
   copiaECola: string;
-  qrCodeBase64: string;
+  /** PNG em base64. Ausente quando o Pix veio da lista de fretes (que não traz o QR): mostra só o código. */
+  qrCodeBase64?: string;
   /** ISO. */
   expiraEm: string;
 }
@@ -54,6 +55,14 @@ export interface PropsPainelPix {
   idBase?: string;
   /** Recolhe o painel (o cartão passa a oferecer "Ver Pix pendente"). */
   aoOcultar?: () => void;
+  /** Sem QR (Pix da lista de fretes): pede o QR de novo (POST idempotente). Sem ele, não há botão. */
+  aoMostrarQr?: () => void;
+  /** Enquanto o QR é pedido: o botão mostra o giro e fica ocupado. */
+  gerandoQr?: boolean;
+  /** Erro ao pedir o QR (texto da API ou padrão); o botão continua, com o foco nele. */
+  erroQr?: string;
+  /** Nome acessível do botão "Mostrar QR Code" (único por cartão, como os demais botões da tela). */
+  rotuloMostrarQr?: string;
 }
 
 const LARGURA_QR = 240;
@@ -111,6 +120,10 @@ export function PainelPix({
   refTitulo,
   idBase = 'painel-pix',
   aoOcultar,
+  aoMostrarQr,
+  gerandoQr = false,
+  erroQr,
+  rotuloMostrarQr = 'Mostrar QR Code',
 }: PropsPainelPix) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
@@ -142,22 +155,43 @@ export function PainelPix({
         ) : (
           <>
             <Texto>
-              Abra o app do seu banco, escolha Pix e leia o QR Code ou cole o código abaixo.
+              {pix.qrCodeBase64
+                ? 'Abra o app do seu banco, escolha Pix e leia o QR Code ou cole o código abaixo.'
+                : 'Abra o app do seu banco, escolha Pix e cole o código abaixo.'}
             </Texto>
-            <View
-              role="img"
-              aria-label={`QR Code do Pix de ${formatarMoeda(valorFrete)}`}
-              accessible
-              style={estilos.qr}
-            >
-              <Image
-                source={{ uri: `data:image/png;base64,${pix.qrCodeBase64}` }}
-                style={estilos.imagem}
-                resizeMode="contain"
-                alt=""
-                accessible={false}
-              />
-            </View>
+            {pix.qrCodeBase64 ? (
+              <View
+                role="img"
+                aria-label={`QR Code do Pix de ${formatarMoeda(valorFrete)}`}
+                accessible
+                style={estilos.qr}
+              >
+                <Image
+                  source={{ uri: `data:image/png;base64,${pix.qrCodeBase64}` }}
+                  style={estilos.imagem}
+                  resizeMode="contain"
+                  alt=""
+                  accessible={false}
+                />
+              </View>
+            ) : aoMostrarQr ? (
+              <View style={estilos.acoes}>
+                <Botao
+                  variante="secundario"
+                  aria-label={rotuloMostrarQr}
+                  carregando={gerandoQr}
+                  rotuloCarregando="Gerando QR Code…"
+                  aoPressionar={aoMostrarQr}
+                >
+                  Mostrar QR Code
+                </Botao>
+              </View>
+            ) : null}
+            {erroQr ? (
+              <Banner variante="erro" titulo="Não foi possível mostrar o QR Code" anunciar>
+                {erroQr}
+              </Banner>
+            ) : null}
             <View>
               <Texto nivel="sm" cor="secundario">
                 Código Pix (copia e cola)

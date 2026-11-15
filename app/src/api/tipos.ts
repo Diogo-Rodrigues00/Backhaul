@@ -249,9 +249,15 @@ export type RespostaMinhasPropostas = { propostas: MinhaProposta[] };
 // ---------- Fretes ----------
 type FreteBase = {
   id: string;
+  /** Proposta que gerou o frete: guardado para o chat e o mapa (cards 042/043 e 035). */
+  proposta_id: string;
   tipo_carga: string;
   valor_final: Numerico;
   status_entrega: StatusEntrega;
+  /** Coleta (origem da carga), para os dois perfis. */
+  origem: Coordenadas;
+  /** Entrega (destino da carga), para os dois perfis. */
+  destino: Coordenadas;
   /** null até o frete ir para em_transito. */
   coleta_em: string | null;
   /** null até o frete ser entregue. */
@@ -260,11 +266,20 @@ type FreteBase = {
   /** null enquanto a empresa não pagou. */
   status_pagamento: StatusPagamento | null;
 };
-/** GET /fretes/meus para o motorista: traz os dados da empresa. */
+/**
+ * GET /fretes/meus para o motorista: traz os dados da empresa. Não traz comissão nem Pix: o motorista
+ * nunca vê a comissão (a API não a envia; a tela também não a lê).
+ */
 export type FreteDoMotorista = FreteBase & {
   empresa: { id: string; razao_social: string };
 };
-/** GET /fretes/meus para a empresa: traz os dados do motorista. */
+/** Comissão do frete como a API devolve para a empresa (`GET /fretes/meus`). Nunca calculada no app. */
+export type ComissaoDoFrete = {
+  percentual_comissao: Numerico;
+  valor_comissao: Numerico;
+  status_pagamento: StatusPagamento;
+};
+/** GET /fretes/meus para a empresa: traz os dados do motorista e a comissão (só a empresa vê). */
 export type FreteDaEmpresa = FreteBase & {
   motorista: {
     id: string;
@@ -272,6 +287,12 @@ export type FreteDaEmpresa = FreteBase & {
     veiculo_tipo: string;
     veiculo_placa: string;
   };
+  /** `null` enquanto não há transação (antes do pagamento). */
+  comissao: ComissaoDoFrete | null;
+  /** Só com o pagamento `pendente` (modo de teste): código copia e cola; `null` nos demais casos. */
+  pix_copia_cola: string | null;
+  /** ISO. Só com o pagamento `pendente`; `null` nos demais casos. */
+  pix_expira_em: string | null;
 };
 export type Frete = FreteDoMotorista | FreteDaEmpresa;
 export type RespostaMeusFretes = { fretes: Frete[] };

@@ -84,7 +84,7 @@ Site publicado: https://backhaul-front.vercel.app (último deploy de produção 
 
 ## Dívida técnica conhecida (detalhes em `auditoria-final.md`)
 - `BarraAbas` sticky sobrepõe alvos da primeira dobra no mobile (`target-size`); contornado na tela de publicar disponibilidade e na fixture da lista. Precisa de folga de rolagem sob a barra no template.
-- Comissão some ao recarregar a página (`GET /fretes/meus` não a devolve); aparece só logo após o pagamento.
+- ~~Comissão some ao recarregar a página~~ — resolvida no card 044: `GET /fretes/meus` devolve `comissao` (e o Pix pendente, sem QR) para a empresa; a tela lê dali e o resultado do POST segue como atualização imediata. Pendência: o QR Code não volta após recarregar (só o copia e cola).
 - Lighthouse mobile Performance 85–93 (aceito pelas decisões); Performance de desktop oscila no CI (0,88–1,00) e já reprovou PRs sem relação com a mudança (PR #88 só de docs passou ao reexecutar). Decisão pendente do Pedro: tornar `warn` no desktop como no mobile.
 - iPhone/Expo Go, VoiceOver e Dynamic Type não verificados em nenhuma tela.
 - Ajustes menores de revisão (ver PRs): foco após recusar proposta e após 409; `ResumoCarga` mostra o selo de urgência em carga expirada; `aria-controls` do combobox só com a lista aberta; helper único do rótulo "Nome - UF".

@@ -127,11 +127,15 @@ function statusPagamentoDoFrete(freteId: string) {
 
 function freteParaLista(frete: FreteFluxo, ladoMotorista: boolean): Frete {
   const carga = estado.cargas.find((c) => c.id === frete.cargaId);
+  const transacao = estado.transacoes.find((t) => t.freteId === frete.id);
   const base = {
     id: frete.id,
+    proposta_id: frete.propostaId,
     tipo_carga: carga?.tipo_carga ?? '',
     valor_final: frete.valor_final,
     status_entrega: frete.status_entrega,
+    origem: carga?.origem ?? { lat: 0, lng: 0 },
+    destino: carga?.destino ?? { lat: 0, lng: 0 },
     coleta_em: frete.coleta_em,
     entrega_em: frete.entrega_em,
     criado_em: frete.criado_em,
@@ -141,6 +145,9 @@ function freteParaLista(frete: FreteFluxo, ladoMotorista: boolean): Frete {
     const empresa = usuarioPorId(frete.empresaId);
     return { ...base, empresa: { id: frete.empresaId, razao_social: empresa?.nome ?? '' } };
   }
+  // Só a empresa recebe comissão e Pix (docs/api.md): `comissao` é null antes da transação; o Pix
+  // (copia e cola e validade, sem QR) só enquanto o pagamento está pendente.
+  const pixPendente = transacao?.status_pagamento === 'pendente' ? transacao.pix : undefined;
   const motorista = usuarioPorId(frete.motoristaId);
   return {
     ...base,
@@ -150,6 +157,15 @@ function freteParaLista(frete: FreteFluxo, ladoMotorista: boolean): Frete {
       veiculo_tipo: motorista?.veiculoTipo ?? '',
       veiculo_placa: motorista?.veiculoPlaca ?? '',
     },
+    comissao: transacao
+      ? {
+          percentual_comissao: transacao.percentual_comissao,
+          valor_comissao: transacao.valor_comissao,
+          status_pagamento: transacao.status_pagamento,
+        }
+      : null,
+    pix_copia_cola: pixPendente?.copia_e_cola ?? null,
+    pix_expira_em: pixPendente?.expira_em ?? null,
   };
 }
 

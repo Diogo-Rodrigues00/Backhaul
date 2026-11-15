@@ -21,6 +21,8 @@ const frete: PropsCartaoFreteEmpresa = {
   coletaEm: null,
   entregaEm: null,
   statusPagamento: null,
+  origem: { lat: -18.9141, lng: -48.2749 },
+  destino: { lat: -19.7472, lng: -47.9381 },
   motorista: { nome: 'João da Silva', veiculo: 'carreta', placa: 'ABC1D23' },
   aoPagar: jest.fn(() => Promise.resolve()),
   aoConflito: jest.fn(),
