@@ -5,8 +5,8 @@ import {
   disponibilidadePublicadaMock,
   disponibilidadesDoMotoristaMock,
 } from '../fixtures/disponibilidades';
-import { respostaErros } from '../respostas';
-import { autenticar, eDataFutura, lerCorpo } from './comum';
+import { respostaErro, respostaErros } from '../respostas';
+import { autenticar, eDataFutura, eUuid, lerCorpo, textoDoParametro } from './comum';
 
 const URGENCIAS = ['normal', 'urgente', 'critico'];
 
@@ -53,6 +53,24 @@ export function criarHandlersDisponibilidades(baseUrl: string) {
         },
         { status: 201 },
       );
+    }),
+
+    // POST /disponibilidades/:id/cancelar (docs/api.md, card 034). Sem estado, como o resto dos handlers:
+    // a lista (GET) continua a das fixtures, e quem testa o cancelamento sobrescreve o GET com `servidor.use`.
+    http.post(`${baseUrl}/disponibilidades/:id/cancelar`, ({ request, params }) => {
+      const { resposta } = autenticar(request, ['motorista']);
+      if (resposta) return resposta;
+      const id = textoDoParametro(params.id);
+      if (!eUuid(id)) return respostaErros(400, ['id deve ser um UUID válido']);
+      const disponibilidade = disponibilidadesDoMotoristaMock.find((item) => item.id === id);
+      if (disponibilidade === undefined) {
+        return respostaErro(404, 'disponibilidade não encontrada');
+      }
+      const vigente = Date.parse(disponibilidade.expira_em) > Date.now();
+      if (disponibilidade.status !== 'aberto' || !vigente) {
+        return respostaErro(409, 'disponibilidade não está mais aberta');
+      }
+      return HttpResponse.json({ disponibilidade: { id, status: 'cancelado' } });
     }),
 
     // PROPOSTA relatório 4b: rota inexistente no backend.

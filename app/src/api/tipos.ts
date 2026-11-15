@@ -163,6 +163,13 @@ export type DisponibilidadeDoMotorista = DisponibilidadePublicada & {
 };
 export type RespostaMinhasDisponibilidades = { disponibilidades: DisponibilidadeDoMotorista[] };
 
+// POST /disponibilidades/:id/cancelar (docs/api.md, só motorista dono). Sem corpo. Propostas pendentes
+// feitas com ela viram `recusada`. Erros: 400 id inválido · 401 · 403 · 404 não existe ou é de outro
+// motorista · 409 "disponibilidade não está mais aberta".
+export type RespostaCancelarDisponibilidade = {
+  disponibilidade: { id: string; status: 'cancelado' };
+};
+
 // ---------- Propostas ----------
 export type CorpoFazerProposta = {
   chamado_carga_id: string;

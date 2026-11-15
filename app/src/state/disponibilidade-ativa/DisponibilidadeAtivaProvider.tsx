@@ -12,7 +12,7 @@ import {
 import { LimiteDeErro } from '@/components/molecules/LimiteDeErro';
 import { useCasca } from '@/components/organisms/useCasca';
 import { useMontado } from '@/hooks/useMontado';
-import { CHAVES, gravar, ler } from '@/lib/armazenamento';
+import { apagar, CHAVES, gravar, ler } from '@/lib/armazenamento';
 import {
   escolherAtiva,
   lerEscolhaSalva,
@@ -152,6 +152,23 @@ export function DisponibilidadeAtivaProvider({ children }: { children: ReactNode
     return () => clearTimeout(cronometro);
   }, [venceEm]);
 
+  // Cancelada (card 034): sai da lista do plano B (a cópia no aparelho é apagada) e, se era a
+  // escolhida, a escolha também. A ativa do que sobra é calculada aqui, para a tela anunciar a troca.
+  const marcarCancelada = useCallback(
+    (id: string): Disponibilidade | null => {
+      const eraEscolhida = salva?.id === id || salva?.publicada?.id === id;
+      if (eraEscolhida) {
+        versaoRef.current += 1;
+        setSalva(null);
+        void apagar(CHAVES.disponibilidadeAtiva);
+      }
+      const restantes = disponibilidades.filter((item) => item.id !== id);
+      const escolhidaDepois = eraEscolhida ? null : (salva?.id ?? null);
+      return escolherAtiva(restantes, escolhidaDepois, new Date());
+    },
+    [disponibilidades, salva],
+  );
+
   const atualizar = consulta.refetch;
   const valor = useMemo<ValorDisponibilidadeAtiva>(
     () => ({
@@ -159,6 +176,7 @@ export function DisponibilidadeAtivaProvider({ children }: { children: ReactNode
       carregando,
       definirAtiva,
       registrarPublicada,
+      marcarCancelada,
       disponibilidades,
       origem: consulta.data ? 'api' : 'local',
       erro,
@@ -170,6 +188,7 @@ export function DisponibilidadeAtivaProvider({ children }: { children: ReactNode
       carregando,
       definirAtiva,
       registrarPublicada,
+      marcarCancelada,
       disponibilidades,
       consulta.data,
       erro,

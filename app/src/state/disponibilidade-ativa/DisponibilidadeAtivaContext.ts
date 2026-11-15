@@ -25,6 +25,12 @@ export interface ValorDisponibilidadeAtiva {
    * ativa e, no plano B, a lista passa a mostrá-la. Guarda a cópia no aparelho.
    */
   registrarPublicada: (disponibilidade: Disponibilidade) => void;
+  /**
+   * Depois de `POST /disponibilidades/:id/cancelar` (200): a disponibilidade sai da ativa. Se era a
+   * escolhida, a escolha guardada é apagada; no plano B, a cópia guardada no aparelho também. Devolve a
+   * nova ativa (ou `null`) para a tela anunciar a troca. A lista na API é relida pelo hook de cancelar.
+   */
+  marcarCancelada: (id: string) => Disponibilidade | null;
   /** Lista da tela "Minhas disponibilidades", na ordem da fonte (a API devolve `criado_em` DESC). */
   disponibilidades: readonly Disponibilidade[];
   origem: OrigemDisponibilidades;

@@ -256,3 +256,25 @@ describe('DialogoConfirmacao (web): papéis e rolagem', () => {
     expect(caixa()?.contains(alerta)).toBe(true);
   });
 });
+
+describe('DialogoConfirmacao (web): botão seguro com outro rótulo (card 034)', () => {
+  it('com rotuloCancelar "Voltar" e confirmação destrutiva, o foco inicial vai a "Voltar"', async () => {
+    await act(async () =>
+      raiz.render(
+        comTema(
+          <Cena
+            extras={{
+              rotuloCancelar: 'Voltar',
+              rotuloConfirmar: 'Cancelar disponibilidade',
+              variante: 'perigo',
+            }}
+          />,
+        ),
+      ),
+    );
+    await act(async () => porId('origem').focus());
+    await act(async () => porId('origem').click());
+    await terminarAnimacao();
+    expect(document.activeElement).toBe(botaoPorNome('Voltar'));
+  });
+});
