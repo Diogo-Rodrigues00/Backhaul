@@ -66,9 +66,9 @@ describe('Minhas disponibilidades: cancelar no plano B (card 034)', () => {
       ),
     );
 
-    fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_UBERLANDIA }));
+    await fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_UBERLANDIA }));
     await waitFor(() => expect(dialogos()).toHaveLength(1));
-    fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
 
     await waitFor(() =>
       expect(

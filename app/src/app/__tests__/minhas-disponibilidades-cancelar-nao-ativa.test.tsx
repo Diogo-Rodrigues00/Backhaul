@@ -51,14 +51,14 @@ describe('Minhas disponibilidades: cancelar uma que não é a ativa (card 034)',
     await aguardarSessao();
     await aguardarLista();
 
-    fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_ARAGUARI }));
+    await fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_ARAGUARI }));
     await waitFor(() => expect(dialogos()).toHaveLength(1));
     servidor.use(
       http.get(urlMock(ROTA_MINHAS), () =>
         HttpResponse.json({ disponibilidades: listaCom(DISPONIBILIDADE_ABERTA_ANTIGA_ID) }),
       ),
     );
-    fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
 
     await waitFor(() => expect(within(cartoes()[2]!).getByText('Cancelada')).toBeOnTheScreen());
     expect(textoDaAtiva()).toBe(TEXTO_ATIVA_UBERLANDIA);

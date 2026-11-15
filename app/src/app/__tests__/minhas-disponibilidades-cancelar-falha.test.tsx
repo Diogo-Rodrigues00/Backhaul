@@ -46,9 +46,9 @@ describe('Minhas disponibilidades: falha ao cancelar (card 034)', () => {
     await aguardarSessao();
     await aguardarLista();
 
-    fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_ARAGUARI }));
+    await fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_ARAGUARI }));
     await waitFor(() => expect(dialogos()).toHaveLength(1));
-    fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
 
     await waitFor(() =>
       expect(within(dialogos()[0]!).getByText('Algo deu errado. Tente de novo.')).toBeOnTheScreen(),

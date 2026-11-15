@@ -60,9 +60,9 @@ describe('Minhas disponibilidades: cancelar com 409 (card 034)', () => {
     await aguardarLista();
     const leiturasAntes = leituras;
 
-    fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_ARAGUARI }));
+    await fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_ARAGUARI }));
     await waitFor(() => expect(dialogos()).toHaveLength(1));
-    fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
 
     expect(await screen.findByText('disponibilidade não está mais aberta')).toBeOnTheScreen();
     expect(screen.getByText('Não foi possível cancelar.')).toBeOnTheScreen();

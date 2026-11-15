@@ -53,7 +53,7 @@ describe('Minhas disponibilidades: cancelar a ativa (card 034)', () => {
     await aguardarLista();
     expect(textoDaAtiva()).toBe(TEXTO_ATIVA_UBERLANDIA);
 
-    fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_UBERLANDIA }));
+    await fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_UBERLANDIA }));
     await waitFor(() => expect(dialogos()).toHaveLength(1));
     expect(screen.getByText('Cancelar esta disponibilidade?')).toBeOnTheScreen();
     // A releitura que segue o cancelamento devolve a lista com a cancelada, como a API faria.
@@ -62,7 +62,7 @@ describe('Minhas disponibilidades: cancelar a ativa (card 034)', () => {
         HttpResponse.json({ disponibilidades: listaCom(DISPONIBILIDADE_ABERTA_ID) }),
       ),
     );
-    fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
 
     await waitFor(() => expect(within(cartoes()[0]!).getByText('Cancelada')).toBeOnTheScreen());
     expect(within(cartoes()[0]!).queryByText('Ativa')).toBeNull();

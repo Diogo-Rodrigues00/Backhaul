@@ -47,9 +47,9 @@ describe('Minhas disponibilidades: cancelar com 404 (card 034)', () => {
     await aguardarSessao();
     await aguardarLista();
 
-    fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_ARAGUARI }));
+    await fireEvent.press(screen.getByRole('button', { name: BOTAO_CANCELAR_ARAGUARI }));
     await waitFor(() => expect(dialogos()).toHaveLength(1));
-    fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar disponibilidade' }));
 
     expect(await screen.findByText('disponibilidade não encontrada')).toBeOnTheScreen();
     await waitFor(() => expect(dialogos()).toHaveLength(0));
