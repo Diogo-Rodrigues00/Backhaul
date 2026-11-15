@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { View, type ViewStyle } from 'react-native';
+import type { ReactNode, Ref } from 'react';
+import { View, type Text, type ViewStyle } from 'react-native';
 
 import { Icone } from '@/components/atoms/Icone';
 import type { NomeIcone } from '@/components/atoms/icones';
@@ -17,6 +17,8 @@ export interface PropsEstadoVazio {
   /** Obrigatória (CT-02): todo estado vazio leva a uma próxima ação. */
   acao: ReactNode;
   icone?: NomeIcone;
+  /** Foco por código no título (ex.: depois de cancelar a carga e ela sumir da lista, card 033). */
+  refTitulo?: Ref<Text>;
 }
 
 // Protótipo (.empty): círculo de 72 px com o ícone de 36 px, borda tracejada de 3 px na caixa.
@@ -52,7 +54,13 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
  * Estado vazio (EmptyState): ícone num círculo âmbar claro, título `h2`, frase e a ação. Sem ação
  * não compila: o vazio nunca deixa a pessoa sem saída (CT-02).
  */
-export function EstadoVazio({ titulo, descricao, acao, icone = 'inbox' }: PropsEstadoVazio) {
+export function EstadoVazio({
+  titulo,
+  descricao,
+  acao,
+  icone = 'inbox',
+  refTitulo,
+}: PropsEstadoVazio) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
 
@@ -67,7 +75,7 @@ export function EstadoVazio({ titulo, descricao, acao, icone = 'inbox' }: PropsE
       >
         <Icone nome={icone} tamanho={LADO_ICONE} cor={colors.text.primary} />
       </View>
-      <Titulo nivel={2} style={estilos.texto}>
+      <Titulo nivel={2} style={estilos.texto} ref={refTitulo} tabIndex={refTitulo ? -1 : undefined}>
         {titulo}
       </Titulo>
       <Texto cor="secundario" style={estilos.texto}>

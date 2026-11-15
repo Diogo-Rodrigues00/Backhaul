@@ -114,6 +114,8 @@ function cargaDaEmpresa(carga: CargaFluxo): CargaDaEmpresa {
   const { empresaId: _empresaId, ...publica } = carga;
   return {
     ...publica,
+    // Como a API (docs/api.md): `aberto` com prazo vencido volta como `expirado`.
+    status: statusEfetivo(carga.status, carga.expira_em),
     certificacao_exigida: certificacao?.nome ?? null,
     total_propostas: estado.propostas.filter((p) => p.cargaId === carga.id).length,
   };
@@ -554,6 +556,28 @@ export function criarHandlersComEstado(baseUrl: string) {
       if (resposta) return resposta;
       const minhas = estado.cargas.filter((c) => c.empresaId === usuario.id);
       return HttpResponse.json({ cargas: maisRecentesPrimeiro(minhas).map(cargaDaEmpresa) });
+    }),
+
+    // Cancelar carga (card 033, docs/api.md): só a empresa dona; 409 se não estiver aberta e vigente;
+    // as propostas pendentes dela viram `recusada`, como a transação da API.
+    http.post(`${baseUrl}/cargas/:id/cancelar`, async ({ request, params }) => {
+      const { usuario, resposta, deOutro } = autenticarFluxo(request, ['empresa']);
+      if (deOutro) return undefined;
+      if (resposta) return resposta;
+      const id = textoDoParametro(params.id);
+      if (!eUuid(id)) return respostaErros(400, ['id deve ser um UUID válido']);
+      const carga = estado.cargas.find((c) => c.id === id && c.empresaId === usuario.id);
+      if (carga === undefined) return respostaErro(404, 'carga não encontrada');
+      if (!cargaAbertaENaoVencida(carga)) {
+        return respostaErro(409, 'carga não está mais aberta');
+      }
+      carga.status = 'cancelado';
+      for (const proposta of estado.propostas) {
+        if (proposta.cargaId === carga.id && proposta.status === 'pendente') {
+          proposta.status = 'recusada';
+        }
+      }
+      return HttpResponse.json({ carga: { id: carga.id, status: 'cancelado' } });
     }),
 
     http.get(`${baseUrl}/cargas/proximas`, ({ request }) => {

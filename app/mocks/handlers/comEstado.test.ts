@@ -8,6 +8,7 @@ import {
   listarMinhasCertificacoes,
   responderCertificacaoPendente,
 } from '@/api/certificacoes';
+import { cancelarCarga, listarMinhasCargas } from '@/api/cargas';
 import { enviarMensagem, listarMensagens } from '@/api/mensagens';
 import { listarMinhasDisponibilidades } from '@/api/disponibilidades';
 import { fazerProposta, listarMinhasPropostas, responderProposta } from '@/api/propostas';
@@ -220,6 +221,36 @@ describe('chat da proposta: histórico, filtro, encerramento', () => {
       mensagens: ['proposta encerrada: não é possível enviar mensagens'],
     });
     expect((await listarMensagens(propostaId)).mensagens).toHaveLength(2);
+  });
+});
+
+describe('cancelar carga (card 033): mock com estado segue docs/api.md', () => {
+  it('empresa dona cancela: 200, a carga vira "cancelado" na lista; de novo, 409', async () => {
+    await entrarComo('empresa@fluxo.test');
+    await expect(cancelarCarga(ID_CARGA_GRAOS_FLUXO)).resolves.toEqual({
+      carga: { id: ID_CARGA_GRAOS_FLUXO, status: 'cancelado' },
+    });
+    const minhas = await listarMinhasCargas();
+    expect(minhas.cargas.find((c) => c.id === ID_CARGA_GRAOS_FLUXO)?.status).toBe('cancelado');
+
+    await expect(cancelarCarga(ID_CARGA_GRAOS_FLUXO)).rejects.toMatchObject({
+      status: 409,
+      mensagens: ['carga não está mais aberta'],
+    });
+  });
+
+  it('id que não é UUID: 400; carga inexistente: 404', async () => {
+    await entrarComo('empresa@fluxo.test');
+    await expect(cancelarCarga('nao-e-uuid')).rejects.toMatchObject({ status: 400 });
+    await expect(cancelarCarga('cccccccc-0000-4000-8000-0000000000ff')).rejects.toMatchObject({
+      status: 404,
+      mensagens: ['carga não encontrada'],
+    });
+  });
+
+  it('motorista não pode cancelar: 403', async () => {
+    await entrarComo('joao@fluxo.test');
+    await expect(cancelarCarga(ID_CARGA_GRAOS_FLUXO)).rejects.toMatchObject({ status: 403 });
   });
 });
 

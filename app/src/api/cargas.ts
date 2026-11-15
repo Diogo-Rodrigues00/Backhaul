@@ -4,6 +4,7 @@ import { requisitar, montarConsulta } from './cliente';
 import type {
   CorpoPublicarCarga,
   ParametrosCargasProximas,
+  RespostaCancelarCarga,
   RespostaCargasProximas,
   RespostaMinhasCargas,
   RespostaPublicarCarga,
@@ -11,6 +12,13 @@ import type {
 
 export function publicarCarga(dados: CorpoPublicarCarga): Promise<RespostaPublicarCarga> {
   return requisitar<RespostaPublicarCarga>('POST', '/cargas', { corpo: dados });
+}
+
+export function cancelarCarga(cargaId: string): Promise<RespostaCancelarCarga> {
+  return requisitar<RespostaCancelarCarga>(
+    'POST',
+    `/cargas/${encodeURIComponent(cargaId)}/cancelar`,
+  );
 }
 
 export function listarMinhasCargas(): Promise<RespostaMinhasCargas> {

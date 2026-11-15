@@ -100,6 +100,9 @@ export type Carga = {
 };
 export type RespostaPublicarCarga = { carga: Carga };
 
+/** POST /cargas/:id/cancelar (só a empresa dona). Propostas pendentes da carga viram `recusada`. */
+export type RespostaCancelarCarga = { carga: { id: string; status: 'cancelado' } };
+
 /** GET /cargas/minhas: os campos de Carga mais nome da certificação e total de propostas. */
 export type CargaDaEmpresa = Carga & {
   /** null quando a carga não exige certificação. */

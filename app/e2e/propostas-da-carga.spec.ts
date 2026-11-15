@@ -73,8 +73,8 @@ test.describe('aceitar com o teclado (D-PO-08)', () => {
     const dialogo = page.getByRole('alertdialog', { name: 'Aceitar a proposta de João da Silva?' });
     await expect(dialogo).toBeVisible();
     await expect(dialogo).toContainText('as outras propostas pendentes são recusadas');
-    // Foco inicial no botão seguro (Cancelar).
-    await expect(page.getByRole('button', { name: 'Cancelar' })).toBeFocused();
+    // Foco inicial no botão seguro (Cancelar). Exato: "Cancelar carga" (card 033) também contém o texto.
+    await expect(page.getByRole('button', { name: 'Cancelar', exact: true })).toBeFocused();
 
     // O Tab não escapa do diálogo, nem para a frente nem para trás.
     for (let i = 0; i < 6; i += 1) {
@@ -110,7 +110,7 @@ test.describe('aceitar com o teclado (D-PO-08)', () => {
     const aceitar = page.getByRole('button', { name: 'Aceitar proposta de João da Silva' });
     await aceitar.focus();
     await page.keyboard.press('Enter');
-    await expect(page.getByRole('button', { name: 'Cancelar' })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Cancelar', exact: true })).toBeFocused();
 
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Aceitar proposta', exact: true })).toBeFocused();
