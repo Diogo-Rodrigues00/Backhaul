@@ -1,5 +1,7 @@
 # Pedido ao Diogo 2 — Pix e rotas que ainda faltam
 
+> **Atualização de 15/11:** o Diogo já entregou os itens A1 a A5, B1 (regras do aceite) e B2 (status `expirado`) nos PRs #148 a #150 da `main`, e o front adotou tudo (cards 033, 034, 044 e 050, em `front`). A tabela da seção P2 abaixo é o histórico do pedido; o que continua aberto é a confirmação de que o deploy do Render já tem essas rotas (um GET autenticado em `/disponibilidades/minhas`) e os itens fora do escopo da Mostra Tech (404/413 em JSON e tetos de tamanho).
+
 _2026-11-12, do Pedro (front). Complementa o [`pedido-ao-diogo.md`](pedido-ao-diogo.md) (não o substitui). Sem prazo além do congelamento de mudanças de 14/11: depois dele, o front não muda e o backend só muda com aviso. O front executa cada item assim que ele estiver na `main` com o contrato no `docs/api.md`._
 
 Diogo, as duas telas do Pix estão prontas e publicadas em <https://backhaul-front.vercel.app>: a chave Pix do motorista (`/motorista/chave-pix`) e o pagamento por Pix da empresa (em "Meus fretes"). Hoje elas funcionam com o modo simulado do servidor. Para mostrar o QR de verdade, esperam o **modo de teste (sandbox) ligado no servidor**, que é o seu PR #137. O front mostra o texto de erro da API tal como ele vem, por isso as mensagens exatas importam.
