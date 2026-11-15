@@ -215,7 +215,11 @@ describe('Meus fretes (empresa): comissão que vem da lista (card 044)', () => {
               ? {
                   ...frete,
                   status_pagamento: 'retido',
-                  comissao: { percentual_comissao: 5, valor_comissao: 160, status_pagamento: 'retido' },
+                  comissao: {
+                    percentual_comissao: 5,
+                    valor_comissao: 160,
+                    status_pagamento: 'retido',
+                  },
                 }
               : frete,
           ),

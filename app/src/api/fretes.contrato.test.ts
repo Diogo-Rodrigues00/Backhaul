@@ -48,9 +48,10 @@ describe('lerPixDaLista', () => {
   const expira = '2026-12-01T00:00:00.000Z';
 
   it('copia e cola e validade válidos: devolve os dois campos', () => {
-    expect(
-      lerPixDaLista({ pix_copia_cola: '00020126-codigo', pix_expira_em: expira }),
-    ).toEqual({ copia_e_cola: '00020126-codigo', expira_em: expira });
+    expect(lerPixDaLista({ pix_copia_cola: '00020126-codigo', pix_expira_em: expira })).toEqual({
+      copia_e_cola: '00020126-codigo',
+      expira_em: expira,
+    });
   });
 
   it('null nos dois campos (pagamento não pendente): nada', () => {
@@ -79,7 +80,12 @@ describe('lerPixDaLista', () => {
   it('aceita o frete da empresa completo (tipos)', () => {
     const frete = {
       ...base,
-      motorista: { id: 'm', nome_completo: 'João', veiculo_tipo: 'carreta', veiculo_placa: 'ABC1D23' },
+      motorista: {
+        id: 'm',
+        nome_completo: 'João',
+        veiculo_tipo: 'carreta',
+        veiculo_placa: 'ABC1D23',
+      },
       comissao: null,
       pix_copia_cola: null,
       pix_expira_em: null,

@@ -25,9 +25,7 @@ describe('rotuloDoPonto', () => {
 
   it('ponto longe de qualquer cidade da lista: coordenadas em texto, sem chutar cidade', () => {
     // São Paulo não está na lista fixa.
-    expect(rotuloDoPonto({ lat: -23.55, lng: -46.63 }, FIXTURE)).toBe(
-      'Lat -23,5500, Lng -46,6300',
-    );
+    expect(rotuloDoPonto({ lat: -23.55, lng: -46.63 }, FIXTURE)).toBe('Lat -23,5500, Lng -46,6300');
   });
 
   it('respeita a tolerância informada', () => {

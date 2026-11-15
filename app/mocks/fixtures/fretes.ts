@@ -32,7 +32,10 @@ const UBERABA = { lat: -19.7472, lng: -47.9381 };
 const SAO_PAULO = { lat: -23.55, lng: -46.63 };
 
 /** Comissão de 5% sobre o valor do frete, como a API calcula (fixture: nunca usada pelo app). */
-function comissaoDe(valorFrete: number, status: ComissaoDoFrete['status_pagamento']): ComissaoDoFrete {
+function comissaoDe(
+  valorFrete: number,
+  status: ComissaoDoFrete['status_pagamento'],
+): ComissaoDoFrete {
   return {
     percentual_comissao: 5,
     valor_comissao: Math.round(valorFrete * 5) / 100,
@@ -98,13 +101,15 @@ export const fretesDoMotoristaMock: FreteDoMotorista[] = base.map(
  * comissão em nenhum frete (`comissao: null`, Pix ausente): é o que as telas e os E2E de antes
  * esperam. Os testes que precisam da comissão paga usam `fretesDaEmpresaComComissaoMock`.
  */
-export const fretesDaEmpresaMock: FreteDaEmpresa[] = base.map(({ comissao: _comissao, ...frete }) => ({
-  ...frete,
-  motorista,
-  comissao: null,
-  pix_copia_cola: null,
-  pix_expira_em: null,
-}));
+export const fretesDaEmpresaMock: FreteDaEmpresa[] = base.map(
+  ({ comissao: _comissao, ...frete }) => ({
+    ...frete,
+    motorista,
+    comissao: null,
+    pix_copia_cola: null,
+    pix_expira_em: null,
+  }),
+);
 
 /**
  * GET /fretes/meus para a empresa com a comissão de cada frete pago (como a API devolve depois do

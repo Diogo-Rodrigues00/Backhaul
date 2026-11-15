@@ -16,12 +16,7 @@ const pixSemQr: PixDaTela = {
 describe('PainelPix sem QR (Pix da lista de fretes)', () => {
   it('mostra o código, a comissão e a validade, sem imagem de QR', async () => {
     await renderizar(
-      <PainelPix
-        valorFrete={3200}
-        percentualComissao={5}
-        valorComissao={160}
-        pix={pixSemQr}
-      />,
+      <PainelPix valorFrete={3200} percentualComissao={5} valorComissao={160} pix={pixSemQr} />,
     );
 
     expect(screen.getByRole('heading', { name: 'Pagamento por Pix' })).toBeOnTheScreen();
