@@ -29,7 +29,8 @@ import { ListaDeFatos } from './ListaDeFatos';
 /** Pix como a tela o guarda (mesmos dados do `pix` da API, em camelCase). */
 export interface PixDaTela {
   copiaECola: string;
-  qrCodeBase64: string;
+  /** PNG em base64. Ausente quando o Pix veio da lista de fretes (que não traz o QR): mostra só o código. */
+  qrCodeBase64?: string;
   /** ISO. */
   expiraEm: string;
 }
@@ -37,6 +38,8 @@ export interface PixDaTela {
 export const ANUNCIO_PIX_COPIADO = 'Código Pix copiado';
 export const ANUNCIO_PIX_NAO_COPIADO = 'Não foi possível copiar. Selecione o código e copie.';
 export const TEXTO_AGUARDANDO_PIX = 'Aguardando confirmação do pagamento…';
+export const TEXTO_SEM_QR =
+  'O QR Code aparece só logo depois de gerar o Pix. Pague com o código copia e cola abaixo.';
 export const TEXTO_PIX_EXPIRADO =
   'Este código Pix expirou. Não é possível gerar outro por aqui: tente de novo mais tarde ou fale com o suporte.';
 
@@ -144,20 +147,26 @@ export function PainelPix({
             <Texto>
               Abra o app do seu banco, escolha Pix e leia o QR Code ou cole o código abaixo.
             </Texto>
-            <View
-              role="img"
-              aria-label={`QR Code do Pix de ${formatarMoeda(valorFrete)}`}
-              accessible
-              style={estilos.qr}
-            >
-              <Image
-                source={{ uri: `data:image/png;base64,${pix.qrCodeBase64}` }}
-                style={estilos.imagem}
-                resizeMode="contain"
-                alt=""
-                accessible={false}
-              />
-            </View>
+            {pix.qrCodeBase64 ? (
+              <View
+                role="img"
+                aria-label={`QR Code do Pix de ${formatarMoeda(valorFrete)}`}
+                accessible
+                style={estilos.qr}
+              >
+                <Image
+                  source={{ uri: `data:image/png;base64,${pix.qrCodeBase64}` }}
+                  style={estilos.imagem}
+                  resizeMode="contain"
+                  alt=""
+                  accessible={false}
+                />
+              </View>
+            ) : (
+              <Texto nivel="sm" cor="secundario">
+                {TEXTO_SEM_QR}
+              </Texto>
+            )}
             <View>
               <Texto nivel="sm" cor="secundario">
                 Código Pix (copia e cola)

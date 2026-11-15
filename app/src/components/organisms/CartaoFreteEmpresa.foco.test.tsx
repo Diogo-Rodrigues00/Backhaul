@@ -13,6 +13,10 @@ jest.mock('@/hooks/useLoopAnimado', () => ({
   useLoopAnimado: jest.fn(() => ({ interpolate: () => '0deg' })),
 }));
 
+// O primeiro render do arquivo paga a carga dos módulos (LinhaRota, cidades): com a máquina ocupada,
+// passa dos 5 s padrão. Mesmo limite das telas de fretes.
+jest.setTimeout(30_000);
+
 const moverFocoMock = jest.mocked(moverFoco);
 const focoNoCorpoMock = jest.mocked(focoNoCorpo);
 
@@ -36,6 +40,8 @@ const base: PropsCartaoFreteEmpresa = {
   coletaEm: null,
   entregaEm: null,
   statusPagamento: 'pendente',
+  origem: { lat: -18.9141, lng: -48.2749 },
+  destino: { lat: -19.7472, lng: -47.9381 },
   motorista: { nome: 'João da Silva', veiculo: 'carreta', placa: 'ABC1D23' },
   pagamento,
   aoPagar: jest.fn(() => Promise.resolve()),

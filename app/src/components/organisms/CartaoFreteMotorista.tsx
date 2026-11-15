@@ -8,7 +8,9 @@ import { Botao } from '@/components/atoms/Botao';
 import { Texto } from '@/components/atoms/Texto';
 import { TextoOculto } from '@/components/atoms/TextoOculto';
 import { Banner } from '@/components/molecules/Banner';
+import { LinhaRota } from '@/components/molecules/LinhaRota';
 import { ResumoFrete } from '@/components/molecules/ResumoFrete';
+import { type Coordenada, rotuloDoPonto } from '@/lib/cidades';
 import type { NumeroEntrada } from '@/lib/formatacao';
 import { proximoPassoFrete, type StatusEntrega, type StatusPagamento } from '@/lib/rotulos';
 import type { TemaVisual } from '@/state/tema/montarTema';
@@ -34,6 +36,9 @@ export interface PropsCartaoFreteMotorista {
   entregaEm: string | null;
   /** `null` = a empresa ainda não pagou (D-PO-07). */
   statusPagamento: StatusPagamento | null;
+  /** Coleta e entrega (coordenadas da API); o cartão mostra o nome da cidade da lista, ou as coordenadas. */
+  origem: Coordenada;
+  destino: Coordenada;
   aviso?: AvisoFrete;
   /** Pede o próximo passo; recebe o botão para o diálogo devolver o foco a ele ao cancelar. */
   aoAvancar: (origem: View | null) => void;
@@ -67,6 +72,8 @@ export function CartaoFreteMotorista({
   coletaEm,
   entregaEm,
   statusPagamento,
+  origem,
+  destino,
   aviso,
   aoAvancar,
   ref,
@@ -92,6 +99,7 @@ export function CartaoFreteMotorista({
         {tipoCarga}
       </TextoOculto>
       <Texto cor="secundario">{`Empresa: ${empresa}`}</Texto>
+      <LinhaRota origem={rotuloDoPonto(origem)} destino={rotuloDoPonto(destino)} />
       <ResumoFrete
         tipoCarga={tipoCarga}
         valorFinal={valorFinal}

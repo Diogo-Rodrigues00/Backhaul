@@ -8,11 +8,13 @@ import { Botao } from '@/components/atoms/Botao';
 import { Texto } from '@/components/atoms/Texto';
 import { TextoOculto } from '@/components/atoms/TextoOculto';
 import { Banner } from '@/components/molecules/Banner';
+import { LinhaRota } from '@/components/molecules/LinhaRota';
 import { ListaDeFatos } from '@/components/molecules/ListaDeFatos';
 import { PainelPix, type PixDaTela } from '@/components/molecules/PainelPix';
 import { ResumoFrete } from '@/components/molecules/ResumoFrete';
 import { ResumoPagamento } from '@/components/molecules/ResumoPagamento';
 import { anunciar, moverFoco } from '@/lib/a11y';
+import { type Coordenada, rotuloDoPonto } from '@/lib/cidades';
 import { ErroApi, MENSAGEM_FALHA } from '@/lib/erros';
 import { focoNoCorpo } from '@/lib/focoNoCorpo';
 import { formatarMoeda, type NumeroEntrada } from '@/lib/formatacao';
@@ -42,8 +44,14 @@ export interface PropsCartaoFreteEmpresa {
   entregaEm: string | null;
   /** `null` = a empresa ainda não pagou: só então o botão "Pagar frete" aparece (D-PO-06). */
   statusPagamento: StatusPagamento | null;
+  /** Coleta e entrega (coordenadas da API); o cartão mostra o nome da cidade da lista, ou as coordenadas. */
+  origem: Coordenada;
+  destino: Coordenada;
   motorista: { nome: string; veiculo: string; placa: string };
-  /** Pagamento feito nesta sessão: mostra o resumo com a comissão. Depois de recarregar, some (Q3). */
+  /**
+   * Pagamento: o que a lista de fretes traz (comissão da API, e o Pix enquanto pendente) ou, logo após o
+   * 201, a resposta do POST. Mostra o resumo com a comissão; nunca é calculado aqui.
+   */
   pagamento?: PagamentoRegistrado;
   /** Registra o pagamento (POST). Rejeita com `ErroApi` quando a API recusa. */
   aoPagar: () => Promise<unknown>;
@@ -97,6 +105,8 @@ export function CartaoFreteEmpresa({
   coletaEm,
   entregaEm,
   statusPagamento,
+  origem,
+  destino,
   motorista,
   pagamento,
   aoPagar,
@@ -191,6 +201,7 @@ export function CartaoFreteEmpresa({
       <TextoOculto nativeID={idTitulo} role="heading" aria-level={2}>
         {tipoCarga}
       </TextoOculto>
+      <LinhaRota origem={rotuloDoPonto(origem)} destino={rotuloDoPonto(destino)} />
       <ResumoFrete
         tipoCarga={tipoCarga}
         valorFinal={valorFinal}

@@ -4,9 +4,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
-import { eFreteDaEmpresa } from '@/api/fretes';
+import { eFreteDaEmpresa, lerPixDaLista } from '@/api/fretes';
 import { useMeusFretes, usePagarFrete } from '@/api/fretes.hooks';
-import type { RespostaMeusFretes } from '@/api/tipos';
+import type { FreteDaEmpresa, RespostaMeusFretes } from '@/api/tipos';
 import { Link } from '@/components/atoms/Link';
 import { Banner } from '@/components/molecules/Banner';
 import { Lista } from '@/components/molecules/Lista';
@@ -39,6 +39,24 @@ function criarEstilos({ space }: TemaVisual) {
   return { bloco: { gap: space[4] } } as const;
 }
 
+/**
+ * Pagamento que a lista traz (card 044): a comissão exatamente como a API devolveu e, enquanto o
+ * pagamento está `pendente`, o copia e cola e a validade do Pix. `comissao: null` = ainda não pagou.
+ * Campo ausente (resposta sem o campo) conta como `null`: a tela não pode cair por isso.
+ */
+export function pagamentoDaLista(frete: FreteDaEmpresa): PagamentoRegistrado | undefined {
+  const comissao = frete.comissao;
+  if (!comissao) return undefined;
+  const pix = lerPixDaLista(frete);
+  return {
+    valorFrete: frete.valor_final,
+    percentualComissao: comissao.percentual_comissao,
+    valorComissao: comissao.valor_comissao,
+    statusPagamento: comissao.status_pagamento,
+    pix: pix ? { copiaECola: pix.copia_e_cola, expiraEm: pix.expira_em } : undefined,
+  };
+}
+
 export default function CorpoFretesDaEmpresa() {
   const { habilitado } = useCasca();
   const estilos = useEstilos(criarEstilos);
@@ -56,10 +74,14 @@ export default function CorpoFretesDaEmpresa() {
     () => (consulta.data?.fretes ?? []).filter(eFreteDaEmpresa),
     [consulta.data],
   );
+  // Resultado do POST (imediato, com o QR) ou o que a lista traz (comissão e copia e cola). A lista é a
+  // fonte depois do POST; o estado local só acrescenta o QR logo após o pagamento.
+  const pagamentoDo = (frete: FreteDaEmpresa): PagamentoRegistrado | undefined =>
+    pagamentos[frete.id] ?? pagamentoDaLista(frete);
   const aguardandoPix = fretes.some(
     (frete) =>
-      pagamentos[frete.id]?.pix !== undefined &&
-      (frete.status_pagamento ?? pagamentos[frete.id]?.statusPagamento) === 'pendente',
+      pagamentoDo(frete)?.pix !== undefined &&
+      (frete.status_pagamento ?? pagamentoDo(frete)?.statusPagamento) === 'pendente',
   );
   if (aguardandoPix !== pixPendente) setPixPendente(aguardandoPix);
   const [conflito, setConflito] = useState<string | null>(null);
@@ -154,12 +176,14 @@ export default function CorpoFretesDaEmpresa() {
               coletaEm={frete.coleta_em}
               entregaEm={frete.entrega_em}
               statusPagamento={frete.status_pagamento}
+              origem={frete.origem}
+              destino={frete.destino}
               motorista={{
                 nome: frete.motorista.nome_completo,
                 veiculo: frete.motorista.veiculo_tipo,
                 placa: frete.motorista.veiculo_placa,
               }}
-              pagamento={pagamentos[frete.id]}
+              pagamento={pagamentoDo(frete)}
               aoPagar={() => pagarFrete(frete.id)}
               aoConflito={aoConflito}
             />
