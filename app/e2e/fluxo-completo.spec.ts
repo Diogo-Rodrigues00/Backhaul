@@ -229,6 +229,47 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       marcar('motorista novo sem MOPP não vê a crítica');
     });
 
+    // Card 050: a lista real de GET /disponibilidades/minhas é a fonte; o aparelho só vale como plano B.
+    await test.step('B1b. plano B e lista real: com a rota em 404 o aparelho segue; com ela de volta, a lista da API vence', async () => {
+      const cors = { 'access-control-allow-origin': '*' };
+      const minhas = `${API}/disponibilidades/minhas`;
+      const lista = janelaN.getByRole('list', { name: 'Cargas próximas' });
+
+      // Backend antigo (Express: "Cannot GET"): a cópia guardada no aparelho mantém "Cargas próximas".
+      await janelaN.route(minhas, async (rota) => {
+        if (rota.request().method() === 'OPTIONS') return rota.fallback();
+        return rota.fulfill({
+          status: 404,
+          headers: cors,
+          contentType: 'text/html; charset=utf-8',
+          body: '<!DOCTYPE html><html><body><pre>Cannot GET /disponibilidades/minhas</pre></body></html>',
+        });
+      });
+      await janelaN.reload();
+      await expect(h1(janelaN)).toHaveText('Cargas próximas');
+      await expect(lista.getByRole('article', { name: 'Grãos' })).toBeVisible();
+      await expect(janelaN.getByText('Algo deu errado. Tente de novo.')).toHaveCount(0);
+
+      // Rota de volta e nada guardado no aparelho (como num aparelho novo): a API devolve a disponibilidade.
+      await janelaN.unroute(minhas);
+      await janelaN.evaluate(() => localStorage.removeItem('backhaul.disponibilidadeAtiva'));
+      const resposta = janelaN.waitForResponse(
+        (res) => res.request().method() === 'GET' && res.url().endsWith('/disponibilidades/minhas'),
+      );
+      await janelaN.reload();
+      const real = await resposta;
+      expect(real.status()).toBe(200);
+      const corpo = (await real.json()) as { disponibilidades: Record<string, unknown>[] };
+      expect(corpo.disponibilidades).toHaveLength(1);
+      expect(corpo.disponibilidades[0]).toMatchObject({
+        status: 'aberto',
+        raio_busca_km: 80,
+        propostas_pendentes: 0,
+      });
+      await expect(lista.getByRole('article', { name: 'Grãos' })).toBeVisible();
+      marcar('plano B e lista real de disponibilidades');
+    });
+
     // ---------------------------------------------------------------- janela B: o motorista com MOPP
     await test.step('B2. motorista com MOPP entra, publica disponibilidade e vê a carga crítica primeiro', async () => {
       await entrar(janelaM, MOTORISTA_MOPP.email, /\/motorista\/cargas$/);
@@ -245,6 +286,18 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
       await expect(critica.getByText(MOPP)).toBeVisible();
       await axeNosDoisTemas(janelaM);
       marcar('motorista com MOPP vê a crítica');
+    });
+
+    await test.step('B2b. recarregar sem a cópia do aparelho: GET /disponibilidades/minhas devolve a disponibilidade e a lista continua', async () => {
+      await janelaM.evaluate(() => localStorage.removeItem('backhaul.disponibilidadeAtiva'));
+      const resposta = janelaM.waitForResponse(
+        (res) => res.request().method() === 'GET' && res.url().endsWith('/disponibilidades/minhas'),
+      );
+      await janelaM.reload();
+      expect((await resposta).status()).toBe(200);
+      const lista = janelaM.getByRole('list', { name: 'Cargas próximas' });
+      await expect(lista.getByRole('article')).toHaveCount(2);
+      await expect(lista.getByRole('heading', { level: 2 })).toHaveText([CARGA, 'Grãos']);
     });
 
     // A empresa fica na tela de propostas da carga, esperando (polling de 10 s).
@@ -336,10 +389,34 @@ test('roteiro da demo: cadastro, carga crítica MOPP, proposta, aceite, frete, p
         frete_id: null,
       });
       expect(corpo.propostas[0]).not.toHaveProperty('carga');
+      // Campos da carga (card 050): rota, urgência, certificação e o estado, calculado pela API.
+      expect(corpo.propostas[0]).toMatchObject({
+        urgencia: 'critico',
+        certificacao_exigida: MOPP,
+        carga_status: 'aberto',
+        origem: { lat: expect.any(Number), lng: expect.any(Number) },
+        destino: { lat: expect.any(Number), lng: expect.any(Number) },
+        carga_expira_em: expect.any(String),
+      });
       const cartao = janelaM.getByRole('article', { name: CARGA });
       await expect(cartao.getByText('Proposta enviada', { exact: true })).toBeVisible();
       await expect(cartao.getByRole('button', { name: /Aceitar|Contraproposta/ })).toHaveCount(0);
       marcar('API devolveu a proposta no formato real');
+    });
+
+    await test.step('B4c. "Minhas disponibilidades" mostra a ativa e a proposta pendente (propostas_pendentes da API)', async () => {
+      await janelaM.goto('/motorista/disponibilidades');
+      await expect(h1(janelaM)).toHaveText('Minhas disponibilidades');
+      const lista = janelaM.getByRole('list', { name: 'Disponibilidades publicadas' });
+      await expect(lista.getByRole('article')).toHaveCount(1);
+      const cartao = lista.getByRole('article').first();
+      await expect(cartao.getByText('Ativa', { exact: true })).toBeVisible();
+      await expect(cartao.getByText('Aberta', { exact: true })).toBeVisible();
+      await expect(cartao.getByText('1 proposta pendente')).toBeVisible();
+      await axeNosDoisTemas(janelaM);
+      await janelaM.goto('/motorista/cargas');
+      await expect(h1(janelaM)).toHaveText('Cargas próximas');
+      marcar('Minhas disponibilidades com propostas_pendentes');
     });
 
     // ---------------------------------------------------------------- aceite e frete
@@ -646,6 +723,13 @@ test('Fase 6: certificação enviada e aprovada pelo admin, proposta, conversa n
     await test.step('6. conversa: a empresa escreve, o motorista lê e responde em "Minhas propostas" (≤ 15 s, com anúncio)', async () => {
       await janelaM.goto('/motorista/propostas');
       await expect(h1(janelaM)).toHaveText('Minhas propostas');
+      // Card 050: o cartão traz a carga (rota, urgência, certificação) e não a marca como indisponível.
+      const cartaoDaCarga = janelaM.getByRole('article', { name: CARGA });
+      await expect(cartaoDaCarga.getByText('Uberlândia - MG')).toBeVisible();
+      await expect(cartaoDaCarga.getByText('Uberaba - MG')).toBeVisible();
+      await expect(cartaoDaCarga.getByText('Crítico')).toBeVisible();
+      await expect(cartaoDaCarga.getByText(`Exige ${MOPP}`)).toBeVisible();
+      await expect(janelaM.getByText('Carga indisponível')).toHaveCount(0);
       await janelaM
         .getByRole('button', { name: /^Abrir conversa com / })
         .first()
@@ -692,6 +776,8 @@ test('Fase 6: certificação enviada e aprovada pelo admin, proposta, conversa n
       const cartao = janelaM.getByRole('article', { name: CARGA });
       await expect(cartao.getByText('Aceita', { exact: true })).toBeVisible();
       await expect(cartao.getByRole('link', { name: `Ver frete de ${CARGA}` })).toBeVisible();
+      // A carga fechou no aceite, e isso é o esperado: não vira "Carga indisponível" (card 050).
+      await expect(janelaM.getByText('Carga indisponível')).toHaveCount(0);
 
       // Pix: só as duas rotas de frete da empresa são trocadas (como em pagamento-pix-empresa.spec.ts).
       const cors = { 'access-control-allow-origin': '*' };

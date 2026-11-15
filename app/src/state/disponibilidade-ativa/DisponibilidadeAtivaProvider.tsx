@@ -36,7 +36,7 @@ const FOLGA_MS = 50;
 
 const LISTA_VAZIA: readonly Disponibilidade[] = [];
 
-/** A rota `GET /disponibilidades/minhas` ainda não existe no backend: 404 liga o plano B. */
+/** Backend sem a rota `GET /disponibilidades/minhas` (versão antiga): 404 liga o plano B. */
 function rotaInexistente(erro: unknown): boolean {
   return erro instanceof ErroApi && erro.status === 404;
 }
@@ -48,10 +48,13 @@ function rotaInexistente(erro: unknown): boolean {
  * Regra: a ativa é a escolhida (guardada em `backhaul.disponibilidadeAtiva`), se ainda estiver
  * aberta e no prazo; senão a mais recente aberta e no prazo; senão `null`.
  *
- * Plano B (`GET /disponibilidades/minhas` ainda não existe): se a API responder 404, a lista passa
- * a ter uma única entrada, a disponibilidade publicada neste aparelho (gravada por
- * `registrarPublicada`, card 023), sem mostrar erro técnico. Quando a rota existir, a lista real
- * entra sozinha e nada nas telas muda.
+ * Fonte (card 050): a lista de `GET /disponibilidades/minhas` prevalece sempre que a rota responde,
+ * inclusive depois de recarregar a página ou trocar de aparelho (o aparelho novo não tem escolha
+ * guardada: vale a mais recente aberta e no prazo). O que está guardado no aparelho é só plano B:
+ * - 404 (backend sem a rota): a lista passa a ter uma única entrada, a disponibilidade publicada neste
+ *   aparelho (gravada por `registrarPublicada`, card 023), sem mostrar erro técnico;
+ * - rede ou 5xx: a tela mostra o erro com "Tentar de novo", mas `ativa` sai da mesma cópia guardada,
+ *   e "Cargas próximas" continua como antes.
  *
  * O aparelho só é lido em efeito (nunca no render, ADR 0006), então o primeiro render é
  * `carregando`, igual ao HTML estático.

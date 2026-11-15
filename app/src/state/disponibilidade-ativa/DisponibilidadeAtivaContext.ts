@@ -3,8 +3,9 @@ import { createContext } from 'react';
 import type { Disponibilidade } from '@/lib/disponibilidadeAtiva';
 
 /**
- * De onde vem a lista: `api` é `GET /disponibilidades/minhas` (proposta 4b); `local` é o plano B,
- * em que a rota ainda não existe (404) e a única entrada é a disponibilidade publicada neste aparelho.
+ * De onde vem a lista: `api` é `GET /disponibilidades/minhas` (a lista real, que prevalece sempre que a
+ * rota responde); `local` é o plano B, quando a rota falha (404 ou rede) e a única entrada é a
+ * disponibilidade publicada neste aparelho.
  */
 export type OrigemDisponibilidades = 'api' | 'local';
 
@@ -33,7 +34,10 @@ export interface ValorDisponibilidadeAtiva {
   /** Lista da tela "Minhas disponibilidades", na ordem da fonte (a API devolve `criado_em` DESC). */
   disponibilidades: readonly Disponibilidade[];
   origem: OrigemDisponibilidades;
-  /** Erro de verdade ao ler a lista (rede, 5xx, 401 tratado pela sessão); 404 não é erro (plano B). */
+  /**
+   * Erro de verdade ao ler a lista (rede, 5xx, 401 tratado pela sessão); 404 não é erro (plano B). Com
+   * erro, `ativa` ainda sai da cópia guardada no aparelho, para "Cargas próximas" não parar.
+   */
   erro: unknown;
   /** Lê a lista de novo (botão "Atualizar" e "Tentar de novo"). */
   atualizar: () => Promise<unknown>;

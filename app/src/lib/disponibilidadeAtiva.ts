@@ -5,8 +5,8 @@ import type { StatusDisponibilidade, Urgencia } from './rotulos';
 import { estaVencido } from './vencimento';
 
 /**
- * Disponibilidade do motorista, no formato de `POST /disponibilidades` e da proposta 4b
- * (`GET /disponibilidades/minhas`). `propostas_pendentes` só existe na lista da 4b.
+ * Disponibilidade do motorista, no formato de `POST /disponibilidades` e de
+ * `GET /disponibilidades/minhas`. `propostas_pendentes` só existe na lista de `GET`.
  * Lib não importa api: o tipo é estrutural e casa com `DisponibilidadeDoMotorista`.
  */
 export interface Disponibilidade {
@@ -24,8 +24,9 @@ export interface Disponibilidade {
 export interface EscolhaSalva {
   id: string;
   /**
-   * Cópia da disponibilidade publicada neste aparelho (card 023). Só serve ao plano B, enquanto
-   * `GET /disponibilidades/minhas` não existe: então ela é a única entrada da lista.
+   * Cópia da disponibilidade publicada neste aparelho (card 023). Só serve ao plano B, quando
+   * `GET /disponibilidades/minhas` falha (404 ou rede): então ela é a única entrada da lista. Com a
+   * lista real em mãos, ela é ignorada.
    */
   publicada?: Disponibilidade;
 }

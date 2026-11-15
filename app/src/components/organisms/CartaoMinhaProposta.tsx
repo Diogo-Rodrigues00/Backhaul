@@ -1,6 +1,8 @@
-// Cartão de proposta do motorista (PropostaCard motorista, DS 5.2, card 026): tipo da carga, empresa,
-// tipo e status em texto, os dois valores e, só quando aceita e com frete, o link "Ver frete". Não busca
-// nem recebe nada além de props: a tela entrega os dados (ADR 0003).
+// Cartão de proposta do motorista (PropostaCard motorista, DS 5.2, cards 026 e 050): tipo da carga,
+// empresa, rota, urgência, certificação exigida, tipo e status em texto, os dois valores e, só quando
+// aceita e com frete, o link "Ver frete". Quando a carga saiu do ar (fechada, cancelada, vencida) o cartão
+// diz "Carga indisponível" em texto e selo. Não busca nem recebe nada além de props: a tela entrega os
+// dados (ADR 0003).
 import { useId, type ReactNode } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
@@ -8,13 +10,23 @@ import type { NomeIcone } from '@/components/atoms/icones';
 import { Etiqueta, type VarianteEtiqueta } from '@/components/atoms/Etiqueta';
 import { Link } from '@/components/atoms/Link';
 import { Preco } from '@/components/atoms/Preco';
+import { SeloUrgencia } from '@/components/atoms/SeloUrgencia';
 import { Texto } from '@/components/atoms/Texto';
 import { Titulo } from '@/components/atoms/Titulo';
 import { BotaoConversa } from '@/components/molecules/BotaoConversa';
+import { LinhaRota } from '@/components/molecules/LinhaRota';
+import { ListaDeFatos } from '@/components/molecules/ListaDeFatos';
+import { rotuloDoLocal, type Coordenada } from '@/lib/cidades';
+import { ROTULO_CARGA_INDISPONIVEL } from '@/lib/cargaDaProposta';
 import { formatarDataHora, formatarMoeda, type NumeroEntrada } from '@/lib/formatacao';
 import { paraNumero } from '@/lib/numeros';
 import { QUEBRA_ONDE_PRECISAR } from '@/lib/quebraDeTexto';
-import { rotuloStatusProposta, type StatusProposta, type TipoProposta } from '@/lib/rotulos';
+import {
+  rotuloStatusProposta,
+  type StatusProposta,
+  type TipoProposta,
+  type Urgencia,
+} from '@/lib/rotulos';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
@@ -31,6 +43,18 @@ export interface PropsCartaoMinhaProposta {
   criadoEm: string;
   /** Só vem preenchido quando a proposta foi aceita (contrato de `GET /propostas/minhas`). */
   freteId: string | null;
+  /** Coleta e entrega (`origem` e `destino` da carga): viram "Cidade - UF". Sem elas, a rota não aparece. */
+  origem?: Coordenada;
+  destino?: Coordenada;
+  /** Urgência da carga; sem ela, o selo não aparece. */
+  urgencia?: Urgencia;
+  /** Nome da certificação exigida; `null` = "Sem exigência"; `undefined` = a linha não aparece. */
+  certificacao?: string | null;
+  /**
+   * Por que a carga não aceita mais proposta (`motivoCargaIndisponivel`); `null`/ausente = segue aberta.
+   * Com motivo, o cartão ganha o selo "Carga indisponível" e a frase, e a borda tracejada do DS.
+   */
+  motivoIndisponivel?: string | null;
   /** Slot do rodapé, ao lado de "Ver frete". */
   children?: ReactNode;
   /**
@@ -68,6 +92,9 @@ const ROTULO_TIPO: Record<TipoProposta, string> = {
 // Teto do botão de conversa em telas largas (no celular ele só estica até o cartão).
 const LARGURA_MAXIMA_DA_ACAO = 360;
 
+/** Texto do ponto sem cidade na lista (coordenada fora do mapa). */
+const LOCAL_NAO_IDENTIFICADO = 'Local não identificado';
+
 function criarEstilos({ border, radius, space }: TemaVisual) {
   return {
     cartao: {
@@ -76,6 +103,8 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
       borderWidth: border.width,
       borderRadius: radius.lg,
     } satisfies ViewStyle,
+    // Carga indisponível (DS 6, como "Expirada"): borda tracejada e fundo rebaixado.
+    indisponivel: { borderStyle: 'dashed' } satisfies ViewStyle,
     linha: { flexDirection: 'row', flexWrap: 'wrap', gap: space[2] } satisfies ViewStyle,
     valores: { flexDirection: 'row', flexWrap: 'wrap', gap: space[6] } satisfies ViewStyle,
     rodape: {
@@ -131,6 +160,11 @@ export function CartaoMinhaProposta({
   valorProposto,
   criadoEm,
   freteId,
+  origem,
+  destino,
+  urgencia,
+  certificacao,
+  motivoIndisponivel = null,
   children,
   conversaAberta = false,
   aoAlternarConversa,
@@ -142,6 +176,7 @@ export function CartaoMinhaProposta({
   const idTitulo = `${useId()}-proposta`;
   const diferenca = fraseDaDiferenca(tipo, valorOferecido, valorProposto);
   const comFrete = status === 'aceita' && freteId !== null;
+  const indisponivel = motivoIndisponivel !== null;
 
   return (
     <View
@@ -149,7 +184,11 @@ export function CartaoMinhaProposta({
       aria-labelledby={idTitulo}
       style={[
         estilos.cartao,
-        { backgroundColor: colors.bg.surface, borderColor: colors.border.subtle },
+        indisponivel ? estilos.indisponivel : null,
+        {
+          backgroundColor: indisponivel ? colors.bg.sunken : colors.bg.surface,
+          borderColor: colors.border.subtle,
+        },
       ]}
     >
       <Titulo nivel={2} nativeID={idTitulo} style={QUEBRA_ONDE_PRECISAR}>
@@ -158,17 +197,45 @@ export function CartaoMinhaProposta({
       <Texto cor="secundario" style={QUEBRA_ONDE_PRECISAR}>
         {`Empresa: ${empresa}`}
       </Texto>
+      {origem && destino ? (
+        <LinhaRota
+          origem={rotuloDoLocal(origem) ?? LOCAL_NAO_IDENTIFICADO}
+          destino={rotuloDoLocal(destino) ?? LOCAL_NAO_IDENTIFICADO}
+        />
+      ) : null}
       <View style={estilos.linha}>
+        {urgencia ? <SeloUrgencia urgencia={urgencia} /> : null}
         <Etiqueta icone={ICONE_TIPO[tipo]}>{ROTULO_TIPO[tipo]}</Etiqueta>
         <Etiqueta variante={VARIANTE_STATUS[status]} icone={ICONE_STATUS[status]}>
           {rotuloStatusProposta(status)}
         </Etiqueta>
+        {indisponivel ? (
+          <Etiqueta variante="tracejada" icone="triangle-alert">
+            {ROTULO_CARGA_INDISPONIVEL}
+          </Etiqueta>
+        ) : null}
       </View>
       <View style={estilos.valores}>
         <Preco valor={valorOferecido} rotulo="Valor oferecido pela empresa" />
         <Preco valor={valorProposto} rotulo="Seu valor" />
       </View>
+      {certificacao === undefined ? null : (
+        <ListaDeFatos
+          itens={[
+            {
+              rotulo: 'Certificação',
+              valor:
+                certificacao === null ? (
+                  'Sem exigência'
+                ) : (
+                  <Etiqueta variante="info">{`Exige ${certificacao}`}</Etiqueta>
+                ),
+            },
+          ]}
+        />
+      )}
       {diferenca ? <Texto cor="secundario">{diferenca}</Texto> : null}
+      {indisponivel ? <Texto cor="secundario">{motivoIndisponivel}</Texto> : null}
       <View style={estilos.rodape}>
         <Texto nivel="sm" cor="secundario">
           {`Enviada em ${formatarDataHora(criadoEm)}`}
