@@ -109,6 +109,66 @@ describe('CartaoDisponibilidade', () => {
     expect(screen.getByText(LOCAL_SEM_CIDADE)).toBeOnTheScreen();
   });
 
+  describe('cancelar disponibilidade (card 034, MVP-22)', () => {
+    const nomeDoCancelar =
+      'Cancelar disponibilidade perto de Uberlândia - MG, expira em 22/10/2026, 12:00';
+
+    it('aparece em aberta e no prazo, também na ativa, e entrega o id ao tocar', async () => {
+      const aoCancelar = jest.fn();
+      await montar({ aoCancelar, ativa: true });
+      fireEvent.press(screen.getByRole('button', { name: nomeDoCancelar }));
+      expect(aoCancelar).toHaveBeenCalledWith('disp-1');
+      // A ativa continua sem "Usar esta", mas cancelar está disponível.
+      expect(screen.queryByRole('button', { name: /Usar esta/ })).toBeNull();
+    });
+
+    it.each([
+      ['aberta vencida (Expirada)', { expiraEm: '2026-10-21T14:00:00Z' }],
+      ['fechada', { status: 'fechado' as const }],
+      ['cancelada', { status: 'cancelado' as const }],
+      ['em negociação', { status: 'em_negociacao' as const }],
+    ])('não aparece em %s', async (_nome, props) => {
+      await montar({ aoCancelar: jest.fn(), ...props });
+      expect(screen.queryByRole('button', { name: /Cancelar disponibilidade/ })).toBeNull();
+    });
+
+    it('sem `aoCancelar` não há o botão', async () => {
+      await montar({ aoCancelar: undefined });
+      expect(screen.queryByRole('button', { name: /Cancelar disponibilidade/ })).toBeNull();
+    });
+
+    it('o nome acessível é único por item: local e horário do prazo', async () => {
+      const aoCancelar = jest.fn();
+      await renderizar(
+        <>
+          <CartaoDisponibilidade
+            {...base}
+            id="disp-a"
+            local={uberlandia}
+            expiraEm="2026-10-22T15:00:00Z"
+            aoCancelar={aoCancelar}
+          />
+          <CartaoDisponibilidade
+            {...base}
+            id="disp-b"
+            local={uberlandia}
+            expiraEm="2026-10-23T15:00:00Z"
+            aoCancelar={aoCancelar}
+          />
+        </>,
+      );
+      // `getByRole` falha se houver mais de um botão com o mesmo nome: a consulta prova a unicidade.
+      fireEvent.press(screen.getByRole('button', { name: nomeDoCancelar }));
+      expect(aoCancelar).toHaveBeenLastCalledWith('disp-a');
+      fireEvent.press(
+        screen.getByRole('button', {
+          name: 'Cancelar disponibilidade perto de Uberlândia - MG, expira em 23/10/2026, 12:00',
+        }),
+      );
+      expect(aoCancelar).toHaveBeenLastCalledWith('disp-b');
+    });
+  });
+
   it('singular e plural das propostas pendentes', () => {
     expect(rotuloPropostasPendentes(0)).toBe('0 propostas pendentes');
     expect(rotuloPropostasPendentes(1)).toBe('1 proposta pendente');
