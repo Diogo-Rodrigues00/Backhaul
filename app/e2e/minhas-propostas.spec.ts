@@ -27,6 +27,33 @@ test.describe('minhas propostas do motorista', () => {
     await expect(page.getByText('Valor oferecido pela empresa').first()).toBeVisible();
   });
 
+  // Card 050: dados da carga em cada cartão e "Carga indisponível" em texto + selo (não só cor).
+  test('cada cartão mostra coleta, entrega, urgência e certificação; carga fora do ar vira "Carga indisponível"', async ({
+    page,
+  }) => {
+    const lista = page.getByRole('list', { name: 'Propostas' });
+    const urgente = lista.getByRole('article', { name: 'Produtos inflamáveis' }).first();
+    await expect(urgente.getByText('Uberlândia - MG')).toBeVisible();
+    await expect(urgente.getByText('Uberaba - MG')).toBeVisible();
+    await expect(urgente.getByText('Urgente')).toBeVisible();
+    await expect(urgente.getByText(/^Exige MOPP/)).toBeVisible();
+    await expect(urgente.getByText('Carga indisponível')).toHaveCount(0);
+
+    // Pendente com o prazo da carga vencido e recusada com a carga fechada por outro: duas indisponíveis.
+    const vencida = lista.getByRole('article', { name: 'Produtos químicos inflamáveis' });
+    await expect(vencida.getByText('Carga indisponível')).toBeVisible();
+    await expect(vencida.getByText('O prazo desta carga acabou.')).toBeVisible();
+    await expect(vencida.getByRole('button', { name: /Aceitar|Contraproposta para/ })).toHaveCount(
+      0,
+    );
+    await expect(lista.getByText('Carga indisponível')).toHaveCount(2);
+
+    // A proposta aceita fechou a carga, e isso não é "indisponível".
+    const aceita = lista.getByRole('article', { name: 'Carga seca paletizada' });
+    await expect(aceita.getByText('Aceita', { exact: true })).toBeVisible();
+    await expect(aceita.getByText('Carga indisponível')).toHaveCount(0);
+  });
+
   test('proposta aceita com frete tem "Ver frete" que leva a Meus fretes', async ({ page }) => {
     const link = page.getByRole('link', { name: /Ver frete de/ }).first();
     await expect(link).toBeVisible();

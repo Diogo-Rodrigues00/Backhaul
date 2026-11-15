@@ -1,7 +1,8 @@
 // Corpo de "Minhas propostas" do motorista (card 026, MVP-15, CT-09): a lista que a API devolve (ordem
 // da API) com a atualização automática a cada 10 s, só com a aba visível (ADR 0010). Mudança de status
-// (aceita, recusada, expirada) é anunciada sem mover o foco. Carregado por React.lazy a partir de
-// `app/motorista/propostas.tsx` (ADR 0011). Sem plano B local: a lista só vem da API.
+// (aceita, recusada, expirada) e carga que saiu do ar ("Carga indisponível", card 050) são anunciadas
+// sem mover o foco. Carregado por React.lazy a partir de `app/motorista/propostas.tsx` (ADR 0011).
+// Sem plano B local: a lista só vem da API.
 import { useCallback, useState } from 'react';
 
 import { useMinhasPropostas } from '@/api/propostas.hooks';
@@ -12,6 +13,7 @@ import { useCasca } from '@/components/organisms/useCasca';
 import { ConteudoLista, type EstadoLista } from '@/components/templates/TemplateLista';
 import { useAnunciarNovidades } from '@/hooks/useAnunciarNovidades';
 import { idDoPainelDaConversa, useUmaConversaAberta } from '@/hooks/useUmaConversaAberta';
+import { motivoCargaIndisponivel } from '@/lib/cargaDaProposta';
 import { descreverMudancasPropostas } from '@/lib/descreverMudancasPropostas';
 import { ErroApi } from '@/lib/erros';
 import { ConversaSobDemanda } from '@/telas/ConversaSobDemanda';
@@ -90,6 +92,11 @@ export default function CorpoMinhasPropostas() {
             valorProposto={proposta.valor_proposto}
             criadoEm={proposta.criado_em}
             freteId={proposta.frete_id}
+            origem={proposta.origem}
+            destino={proposta.destino}
+            urgencia={proposta.urgencia}
+            certificacao={proposta.certificacao_exigida}
+            motivoIndisponivel={motivoCargaIndisponivel(proposta)}
             conversaAberta={conversas.estaAberta(proposta.id)}
             idConversa={idDoPainelDaConversa(proposta.id)}
             aoAlternarConversa={() => conversas.alternar(proposta.id)}

@@ -154,10 +154,9 @@ export type DisponibilidadePublicada = {
 };
 export type RespostaPublicarDisponibilidade = { disponibilidade: DisponibilidadePublicada };
 
-// PROPOSTA relatório 4b: GET /disponibilidades/minhas (ainda não existe no backend; conferir
-// quando entrar em docs/api.md). Só motorista. Ordem criado_em DESC. Query: nenhuma.
-// Texto da proposta: "`status` deve sair como `expirado` quando `status = 'aberto'` e
-// `expira_em <= now()`, porque o banco nunca grava `expirado`" (o backend calcula no SELECT).
+// GET /disponibilidades/minhas (docs/api.md, card 050). Só motorista. Ordem criado_em DESC. Query: nenhuma.
+// `status` é calculado no SELECT: `aberto` com `expira_em` vencido volta como `expirado` (o banco nunca
+// grava `expirado`). Lista vazia: `{ disponibilidades: [] }`.
 // Erros: 401 · 403 não é motorista · 404 perfil de motorista não encontrado.
 export type DisponibilidadeDoMotorista = DisponibilidadePublicada & {
   propostas_pendentes: number;
@@ -221,7 +220,10 @@ export type RespostaResponder = RespostaResponderRecusar | RespostaResponderAcei
 
 // GET /propostas/minhas (docs/api.md). Só motorista. Formato PLANO, `criado_em` DESC. A API ignora
 // qualquer query (não há filtro `?status=`). `frete_id` só vem preenchido quando `status` é `aceita`.
+// Desde o card 050 traz também a carga (origem, destino, urgência, certificação e o estado dela).
 // Erros: 401 · 403 não é motorista · 404 `perfil de motorista não encontrado`.
+/** `carga_status` é calculado pela API: `aberto` com prazo vencido volta como `expirado`. */
+export type StatusCargaDaProposta = 'aberto' | 'fechado' | 'cancelado' | 'expirado';
 export type MinhaProposta = {
   id: string;
   tipo: TipoProposta;
@@ -234,6 +236,13 @@ export type MinhaProposta = {
   valor_oferecido: Numerico;
   empresa: string;
   frete_id: string | null;
+  origem: Coordenadas;
+  destino: Coordenadas;
+  urgencia: Urgencia;
+  /** Nome da certificação exigida; `null` quando a carga não exige. */
+  certificacao_exigida: string | null;
+  carga_status: StatusCargaDaProposta;
+  carga_expira_em: string;
 };
 export type RespostaMinhasPropostas = { propostas: MinhaProposta[] };
 
