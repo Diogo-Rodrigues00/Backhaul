@@ -60,3 +60,8 @@ Decisões fechadas antes do grill (kickoff, 2026-10-20). Novas decisões entram 
 | 2026-11-05 | Orquestrador só avança (merge, retomada de agente, ação nova) com permissão explícita do Pedro | Pedro |
 | 2026-11-05 | #125 (040) mergeado com as ressalvas A1–A4 da auditoria movidas para o card 046 | Pedro |
 | 2026-11-05 | #124 (026): corrigir antes do merge os itens 1–4 do "Mais" (foco do VoiceOver ao abrir, `onAccessibilityEscape`, fechar ao sair por Tab + Esc global, fundo só acima da barra no iPhone); Dynamic Type 2× vai para o 046 | Pedro |
+| 2026-11-14 | Adotar todo o contrato novo do Diogo antes da demo de 16/11 (cards 033, 034, 044 e troca do plano B por `GET /disponibilidades/minhas`, card 050), mesmo no dia do congelamento; PRs contra `front` | Pedro |
+| 2026-11-14 | O plano B local da disponibilidade fica como fallback (404 ou rede); a lista real prevalece quando a rota responde | Orquestrador (card 050) |
+| 2026-11-15 | Card 044 ganha o botão "Mostrar QR Code" no Pix vindo da lista (chama o `POST /fretes/:id/pagamento` idempotente), porque o QR não volta ao recarregar nem ao trocar de rota | Orquestrador (revisão do PR #154) |
+| 2026-11-15 | Card 034 só mergeado depois de corrigir a regressão do E2E de falha de chunk (recuperação em um clique) e de remover a sobreposição local "Cancelada" que mentia em 409/404 | Orquestrador (revisão do PR #156) |
+| 2026-11-15 | Deploy de produção do `front` integrado (`fdc6561`) na Vercel, Ready em https://backhaul-front.vercel.app (alias do deploy `bn8dhfv1r`); bundle aponta para `https://backhaul-api.onrender.com`, sem `localhost` | Pedro (autorizou "faz tudo") |

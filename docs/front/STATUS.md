@@ -1,6 +1,6 @@
 # STATUS — Front-end do Backhaul
 
-_Atualizado em 2026-11-09 (Fase 6, Ondas 1 e 2 parciais, orquestrador)._
+_Atualizado em 2026-11-15 (véspera da demo de 16/11; contrato novo do backend adotado; orquestrador)._
 
 ## Fase atual
 **Fase 6 — Backend novo: Ondas 0 e 1 concluídas; Onda 2 em andamento (043 mergeado).** Spec: `spec-fase-backend-novo.md` (os cards em `cards/` são a fonte vigente). Sem cronograma com datas (decisão do Pedro em 04/11): ondas em ordem, até onde der antes da Mostra Tech (12/11).
@@ -8,6 +8,29 @@ _Atualizado em 2026-11-09 (Fase 6, Ondas 1 e 2 parciais, orquestrador)._
 **Regra de operação (05/11):** o orquestrador só avança (merge, retomada de agente, ação nova) com permissão explícita do Pedro.
 
 Bug crítico de "Cargas próximas" (036) corrigido e publicado: deploy de produção a partir de `bcc8884` (front com 036, INT, 037 e 038), Ready em https://backhaul-front.vercel.app.
+
+## Contrato novo do backend adotado (14–15/11)
+O Diogo liberou os PRs #148 a #150 da `main` (`docs/api.md`). O Pedro aprovou adotar tudo que liberou, mesmo no dia do congelamento (14/11). Quatro cards entraram em `front`, cada um com revisão do `revisor-qa` e CI verde (6 jobs):
+
+| Card | PR | O que entrou |
+|---|---|---|
+| base | #153 | merge da `main` em `front` (backend e docs) |
+| 050 | #157 | `GET /disponibilidades/minhas` como fonte da disponibilidade ativa (plano B local só em 404/rede); Minhas propostas com origem, destino, urgência, certificação e "Carga indisponível" |
+| 033 | #155 | empresa cancela carga (`POST /cargas/:id/cancelar`), com foco e anúncio corretos em 200, 409 e 404 |
+| 044 | #154 | comissão da empresa vem de `GET /fretes/meus` (não some ao recarregar); origem/destino em texto; Pix da lista com "Mostrar QR Code" (POST idempotente); motorista nunca vê comissão |
+| 034 | #156 | motorista cancela disponibilidade; rota de Minhas disponibilidades virou casca com corpo lazy; recuperação de falha de chunk em um clique |
+
+CI do `front` integrado (`fdc6561`): `qualidade`, `build`, `e2e`, `lighthouse-desktop`, `lighthouse-mobile` e `web` verdes (run 43758167359). **Deploy de produção em 15/11 a partir de `fdc6561`:** https://backhaul-front.vercel.app (Ready; `/entrar` responde 200; o bundle aponta para `https://backhaul-api.onrender.com`).
+
+**Pendências desta rodada**
+- **Produção do backend não confirmada:** o 401 sem token não prova que `GET /disponibilidades/minhas` existe (o router inteiro exige token). Só `/propostas/minhas` está provado. O Diogo ainda não avisou o deploy. Fazer um GET autenticado com a conta de demo. O app aguenta os dois mundos (backend antigo cai no plano B).
+- **Conta do motorista da demo:** a lista real agora manda na disponibilidade ativa; cancelar ou conferir disponibilidades antigas abertas antes do ensaio.
+- **Cabeçalho logado** tem largura mínima de ~318 px e estoura em 320 px com barra de rolagem clássica (já existia na base; não é de nenhum card).
+- **033:** falta o E2E de cancelar por teclado e o axe com o diálogo aberto no E2E.
+- **034:** o mock `comEstado.ts` não tem `POST /disponibilidades/:id/cancelar` para tokens `fluxo-*`; o roteiro de dois navegadores não cancela disponibilidade.
+- **iPhone/Expo Go, VoiceOver e Dynamic Type** seguem sem verificação em todos os cards.
+- `PATCH /admin/usuarios/:id/ativo` (backend) sem uso no front.
+- `npm run lint` sai com código 2 (erro de parse do ESLint, linha de base; `npx expo lint` passa).
 
 ## Fases
 | Fase | Estado |
@@ -55,7 +78,7 @@ Bug crítico de "Cargas próximas" (036) corrigido e publicado: deploy de produ�
 Ordem de merge (arquivos compartilhados): Onda 0: 036 → INT → 037 → 038 · Onda 1: 040 → 026 → 031 → 042 · Onda 2: 041 → 032 → 043 → 035 (+ 033/034/044 se as rotas saírem) · Onda 3: 046 por último.
 
 Protótipo aprovado (Fase 2): https://claude.ai/artifact/VDeLDcq1BYMsMwfJVEV6sP · Protótipos da Fase 6 (aprovados): https://claude.ai/artifact/DogM2ZsRMyK9k16Q88fUg4
-Site publicado: https://backhaul-front.vercel.app (último deploy de produção em 2026-11-04, a partir de `bcc8884`, com a Onda 0).
+Site publicado: https://backhaul-front.vercel.app (último deploy de produção em 2026-11-15, a partir de `fdc6561`, com o contrato novo do backend).
 
 ## Bloqueios e atenção
 - Rate limit secundário do GitHub com vários `gh run watch` em paralelo: agentes usam `-i 120`.
