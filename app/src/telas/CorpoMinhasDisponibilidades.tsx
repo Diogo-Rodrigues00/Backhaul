@@ -3,7 +3,7 @@
 // cliente de dados: a mutation de cancelar precisa dele (ADR 0004, adendo). A lista e a ativa vêm do
 // provider da área (DisponibilidadeAtivaProvider), que também cuida do plano B. Sem atualização
 // automática: só "Atualizar".
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { useCancelarDisponibilidade } from '@/api/cancelarDisponibilidade.hooks';
@@ -71,8 +71,29 @@ export default function CorpoMinhasDisponibilidades() {
   const [aberto, setAberto] = useState(false);
   const [erroDoDialogo, setErroDoDialogo] = useState<string | undefined>();
   const [aviso, setAviso] = useState<Aviso | null>(null);
+  // Troca de ativa a anunciar: o texto fica no ref e o contador só dispara o efeito abaixo. Sai depois
+  // que a releitura termina.
+  const [pedidosDeAnuncio, setPedidosDeAnuncio] = useState(0);
+  const anuncioPendente = useRef<string | null>(null);
   // Ao fechar o diálogo, o foco vai ao aviso (depois de cancelar). Sem aviso, volta a quem abriu.
   const refAviso = useRef<View>(null);
+  const recuperacaoFeita = useRef(false);
+
+  // Chunk das consultas que falhou antes (sem conexão): o provider ficou em erro enquanto este corpo
+  // estava fora do ar. Ao montar com o chunk de volta, relê uma vez, para um "Tentar de novo" bastar.
+  useEffect(() => {
+    if (!erro || recuperacaoFeita.current) return;
+    recuperacaoFeita.current = true;
+    void atualizar();
+  }, [erro, atualizar]);
+
+  // O "Lista atualizada" do BotaoAtualizar sai no efeito do filho, que roda antes deste efeito do pai:
+  // a troca de ativa fica por último na região viva.
+  useEffect(() => {
+    if (anuncioPendente.current === null || atualizando) return;
+    anunciar(anuncioPendente.current);
+    anuncioPendente.current = null;
+  }, [pedidosDeAnuncio, atualizando]);
 
   const estado: EstadoLista = erro
     ? 'erro'
@@ -92,7 +113,13 @@ export default function CorpoMinhasDisponibilidades() {
   const usar = (id: string) => {
     const escolhida = disponibilidades.find((item) => item.id === id);
     definirAtiva(id);
+    setAviso(null);
     if (escolhida) anunciar(`Disponibilidade ativa: ${descreverLocal(escolhida)}`);
+  };
+
+  const atualizarLista = () => {
+    setAviso(null);
+    return atualizar();
   };
 
   const pedirCancelamento = (id: string) => {
@@ -108,10 +135,12 @@ export default function CorpoMinhasDisponibilidades() {
   const confirmar = async () => {
     if (pedido === null) return;
     try {
+      // Só termina depois que a lista foi relida: o cartão já mostra "Cancelada" quando a tela segue.
       await cancelar.mutateAsync(pedido.id);
     } catch (falha) {
-      // 409: já não está aberta. 404: não existe ou é de outro motorista. Nos dois casos a lista é relida
-      // e a cópia local (plano B) sai, se for ela. O foco vai ao aviso com a mensagem da API.
+      // 409: já não está aberta (pode ser prazo vencido). 404: não existe ou é de outro motorista. Nos
+      // dois casos não se marca nada como cancelado: sai só a escolha e a cópia local, e a lista é
+      // relida para a API dizer o estado (ex.: "Expirada"). O foco vai ao aviso com a mensagem da API.
       if (eStatus(falha, 409) || eStatus(falha, 404)) {
         marcarCancelada(pedido.id);
         setAviso({
@@ -120,14 +149,15 @@ export default function CorpoMinhasDisponibilidades() {
           texto: mensagemDeErro(falha),
         });
         setAberto(false);
-        void atualizar();
+        await atualizar();
       } else {
         setErroDoDialogo(mensagemDeErro(falha));
       }
       return;
     }
 
-    // A ativa é recalculada agora, sem esperar a releitura: a próxima aberta e no prazo, ou nenhuma.
+    // A ativa vem da lista já relida: marcarCancelada só limpa a escolha e a cópia local e devolve a
+    // próxima ativa, para o texto do aviso e o anúncio.
     const nova = marcarCancelada(pedido.id);
     const textoDaAtiva = nova
       ? `Ativa agora: ${descreverLocal(nova)}`
@@ -139,9 +169,10 @@ export default function CorpoMinhasDisponibilidades() {
     });
     setAberto(false);
     if (pedido.eraAtiva) {
-      anunciar(
-        nova ? `Disponibilidade ativa: ${descreverLocal(nova)}` : 'Nenhuma disponibilidade ativa.',
-      );
+      anuncioPendente.current = nova
+        ? `Disponibilidade ativa: ${descreverLocal(nova)}`
+        : 'Nenhuma disponibilidade ativa.';
+      setPedidosDeAnuncio((n) => n + 1);
     }
   };
 
@@ -170,7 +201,7 @@ export default function CorpoMinhasDisponibilidades() {
           icone: 'locate',
         }}
         erro={{ mensagem: mensagemDeErroDaLista(erro) }}
-        aoAtualizar={() => atualizar()}
+        aoAtualizar={atualizarLista}
         atualizando={atualizando}
       >
         <Lista

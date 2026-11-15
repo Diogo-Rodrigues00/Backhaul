@@ -128,20 +128,10 @@ export function DisponibilidadeAtivaProvider({ children }: { children: ReactNode
   const modoLocal = consulta.isError && rotaInexistente(consulta.error);
   const erro = consulta.isError && !modoLocal ? consulta.error : null;
 
-  // Canceladas nesta tela (card 034): o status "cancelado" vale já na resposta do POST, sem esperar a
-  // releitura. A releitura depois confirma com a API; a lista que vem dela continua valendo.
-  const [canceladasAqui, setCanceladasAqui] = useState<ReadonlySet<string>>(() => new Set());
   const disponibilidades = useMemo<readonly Disponibilidade[]>(() => {
-    const lista: readonly Disponibilidade[] = consulta.data
-      ? consulta.data.disponibilidades
-      : salva?.publicada
-        ? [salva.publicada]
-        : LISTA_VAZIA;
-    if (canceladasAqui.size === 0) return lista;
-    return lista.map((item) =>
-      canceladasAqui.has(item.id) ? { ...item, status: 'cancelado' as const } : item,
-    );
-  }, [consulta.data, salva, canceladasAqui]);
+    if (consulta.data) return consulta.data.disponibilidades;
+    return salva?.publicada ? [salva.publicada] : LISTA_VAZIA;
+  }, [consulta.data, salva]);
 
   const carregando = !lida || consulta.isPending;
   const ativa = useMemo(
@@ -163,7 +153,6 @@ export function DisponibilidadeAtivaProvider({ children }: { children: ReactNode
   // escolhida, a escolha também. A ativa do que sobra é calculada aqui, para a tela anunciar a troca.
   const marcarCancelada = useCallback(
     (id: string): Disponibilidade | null => {
-      setCanceladasAqui((atual) => new Set(atual).add(id));
       const eraEscolhida = salva?.id === id || salva?.publicada?.id === id;
       if (eraEscolhida) {
         versaoRef.current += 1;
