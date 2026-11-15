@@ -49,14 +49,14 @@ O que já existia desde os cards 022, 023, 026 e 036 (provider com a rota real e
 - E2E: `app/e2e/fluxo-completo.spec.ts`, `app/e2e/minhas-propostas.spec.ts`, `app/e2e/minhas-disponibilidades.spec.ts`.
 
 ## Critérios de aceite
-- [ ] Recarregar a página (e abrir num aparelho sem nada guardado) recupera a disponibilidade ativa pela API; "Cargas próximas" continua com as mesmas cargas.
-- [ ] Com `GET /disponibilidades/minhas` em 404, o fluxo publicar → Cargas próximas → proposta funciona como antes (cópia do aparelho), sem erro técnico. Com a rota de volta, a lista da API vence.
-- [ ] Com rede caída ou 5xx, "Minhas disponibilidades" mostra o erro e "Cargas próximas" segue pela cópia guardada.
-- [ ] "Minhas disponibilidades" lista as reais, com `propostas_pendentes` e status `expirado` em texto ("Expirada" + "Prazo vencido em").
-- [ ] "Minhas propostas" mostra "Cidade - UF" de coleta e entrega, urgência em texto, "Exige <certificação>" ou "Sem exigência" e, para carga fora do ar, "Carga indisponível" em texto (selo + frase), nunca só por cor; proposta aceita não leva o selo.
-- [ ] Estado novo anunciado na região viva sem mover o foco.
-- [ ] Mock com estado e mock sem estado fiéis ao contrato; o E2E do fluxo completo passa contra o mundo novo e cobre o fallback (rota em 404).
-- [ ] Portões do ADR 0013 verdes; JS inicial ≤ 360 KiB e sem aumento (a rota do cartão é carregada sob demanda).
+- [x] Recarregar a página (e abrir num aparelho sem nada guardado) recupera a disponibilidade ativa pela API; "Cargas próximas" continua com as mesmas cargas.
+- [x] Com `GET /disponibilidades/minhas` em 404, o fluxo publicar → Cargas próximas → proposta funciona como antes (cópia do aparelho), sem erro técnico. Com a rota de volta, a lista da API vence.
+- [x] Com rede caída ou 5xx, "Minhas disponibilidades" mostra o erro e "Cargas próximas" segue pela cópia guardada.
+- [x] "Minhas disponibilidades" lista as reais, com `propostas_pendentes` e status `expirado` em texto ("Expirada" + "Prazo vencido em").
+- [x] "Minhas propostas" mostra "Cidade - UF" de coleta e entrega, urgência em texto, "Exige <certificação>" ou "Sem exigência" e, para carga fora do ar, "Carga indisponível" em texto (selo + frase), nunca só por cor; proposta aceita não leva o selo.
+- [x] Estado novo anunciado na região viva sem mover o foco.
+- [x] Mock com estado e mock sem estado fiéis ao contrato; o E2E do fluxo completo passa contra o mundo novo e cobre o fallback (rota em 404).
+- [x] Portões do ADR 0013 verdes; JS inicial ≤ 360 KiB e sem aumento (a rota do cartão é carregada sob demanda).
 
 ## Testes exigidos
 - **Unitários:** `lib/cargaDaProposta` (aberta, fechada/cancelada/expirada, prazo vencido com `aberto`, aceita nunca indisponível, campos ausentes, status desconhecido); `lib/descreverMudancasPropostas` (carga que sai do ar, uma frase por proposta, aceita); `lib/disponibilidadeAtiva` (já cobre real que prevalece, expirada ignorada e a escolha guardada).
@@ -65,10 +65,15 @@ O que já existia desde os cards 022, 023, 026 e 036 (provider com a rota real e
 - **E2E:** `fluxo-completo.spec.ts` (B1b: 404 e depois lista real sem a cópia local; B2b: recarregar sem a cópia; B4b e B4c: campos novos e `propostas_pendentes`; Fase 6: rota e certificação em "Minhas propostas", aceita sem "Carga indisponível"), `minhas-propostas.spec.ts` e `minhas-disponibilidades.spec.ts`.
 
 ## Checklist de acessibilidade e performance
-- [ ] "Carga indisponível" tem texto, ícone e frase: contraste AA nos dois temas (axe do E2E).
-- [ ] Anúncio por região viva educada; nenhum foco movido.
-- [ ] Reflow a 320 px sem rolagem horizontal.
-- [ ] Nenhum import novo no JS inicial (o cartão e a lib entram no chunk de `CorpoMinhasPropostas`).
+- [x] "Carga indisponível" tem texto, ícone e frase: contraste AA nos dois temas (axe do E2E).
+- [x] Anúncio por região viva educada; nenhum foco movido.
+- [x] Reflow a 320 px sem rolagem horizontal.
+- [x] Nenhum import novo no JS inicial (o cartão e a lib entram no chunk de `CorpoMinhasPropostas`).
 
 ## Divergências e riscos
 Ver a descrição do PR: o que `docs/api.md` promete e o que foi observado, e os riscos para a demo de 16/11.
+
+## Verificação (15/11)
+- Jest em série (`--runInBand --testTimeout=60000`): 1861 testes, 0 falhas. E2E (`fluxo-completo`, `minhas-propostas`, `minhas-disponibilidades`, `cargas-proximas`, `fazer-proposta`, `publicar-disponibilidade`, `fretes-motorista`, desktop e 320 px) contra build e mock privados: 83 passaram, 19 pulados por desenho (cobertura de um só projeto).
+- Navegador (Chromium, claro e escuro, 320 px e 1280 px): "Carga indisponível" com selo, ícone e frase, borda tracejada; proposta aceita sem selo; sem rolagem horizontal.
+- **Não verificado:** iPhone (Expo Go), VoiceOver e Dynamic Type.
