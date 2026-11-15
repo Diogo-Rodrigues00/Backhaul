@@ -1,6 +1,6 @@
 // Minhas disponibilidades do motorista (MVP-11, CT-01 a CT-10). Sem atualização automática: só
 // "Atualizar". A lista e a ativa vêm do provider da área (ver DisponibilidadeAtivaProvider), que
-// também cuida do plano B enquanto `GET /disponibilidades/minhas` não existe.
+// também cuida do plano B quando `GET /disponibilidades/minhas` falha (404 ou rede).
 import { Link } from '@/components/atoms/Link';
 import { Lista } from '@/components/molecules/Lista';
 import {

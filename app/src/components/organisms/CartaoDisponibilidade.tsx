@@ -28,7 +28,7 @@ export interface PropsCartaoDisponibilidade {
   urgencia: Urgencia;
   status: StatusDisponibilidade;
   expiraEm: string;
-  /** Só a lista da proposta 4b traz o número; sem ele (plano B) a linha não aparece. */
+  /** Só `GET /disponibilidades/minhas` traz o número; sem ele (plano B) a linha não aparece. */
   propostasPendentes?: number;
   /** É a disponibilidade em uso: mostra "Ativa" em texto e não oferece "Usar esta". */
   ativa: boolean;

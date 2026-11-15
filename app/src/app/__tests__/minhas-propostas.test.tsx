@@ -224,3 +224,114 @@ describe('minhas propostas do motorista: leitura (MVP-15)', () => {
     expect(focoMovido).not.toHaveBeenCalled();
   });
 });
+
+describe('minhas propostas: dados da carga e "Carga indisponível" (card 050)', () => {
+  const doisCartoes = (...propostas: ReturnType<typeof minhaPropostaMock>[]) =>
+    servidor.use(http.get(urlMock('/propostas/minhas'), () => HttpResponse.json({ propostas })));
+
+  it('cada cartão mostra coleta e entrega em "Cidade - UF", a urgência e a certificação exigida', async () => {
+    doisCartoes(
+      minhaPropostaMock({
+        id: 'bbbbbbbb-0000-4000-8000-0000000000b1',
+        tipo_carga: 'Produtos inflamáveis',
+        origem: { lat: -18.9186, lng: -48.2772 },
+        destino: { lat: -19.7469, lng: -47.9319 },
+        urgencia: 'critico',
+        certificacao_exigida: 'MOPP - Classe 3 Inflamáveis',
+      }),
+    );
+    await abrir();
+    await waitFor(() => expect(comPapel('article')).toHaveLength(1));
+
+    expect(screen.getByText('Uberlândia - MG')).toBeOnTheScreen();
+    expect(screen.getByText('Uberaba - MG')).toBeOnTheScreen();
+    expect(screen.getByText('Crítico')).toBeOnTheScreen();
+    expect(screen.getByText('Exige MOPP - Classe 3 Inflamáveis')).toBeOnTheScreen();
+    expect(screen.queryByText('Carga indisponível')).toBeNull();
+  });
+
+  it('carga sem exigência mostra "Sem exigência"', async () => {
+    doisCartoes(minhaPropostaMock({ certificacao_exigida: null }));
+    await abrir();
+    await waitFor(() => expect(comPapel('article')).toHaveLength(1));
+    expect(screen.getByText('Sem exigência')).toBeOnTheScreen();
+  });
+
+  it.each([
+    ['fechado', 'Esta carga já foi fechada.'],
+    ['cancelado', 'A empresa cancelou esta carga.'],
+    ['expirado', 'O prazo desta carga acabou.'],
+  ] as const)(
+    'carga_status "%s" numa proposta pendente: selo "Carga indisponível" em texto e o motivo',
+    async (carga_status, motivo) => {
+      doisCartoes(minhaPropostaMock({ status: 'pendente', carga_status }));
+      await abrir();
+      await waitFor(() => expect(comPapel('article')).toHaveLength(1));
+
+      expect(screen.getByText('Carga indisponível')).toBeOnTheScreen();
+      expect(screen.getByText(motivo)).toBeOnTheScreen();
+      // Nenhuma ação de proposta nova: nem botão de aceitar, nem de contraproposta, nem link para propor.
+      expect(
+        screen.queryByRole('button', { name: /Aceitar|Contraproposta|Fazer proposta/ }),
+      ).toBeNull();
+      expect(screen.queryByRole('link', { name: /Fazer proposta|Aceitar/ })).toBeNull();
+    },
+  );
+
+  it('carga `aberta` com `carga_expira_em` já vencido também é "Carga indisponível" (prazo)', async () => {
+    doisCartoes(
+      minhaPropostaMock({ carga_status: 'aberto', carga_expira_em: '2020-01-01T00:00:00.000Z' }),
+    );
+    await abrir();
+    await waitFor(() => expect(comPapel('article')).toHaveLength(1));
+    expect(screen.getByText('Carga indisponível')).toBeOnTheScreen();
+    expect(screen.getByText('O prazo desta carga acabou.')).toBeOnTheScreen();
+  });
+
+  it('proposta aceita com a carga fechada NÃO é "Carga indisponível" e mantém "Ver frete"', async () => {
+    doisCartoes(
+      minhaPropostaMock({
+        status: 'aceita',
+        tipo: 'aceite',
+        carga_status: 'fechado',
+        frete_id: 'ffffffff-0000-4000-8000-000000000099',
+      }),
+    );
+    await abrir();
+    await waitFor(() => expect(comPapel('article')).toHaveLength(1));
+    expect(screen.queryByText('Carga indisponível')).toBeNull();
+    expect(screen.getByRole('link', { name: /Ver frete/ })).toBeOnTheScreen();
+  });
+
+  it('o fixture da tela tem cartões disponíveis e indisponíveis, cada um com o seu texto', async () => {
+    await abrir();
+    await esperarCartoes();
+    const esperados = minhasPropostasMock.filter(
+      (p) =>
+        p.status !== 'aceita' &&
+        (p.carga_status !== 'aberto' || Date.parse(p.carga_expira_em) <= Date.now()),
+    ).length;
+    expect(esperados).toBeGreaterThan(0);
+    expect(screen.getAllByText('Carga indisponível')).toHaveLength(esperados);
+  });
+
+  it('backend ainda sem os campos novos: o cartão aparece como antes, sem quebrar nem marcar indisponível', async () => {
+    const {
+      origem: _o,
+      destino: _d,
+      urgencia: _u,
+      certificacao_exigida: _c,
+      carga_status: _s,
+      carga_expira_em: _e,
+      ...antiga
+    } = minhaPropostaMock();
+    servidor.use(
+      http.get(urlMock('/propostas/minhas'), () => HttpResponse.json({ propostas: [antiga] })),
+    );
+    await abrir();
+    await waitFor(() => expect(comPapel('article')).toHaveLength(1));
+    expect(screen.getByText('Pendente')).toBeOnTheScreen();
+    expect(screen.queryByText('Carga indisponível')).toBeNull();
+    expect(screen.queryByText('Certificação')).toBeNull();
+  });
+});
