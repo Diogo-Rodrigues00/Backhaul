@@ -21,6 +21,27 @@ export function eFreteDaEmpresa(frete: Frete): frete is FreteDaEmpresa {
   return 'motorista' in frete;
 }
 
+/**
+ * Frete do motorista só com os campos que a tela usa. Comissão e Pix (`comissao`, `pix_*`) não passam
+ * daqui, mesmo que a API os mandasse: o motorista nunca vê a comissão (card 044).
+ */
+export function paraFreteDoMotorista(frete: FreteDoMotorista): FreteDoMotorista {
+  return {
+    id: frete.id,
+    proposta_id: frete.proposta_id,
+    tipo_carga: frete.tipo_carga,
+    valor_final: frete.valor_final,
+    status_entrega: frete.status_entrega,
+    origem: frete.origem,
+    destino: frete.destino,
+    coleta_em: frete.coleta_em,
+    entrega_em: frete.entrega_em,
+    criado_em: frete.criado_em,
+    status_pagamento: frete.status_pagamento,
+    empresa: { id: frete.empresa.id, razao_social: frete.empresa.razao_social },
+  };
+}
+
 export function listarMeusFretes(): Promise<RespostaMeusFretes> {
   return requisitar<RespostaMeusFretes>('GET', '/fretes/meus');
 }
@@ -60,6 +81,22 @@ export function lerPix(bruto: unknown): PixPagamento | undefined {
   if (!BASE64.test(qrLimpo)) return undefined;
   if (typeof expira !== 'string' || Number.isNaN(Date.parse(expira))) return undefined;
   return { copia_e_cola: codigo, qr_code_base64: qrLimpo, expira_em: expira };
+}
+
+/**
+ * Pix que a lista de fretes traz enquanto o pagamento está `pendente` (card 044): copia e cola e
+ * validade. A lista não traz o QR Code (só o POST traz). Mesmas regras de `lerPix` para os dois campos.
+ */
+export function lerPixDaLista(
+  frete: Pick<FreteDaEmpresa, 'pix_copia_cola' | 'pix_expira_em'>,
+): { copia_e_cola: string; expira_em: string } | undefined {
+  const codigo: unknown = frete.pix_copia_cola;
+  const expira: unknown = frete.pix_expira_em;
+  if (typeof codigo !== 'string' || codigo.length === 0 || codigo.length > MAX_COPIA_E_COLA) {
+    return undefined;
+  }
+  if (typeof expira !== 'string' || Number.isNaN(Date.parse(expira))) return undefined;
+  return { copia_e_cola: codigo, expira_em: expira };
 }
 
 export async function pagarFrete(freteId: string): Promise<RespostaPagamento> {
