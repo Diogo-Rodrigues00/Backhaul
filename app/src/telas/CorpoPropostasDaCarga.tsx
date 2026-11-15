@@ -296,11 +296,7 @@ export default function CorpoPropostasDaCarga() {
               />
               {cargaAberta ? (
                 <View style={estilos.acoes}>
-                  <Botao
-                    variante="perigo"
-                    ref={refBotaoCancelar}
-                    aoPressionar={abrirCancelamento}
-                  >
+                  <Botao variante="perigo" ref={refBotaoCancelar} aoPressionar={abrirCancelamento}>
                     Cancelar carga
                   </Botao>
                 </View>

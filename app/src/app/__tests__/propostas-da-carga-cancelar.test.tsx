@@ -164,11 +164,15 @@ describe('cancelar carga: diálogo de confirmação', () => {
 
     await pedirCancelamento();
     expect(
-      screen.getByText('Ela sai das buscas e as propostas pendentes serão recusadas. Não dá para desfazer.'),
+      screen.getByText(
+        'Ela sai das buscas e as propostas pendentes serão recusadas. Não dá para desfazer.',
+      ),
     ).toBeOnTheScreen();
     expect(comPapel('alertdialog')).toHaveLength(1);
 
-    await fireEvent.press(within(comPapel('alertdialog')[0]!).getByRole('button', { name: 'Voltar' }));
+    await fireEvent.press(
+      within(comPapel('alertdialog')[0]!).getByRole('button', { name: 'Voltar' }),
+    );
     await waitFor(() => expect(comPapel('alertdialog')).toHaveLength(0));
     expect(posts).not.toHaveBeenCalled();
     servidor.events.removeAllListeners();
@@ -182,7 +186,9 @@ describe('cancelar carga: respostas da API', () => {
     servidor.use(
       http.get(urlMock('/cargas/minhas'), () => {
         leituras.cargas += 1;
-        return HttpResponse.json({ cargas: [cargaComo({ status: cancelada ? 'cancelado' : 'aberto' })] });
+        return HttpResponse.json({
+          cargas: [cargaComo({ status: cancelada ? 'cancelado' : 'aberto' })],
+        });
       }),
       http.get(urlMock(`/cargas/${CARGA_URGENTE_ID}/propostas`), () => {
         leituras.propostas += 1;
@@ -224,7 +230,9 @@ describe('cancelar carga: respostas da API', () => {
     servidor.use(
       http.get(urlMock('/cargas/minhas'), () => {
         leituras.cargas += 1;
-        return HttpResponse.json({ cargas: [cargaComo({ status: fechada ? 'fechado' : 'aberto' })] });
+        return HttpResponse.json({
+          cargas: [cargaComo({ status: fechada ? 'fechado' : 'aberto' })],
+        });
       }),
       http.get(urlMock(`/cargas/${CARGA_URGENTE_ID}/propostas`), () => {
         leituras.propostas += 1;
