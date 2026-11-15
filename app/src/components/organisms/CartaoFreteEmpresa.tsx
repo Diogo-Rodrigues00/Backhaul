@@ -55,12 +55,19 @@ export interface PropsCartaoFreteEmpresa {
   pagamento?: PagamentoRegistrado;
   /** Registra o pagamento (POST). Rejeita com `ErroApi` quando a API recusa. */
   aoPagar: () => Promise<unknown>;
+  /**
+   * Pix da lista sem QR: pede a mesma cobrança de novo (POST idempotente, que devolve o QR enquanto
+   * `pendente`). Resolve `true` se veio o QR; rejeita com `ErroApi` em falha.
+   */
+  aoMostrarQr?: () => Promise<boolean>;
   /** 409 (frete já pago ou cancelado): o diálogo fecha e a tela mostra a mensagem e recarrega. */
   aoConflito: (mensagem: string) => void;
 }
 
 export const ANUNCIO_PAGAMENTO_CONFIRMADO = 'Pagamento confirmado';
 export const MENSAGEM_PAGAMENTO_INDISPONIVEL = 'Serviço de pagamento indisponível, tente novamente';
+export const MENSAGEM_QR_INDISPONIVEL =
+  'O QR Code não ficou disponível agora. Pague com o código copia e cola.';
 export const TEXTO_PIX_SEM_CODIGO =
   'Pagamento pendente. O código Pix desta cobrança não está mais disponível nesta tela. Aguarde a confirmação do pagamento ou fale com o suporte.';
 /** Confere a validade do Pix a cada 30 s enquanto o cartão está aberto. */
@@ -110,6 +117,7 @@ export function CartaoFreteEmpresa({
   motorista,
   pagamento,
   aoPagar,
+  aoMostrarQr,
   aoConflito,
 }: PropsCartaoFreteEmpresa) {
   const estilos = useEstilos(criarEstilos);
@@ -119,6 +127,8 @@ export function CartaoFreteEmpresa({
   const [aberto, setAberto] = useState(false);
   const [pagando, setPagando] = useState(false);
   const [erro, setErro] = useState<string | undefined>(undefined);
+  const [gerandoQr, setGerandoQr] = useState(false);
+  const [erroQr, setErroQr] = useState<string | undefined>(undefined);
   const refBotao = useRef<View>(null);
   const refResumo = useRef<View>(null);
   const refPix = useRef<View>(null);
@@ -132,7 +142,18 @@ export function CartaoFreteEmpresa({
   const status = statusPagamento ?? pagamento?.statusPagamento ?? null;
   const pix = pagamento?.pix;
   const pendente = status === 'pendente';
-  const confirmado = pix !== undefined && (status === 'retido' || status === 'liberado');
+  // Confirmado: o Pix desta sessão foi pago, ou a lista passou de `pendente` para pago (recarga com Pix
+  // da lista: ali não há `pix` quando o pagamento vira `retido`, e sem isso não haveria aviso nem foco).
+  const statusAnterior = useRef(status);
+  const [pagoAgora, setPagoAgora] = useState(false);
+  useEffect(() => {
+    const anterior = statusAnterior.current;
+    statusAnterior.current = status;
+    if (anterior === 'pendente' && (status === 'retido' || status === 'liberado'))
+      setPagoAgora(true);
+  }, [status]);
+  const pagoLista = status === 'retido' || status === 'liberado';
+  const confirmado = (pix !== undefined || pagoAgora) && pagoLista;
   const pixExpirado = pix !== undefined && pendente && Date.parse(pix.expiraEm) <= agora;
 
   // Só enquanto espera o Pix: reconfere a validade (o resto da tela já é atualizado pela lista).
@@ -169,6 +190,24 @@ export function CartaoFreteEmpresa({
   function abrir() {
     setErro(undefined);
     setAberto(true);
+  }
+
+  // Pede o QR do Pix da lista. O foco vai ao título do painel quando o QR chega (ação do usuário); se a
+  // falha vem, o botão continua no lugar com o foco nele e o erro é anunciado.
+  async function mostrarQr() {
+    if (!aoMostrarQr) return;
+    setErroQr(undefined);
+    setGerandoQr(true);
+    try {
+      const obtido = await aoMostrarQr();
+      if (obtido) moverFoco(refPix);
+      else setErroQr(MENSAGEM_QR_INDISPONIVEL);
+    } catch (falha) {
+      if (falha instanceof ErroApi && falha.status === 409) aoConflito(mensagemDoErro(falha));
+      else setErroQr(mensagemDoErro(falha));
+    } finally {
+      setGerandoQr(false);
+    }
   }
 
   async function confirmar() {
@@ -247,6 +286,10 @@ export function CartaoFreteEmpresa({
             pix={pix}
             expirado={pixExpirado}
             aoOcultar={() => alternarPix(false)}
+            aoMostrarQr={aoMostrarQr && !pix.qrCodeBase64 ? mostrarQr : undefined}
+            gerandoQr={gerandoQr}
+            erroQr={erroQr}
+            rotuloMostrarQr={`Mostrar QR Code de ${tipoCarga}`}
           />
         ) : (
           <View style={estilos.rodape}>

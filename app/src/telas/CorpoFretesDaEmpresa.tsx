@@ -44,10 +44,11 @@ function criarEstilos({ space }: TemaVisual) {
  * pagamento está `pendente`, o copia e cola e a validade do Pix. `comissao: null` = ainda não pagou.
  * Campo ausente (resposta sem o campo) conta como `null`: a tela não pode cair por isso.
  */
-export function pagamentoDaLista(frete: FreteDaEmpresa): PagamentoRegistrado | undefined {
+function pagamentoDaLista(frete: FreteDaEmpresa): PagamentoRegistrado | undefined {
   const comissao = frete.comissao;
   if (!comissao) return undefined;
-  const pix = lerPixDaLista(frete);
+  // `pix_*` só vale com o pagamento pendente: um residual com o pagamento já pago não reabre o painel.
+  const pix = comissao.status_pagamento === 'pendente' ? lerPixDaLista(frete) : undefined;
   return {
     valorFrete: frete.valor_final,
     percentualComissao: comissao.percentual_comissao,
@@ -61,7 +62,8 @@ export default function CorpoFretesDaEmpresa() {
   const { habilitado } = useCasca();
   const estilos = useEstilos(criarEstilos);
   const pagar = usePagarFrete();
-  // O Pix e o pagamento ficam só neste estado de tela: somem ao sair ou recarregar (dado de cobrança).
+  // O resultado do POST (com o QR) fica só neste estado de tela, até sair da tela: dado de cobrança, sem
+  // storage. Recarregar não traz o QR (a lista não traz); o botão "Mostrar QR Code" pede a cobrança de novo.
   const [pagamentos, setPagamentos] = useState<Record<string, PagamentoRegistrado>>({});
   // Enquanto algum Pix espera confirmação a lista vem a cada 5 s (e não 10 s); só com a aba visível.
   const [pixPendente, setPixPendente] = useState(false);
@@ -129,6 +131,28 @@ export default function CorpoFretesDaEmpresa() {
     );
   }
 
+  // Pix da lista sem QR: o POST é idempotente enquanto `pendente` e devolve a mesma cobrança, agora com o
+  // QR. Guarda em `pagamentos` (estado de tela). Sem `pix` na resposta, devolve false (o cartão avisa).
+  async function mostrarQr(freteId: string): Promise<boolean> {
+    const { transacao, pix } = await pagar.mutateAsync(freteId);
+    if (!pix) return false;
+    setPagamentos((atuais) => ({
+      ...atuais,
+      [freteId]: {
+        valorFrete: transacao.valor_frete,
+        percentualComissao: transacao.percentual_comissao,
+        valorComissao: transacao.valor_comissao,
+        statusPagamento: transacao.status_pagamento,
+        pix: {
+          copiaECola: pix.copia_e_cola,
+          qrCodeBase64: pix.qr_code_base64,
+          expiraEm: pix.expira_em,
+        },
+      },
+    }));
+    return true;
+  }
+
   function aoConflito(mensagem: string) {
     setConflito(mensagem);
     void consulta.refetch();
@@ -185,6 +209,7 @@ export default function CorpoFretesDaEmpresa() {
               }}
               pagamento={pagamentoDo(frete)}
               aoPagar={() => pagarFrete(frete.id)}
+              aoMostrarQr={() => mostrarQr(frete.id)}
               aoConflito={aoConflito}
             />
           )}

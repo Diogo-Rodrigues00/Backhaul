@@ -25,12 +25,14 @@ describe('rotuloDoPonto', () => {
 
   it('ponto longe de qualquer cidade da lista: coordenadas em texto, sem chutar cidade', () => {
     // São Paulo não está na lista fixa.
-    expect(rotuloDoPonto({ lat: -23.55, lng: -46.63 }, FIXTURE)).toBe('Lat -23,5500, Lng -46,6300');
+    expect(rotuloDoPonto({ lat: -23.55, lng: -46.63 }, FIXTURE)).toBe(
+      'Latitude -23,5500, longitude -46,6300',
+    );
   });
 
   it('respeita a tolerância informada', () => {
     const ponto = { lat: -18.9141, lng: -48.2749 + 0.02 }; // ~2,2 km a leste do centro
-    expect(rotuloDoPonto(ponto, FIXTURE, 1)).toMatch(/^Lat /);
+    expect(rotuloDoPonto(ponto, FIXTURE, 1)).toMatch(/^Latitude /);
     expect(rotuloDoPonto(ponto, FIXTURE, 5)).toBe('Uberlândia - MG');
   });
 
@@ -45,7 +47,9 @@ describe('rotuloDoPonto', () => {
   });
 
   it('lista vazia: coordenadas, nunca um nome inventado', () => {
-    expect(rotuloDoPonto({ lat: -18.9141, lng: -48.2749 }, [])).toBe('Lat -18,9141, Lng -48,2749');
+    expect(rotuloDoPonto({ lat: -18.9141, lng: -48.2749 }, [])).toBe(
+      'Latitude -18,9141, longitude -48,2749',
+    );
   });
 
   it('a tolerância padrão é de 1 km', () => {
@@ -55,6 +59,8 @@ describe('rotuloDoPonto', () => {
 
 describe('rotuloDaCoordenada', () => {
   it('4 casas decimais, vírgula como separador, sinal negativo preservado', () => {
-    expect(rotuloDaCoordenada({ lat: -18.91, lng: -48.1 })).toBe('Lat -18,9100, Lng -48,1000');
+    expect(rotuloDaCoordenada({ lat: -18.91, lng: -48.1 })).toBe(
+      'Latitude -18,9100, longitude -48,1000',
+    );
   });
 });

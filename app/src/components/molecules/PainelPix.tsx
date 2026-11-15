@@ -38,8 +38,6 @@ export interface PixDaTela {
 export const ANUNCIO_PIX_COPIADO = 'Código Pix copiado';
 export const ANUNCIO_PIX_NAO_COPIADO = 'Não foi possível copiar. Selecione o código e copie.';
 export const TEXTO_AGUARDANDO_PIX = 'Aguardando confirmação do pagamento…';
-export const TEXTO_SEM_QR =
-  'O QR Code aparece só logo depois de gerar o Pix. Pague com o código copia e cola abaixo.';
 export const TEXTO_PIX_EXPIRADO =
   'Este código Pix expirou. Não é possível gerar outro por aqui: tente de novo mais tarde ou fale com o suporte.';
 
@@ -57,6 +55,14 @@ export interface PropsPainelPix {
   idBase?: string;
   /** Recolhe o painel (o cartão passa a oferecer "Ver Pix pendente"). */
   aoOcultar?: () => void;
+  /** Sem QR (Pix da lista de fretes): pede o QR de novo (POST idempotente). Sem ele, não há botão. */
+  aoMostrarQr?: () => void;
+  /** Enquanto o QR é pedido: o botão mostra o giro e fica ocupado. */
+  gerandoQr?: boolean;
+  /** Erro ao pedir o QR (texto da API ou padrão); o botão continua, com o foco nele. */
+  erroQr?: string;
+  /** Nome acessível do botão "Mostrar QR Code" (único por cartão, como os demais botões da tela). */
+  rotuloMostrarQr?: string;
 }
 
 const LARGURA_QR = 240;
@@ -114,6 +120,10 @@ export function PainelPix({
   refTitulo,
   idBase = 'painel-pix',
   aoOcultar,
+  aoMostrarQr,
+  gerandoQr = false,
+  erroQr,
+  rotuloMostrarQr = 'Mostrar QR Code',
 }: PropsPainelPix) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
@@ -145,7 +155,9 @@ export function PainelPix({
         ) : (
           <>
             <Texto>
-              Abra o app do seu banco, escolha Pix e leia o QR Code ou cole o código abaixo.
+              {pix.qrCodeBase64
+                ? 'Abra o app do seu banco, escolha Pix e leia o QR Code ou cole o código abaixo.'
+                : 'Abra o app do seu banco, escolha Pix e cole o código abaixo.'}
             </Texto>
             {pix.qrCodeBase64 ? (
               <View
@@ -162,11 +174,24 @@ export function PainelPix({
                   accessible={false}
                 />
               </View>
-            ) : (
-              <Texto nivel="sm" cor="secundario">
-                {TEXTO_SEM_QR}
-              </Texto>
-            )}
+            ) : aoMostrarQr ? (
+              <View style={estilos.acoes}>
+                <Botao
+                  variante="secundario"
+                  aria-label={rotuloMostrarQr}
+                  carregando={gerandoQr}
+                  rotuloCarregando="Gerando QR Code…"
+                  aoPressionar={aoMostrarQr}
+                >
+                  Mostrar QR Code
+                </Botao>
+              </View>
+            ) : null}
+            {erroQr ? (
+              <Banner variante="erro" titulo="Não foi possível mostrar o QR Code" anunciar>
+                {erroQr}
+              </Banner>
+            ) : null}
             <View>
               <Texto nivel="sm" cor="secundario">
                 Código Pix (copia e cola)

@@ -91,7 +91,7 @@ describe('Meus fretes (motorista): origem, destino e sem comissão (card 044)', 
   it('destino fora da lista fixa (São Paulo) mostra as coordenadas em texto', async () => {
     await abrir();
     await screen.findByRole('heading', { name: 'Grãos' });
-    expect(screen.getByText('Lat -23,5500, Lng -46,6300')).toBeOnTheScreen();
+    expect(screen.getByText('Latitude -23,5500, longitude -46,6300')).toBeOnTheScreen();
   });
 
   it('não mostra comissão, percentual nem Pix, nem com a API enviando esses campos', async () => {

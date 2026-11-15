@@ -94,10 +94,10 @@ export const TOLERANCIA_CIDADE_KM = 1;
 /** Texto de um local sem coordenadas válidas (mesmo texto dos cartões de carga). */
 export const LOCAL_SEM_IDENTIFICACAO = 'Local não identificado';
 
-/** Coordenadas em texto legível, com vírgula decimal: "Lat -18,9186, Lng -48,2772". */
+/** Coordenadas em texto legível, com vírgula decimal: "Latitude -18,9186, longitude -48,2772". */
 export function rotuloDaCoordenada(ponto: Coordenada): string {
   const formatar = (numero: number) => numero.toFixed(4).replace('.', ',');
-  return `Lat ${formatar(ponto.lat)}, Lng ${formatar(ponto.lng)}`;
+  return `Latitude ${formatar(ponto.lat)}, longitude ${formatar(ponto.lng)}`;
 }
 
 /**

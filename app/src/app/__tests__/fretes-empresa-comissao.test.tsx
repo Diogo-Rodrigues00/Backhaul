@@ -157,7 +157,13 @@ describe('Meus fretes (empresa): comissão que vem da lista (card 044)', () => {
     expect(await screen.findByRole('heading', { name: 'Pagamento por Pix' })).toBeOnTheScreen();
     expect(screen.getByText(CODIGO)).toBeOnTheScreen();
     expect(screen.getByLabelText('Comissão da plataforma: R$ 160,00')).toBeOnTheScreen();
-    expect(screen.getByText(/O QR Code aparece só logo depois de gerar o Pix/)).toBeOnTheScreen();
+    // Sem QR: o texto manda só copiar o código (nunca "leia o QR Code") e há o botão para pedir o QR.
+    expect(
+      screen.getByText('Abra o app do seu banco, escolha Pix e cole o código abaixo.'),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByRole('button', { name: 'Mostrar QR Code de Produtos inflamáveis' }),
+    ).toBeOnTheScreen();
     expect(screen.queryByLabelText(/QR Code do Pix/)).toBeNull();
     expect(screen.getByText('Aguardando confirmação do pagamento…')).toBeOnTheScreen();
     // Pendente: sem "Pagar frete" de novo.
@@ -185,7 +191,7 @@ describe('Meus fretes (empresa): comissão que vem da lista (card 044)', () => {
     expect(screen.getAllByText('Coleta em')).toHaveLength(3);
     expect(screen.getAllByText('Entrega em')).toHaveLength(3);
     expect(screen.getByText('Uberaba - MG')).toBeOnTheScreen();
-    expect(screen.getByText('Lat -23,5500, Lng -46,6300')).toBeOnTheScreen();
+    expect(screen.getByText('Latitude -23,5500, longitude -46,6300')).toBeOnTheScreen();
   });
 
   it('depois do POST, a lista (que agora traz a comissão) segue valendo ao recarregar', async () => {
