@@ -376,7 +376,7 @@ describe('Minhas disponibilidades', () => {
       await screen.findByText('Algo deu errado. Tente de novo.');
 
       ligada = true;
-      fireEvent.press(screen.getByRole('button', { name: 'Tentar de novo' }));
+      await fireEvent.press(screen.getByRole('button', { name: 'Tentar de novo' }));
       await aguardarLista();
 
       expect(cartoes()).toHaveLength(3);
