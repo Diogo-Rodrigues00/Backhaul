@@ -283,17 +283,17 @@ describe('guardas por perfil', () => {
   });
 });
 
-describe('área do administrador (D-PO-10)', () => {
-  it('mostra "sem telas nesta versão", sem navegação, e o botão Sair encerra a sessão', async () => {
+describe('área do administrador (card 040)', () => {
+  it('mostra o resumo, a navegação com "Resumo", e o Sair do cabeçalho encerra a sessão', async () => {
     await gravar(CHAVES.token, 'mock-admin');
     await abrir('/admin');
 
-    await waitFor(() => expect(sonda()).toBe('autenticado|Administrador|admin'));
-    expect(titulo('Perfil de administrador sem telas nesta versão')).toBeOnTheScreen();
-    expect(screen.container.queryAll((el) => el.props.role === 'navigation')).toHaveLength(0);
+    // O admin vem com `nome: null` do GET /eu: a área abre sem nome e o cabeçalho mostra só o perfil.
+    await waitFor(() => expect(sonda()).toBe('autenticado|-|admin'));
+    expect(titulo('Resumo da plataforma')).toBeOnTheScreen();
+    expect(screen.getAllByRole('link', { name: 'Resumo' }).length).toBeGreaterThan(0);
 
-    const [sairDoCorpo] = screen.getAllByRole('button', { name: 'Sair' }).slice(-1);
-    await act(async () => fireEvent.press(sairDoCorpo!));
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Sair' })));
     await waitFor(() => expect(caminho()).toBe('/entrar'));
     await expect(ler(CHAVES.token)).resolves.toBeNull();
   });
@@ -511,19 +511,36 @@ describe('cabeçalho e abas da área (web)', () => {
     }
   });
 
-  it('motorista: os 3 destinos (sem "Minhas propostas", rota fora do MVP)', async () => {
+  it('motorista: o cabeçalho tem os 6 destinos; a barra tem 3 e o "Mais" com Disponibilidade, Certificações e Chave Pix', async () => {
     await gravar(CHAVES.token, 'mock-motorista');
     await abrir('/motorista/cargas');
     await waitFor(() => expect(sonda()).toContain('autenticado'));
 
-    const [nav] = navegacoes();
-    expect(within(nav!).getAllByRole('link')).toHaveLength(3);
-    expect(within(nav!).queryByRole('link', { name: 'Minhas propostas' })).toBeNull();
-    for (const rotulo of ['Cargas próximas', 'Disponibilidade', 'Meus fretes']) {
-      expect(within(nav!).getByRole('link', { name: rotulo })).toBeOnTheScreen();
+    // Cabeçalho (acima de 960 px): a lista inteira, na ordem do protótipo.
+    const [cabecalho, barra] = navegacoes();
+    expect(within(cabecalho!).getAllByRole('link')).toHaveLength(6);
+    for (const rotulo of [
+      'Cargas próximas',
+      'Disponibilidade',
+      'Minhas propostas',
+      'Meus fretes',
+      'Certificações',
+      'Chave Pix',
+    ]) {
+      expect(within(cabecalho!).getByRole('link', { name: rotulo })).toBeOnTheScreen();
     }
-    expect(within(nav!).getByRole('link', { name: 'Cargas próximas' }).props['aria-current']).toBe(
-      'page',
-    );
+    expect(
+      within(cabecalho!).getByRole('link', { name: 'Cargas próximas' }).props['aria-current'],
+    ).toBe('page');
+
+    // Barra inferior (até 960 px): Disponibilidade, Certificações e Chave Pix saem da barra e vão para o "Mais" (fechado: sem link).
+    expect(within(barra!).getAllByRole('link')).toHaveLength(3);
+    expect(within(barra!).getByRole('link', { name: 'Minhas propostas' })).toBeOnTheScreen();
+    expect(within(barra!).getByRole('link', { name: 'Meus fretes' })).toBeOnTheScreen();
+    expect(within(barra!).queryByRole('link', { name: 'Disponibilidade' })).toBeNull();
+    expect(within(barra!).queryByRole('link', { name: 'Certificações' })).toBeNull();
+    expect(within(barra!).queryByRole('link', { name: 'Chave Pix' })).toBeNull();
+    const mais = within(barra!).getByRole('button', { name: 'Mais' }).props;
+    expect(mais['aria-expanded'] ?? mais.accessibilityState?.expanded).toBe(false);
   });
 });

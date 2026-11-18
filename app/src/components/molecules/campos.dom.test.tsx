@@ -14,6 +14,7 @@ import { TemaContext } from '@/state/tema/TemaProvider';
 
 import { CartaoFormulario, CelulaFormulario } from '../organisms/CartaoFormulario';
 
+import { CampoDataPartes } from './CampoDataPartes';
 import { CampoNumero } from './CampoNumero';
 import { CampoSelecao } from './CampoSelecao';
 import { CampoSenha } from './CampoSenha';
@@ -138,6 +139,28 @@ describe('rótulo na web', () => {
   });
 });
 
+describe('CampoDataPartes na web', () => {
+  it('clicar em Dia, Mês ou Ano foca o campo; só dígitos entram', async () => {
+    const aoMudar = jest.fn();
+    await montar(
+      <CampoDataPartes
+        rotulo="Validade"
+        id="val"
+        valor={{ dia: '', mes: '', ano: '' }}
+        aoMudar={aoMudar}
+      />,
+    );
+    for (const parte of ['dia', 'mes', 'ano']) {
+      await act(async () => achar<HTMLElement>(`#val-${parte}-rotulo`).click());
+      expect(document.activeElement?.id).toBe(`val-${parte}`);
+    }
+    const dia = achar<HTMLInputElement>('#val-dia');
+    expect(dia.getAttribute('inputmode')).toBe('numeric');
+    expect(dia.getAttribute('aria-labelledby')).toBe('val-dia-rotulo');
+    expect(achar<HTMLElement>('[role="group"]').getAttribute('aria-labelledby')).toBe('val-rotulo');
+  });
+});
+
 describe('CampoSenha na web', () => {
   it('type password alterna para text; o botão tem aria-pressed e nome', async () => {
     await montar(<CampoSenha rotulo="Senha" tipo="nova-senha" />);
@@ -192,6 +215,27 @@ describe('CampoSelecao na web', () => {
       'Selecione',
       'MOPP',
       'ADR',
+    ]);
+  });
+
+  it('opção desabilitada vira <option disabled> e as demais continuam escolhíveis', async () => {
+    await montar(
+      <CampoSelecao
+        rotulo="Certificação"
+        opcoes={[
+          { valor: 'mopp', rotulo: 'MOPP (já aprovada)', desabilitada: true },
+          { valor: 'adr', rotulo: 'ADR' },
+        ]}
+        valor=""
+        textoVazio="Selecione"
+        aoMudar={() => {}}
+      />,
+    );
+    const opcoes = Array.from(achar<HTMLSelectElement>('select').options);
+    expect(opcoes.map((o) => [o.textContent, o.disabled])).toEqual([
+      ['Selecione', false],
+      ['MOPP (já aprovada)', true],
+      ['ADR', false],
     ]);
   });
 

@@ -80,7 +80,7 @@ describe('cadastro de motorista: envio', () => {
         email: 'caminho.feliz@mock.test',
         senha: 'senhaSegura8',
         nome_completo: 'João da Silva',
-        cpf: '123.456.789-01',
+        cpf: '529.982.247-25',
         cnh: '11122233344',
         veiculo_tipo: 'Carreta',
         veiculo_placa: 'ABC1D23',
@@ -108,18 +108,31 @@ describe('cadastro de motorista: envio', () => {
     );
   });
 
-  it('409: mostra "e-mail ou CPF já cadastrado" no resumo, limpa a senha e mantém o resto', async () => {
+  it('409: mostra "email já cadastrado" (texto do backend) no resumo, limpa a senha e mantém o resto', async () => {
     await renderizarCadastroMotorista();
     await preencherCadastroMotorista({ email: 'existente@mock.test' });
 
     await criarContaCadastroMotorista();
 
-    await waitFor(() => expect(screen.getByText('e-mail ou CPF já cadastrado')).toBeOnTheScreen());
+    await waitFor(() => expect(screen.getByText('email já cadastrado')).toBeOnTheScreen());
     expect(screen.getByLabelText('Senha').props.value).toBe('');
     expect(screen.getByLabelText('E-mail').props.value).toBe('existente@mock.test');
     expect(screen.getByLabelText('Nome completo').props.value).toBe('João da Silva');
-    expect(screen.getByLabelText('CPF').props.value).toBe('123.456.789-01');
+    expect(screen.getByLabelText('CPF').props.value).toBe('529.982.247-25');
     expect(sessaoFalsa.entrar).not.toHaveBeenCalled();
+  });
+
+  it('409 de CPF repetido: mostra "cpf já cadastrado" no resumo e mantém o CPF digitado', async () => {
+    servidor.use(
+      http.post(urlMock('/cadastro/motorista'), () => respostaErro(409, 'cpf já cadastrado')),
+    );
+    await renderizarCadastroMotorista();
+    await preencherCadastroMotorista({ email: 'cpf.repetido@mock.test' });
+
+    await criarContaCadastroMotorista();
+
+    await waitFor(() => expect(screen.getByText('cpf já cadastrado')).toBeOnTheScreen());
+    expect(screen.getByLabelText('CPF').props.value).toBe('529.982.247-25');
   });
 
   it('400 por campo: cada mensagem que começa com o nome do campo aparece junto dele (CT-03)', async () => {
@@ -198,6 +211,48 @@ describe('cadastro de motorista: validação local (D-PO-14)', () => {
     expect(screen.getByText('Informe um número maior que zero.')).toBeOnTheScreen();
   });
 
+  // Nenhuma requisição sai: o formulário barra antes do POST (card 037).
+  it.each([
+    [
+      'CPF com dígito verificador errado',
+      { cpf: '529.982.247-26' },
+      'CPF inválido. Confira os números.',
+    ],
+    ['CPF de sequência repetida', { cpf: '111.111.111-11' }, 'CPF inválido. Confira os números.'],
+    ['placa fora do padrão', { placa: 'AB12345' }, 'Use o formato ABC1234 ou ABC1D23.'],
+  ])('%s: mostra a mensagem junto do campo e não chama a API', async (_nome, campos, mensagem) => {
+    let chamou = false;
+    servidor.use(
+      http.post(urlMock('/cadastro/motorista'), () => {
+        chamou = true;
+        return HttpResponse.json({ erro: 'não deveria chamar' }, { status: 500 });
+      }),
+    );
+    await renderizarCadastroMotorista();
+    await preencherCadastroMotorista(campos);
+
+    await criarContaCadastroMotorista();
+
+    await waitFor(() => expect(screen.getAllByText(mensagem).length).toBeGreaterThan(0));
+    const campo = 'cpf' in campos ? 'CPF' : 'Placa';
+    expect(screen.getByLabelText(campo).props['aria-invalid']).toBe(true);
+    expect(chamou).toBe(false);
+    expect(sessaoFalsa.entrar).not.toHaveBeenCalled();
+  });
+
+  it('aceita CPF sem pontuação e placa com hífen e minúscula', async () => {
+    await renderizarCadastroMotorista();
+    await preencherCadastroMotorista({
+      email: 'formatos.livres@mock.test',
+      cpf: '11144477735',
+      placa: 'abc-1d23',
+    });
+
+    await criarContaCadastroMotorista();
+
+    await waitFor(() => expect(sessaoFalsa.entrar).toHaveBeenCalledTimes(1));
+  });
+
   it('capacidade com ponto de milhar é recusada (1.234 pode ser 1234 ou 1,234)', async () => {
     await renderizarCadastroMotorista();
     await preencherCadastroMotorista({ capacidade: '15.000' });
@@ -209,6 +264,25 @@ describe('cadastro de motorista: validação local (D-PO-14)', () => {
         screen.getByText('Use vírgula para decimais e sem ponto de milhar (ex.: 1234 ou 1234,5).'),
       ).toBeOnTheScreen(),
     );
+  });
+
+  it('capacidade acima de 99.999.999,99: erro no campo e nada é enviado à API', async () => {
+    const corpos: Record<string, unknown>[] = [];
+    ouvinte = async ({ request }) => {
+      if (request.method === 'POST' && request.url.endsWith('/cadastro/motorista')) {
+        corpos.push((await request.clone().json()) as Record<string, unknown>);
+      }
+    };
+    servidor.events.on('request:start', ouvinte);
+    await renderizarCadastroMotorista();
+    await preencherCadastroMotorista({ capacidade: '100000000' });
+
+    await criarContaCadastroMotorista();
+
+    await waitFor(() =>
+      expect(screen.getByText('Informe um valor até 99.999.999,99.')).toBeOnTheScreen(),
+    );
+    expect(corpos).toHaveLength(0);
   });
 
   it('senha com menos de 8 caracteres: mensagem junto do campo', async () => {

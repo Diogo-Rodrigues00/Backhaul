@@ -26,7 +26,14 @@ import { ErroApi } from '@/lib/erros';
 import { paraNumero } from '@/lib/numeros';
 import { calcularExpiraEm } from '@/lib/prazos';
 import type { Urgencia } from '@/lib/rotulos';
-import { MAX, maximo, numeroPositivo, numeroSemAmbiguidade, obrigatorio } from '@/lib/validacao';
+import {
+  ateValorMaximo,
+  MAX,
+  maximo,
+  numeroPositivo,
+  numeroSemAmbiguidade,
+  obrigatorio,
+} from '@/lib/validacao';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 
@@ -77,8 +84,8 @@ const ROTULOS = {
 } as const;
 
 const validarTipoCarga = encadear(obrigatorio, maximo(MAX.tipo_carga));
-const validarPeso = encadear(obrigatorio, numeroSemAmbiguidade, numeroPositivo);
-const validarValor = encadear(obrigatorio, numeroSemAmbiguidade, numeroPositivo);
+const validarPeso = encadear(obrigatorio, numeroSemAmbiguidade, numeroPositivo, ateValorMaximo);
+const validarValor = encadear(obrigatorio, numeroSemAmbiguidade, numeroPositivo, ateValorMaximo);
 
 function exigirLocal(mensagem: string) {
   return (valor: Local | null): true | string => valor !== null || mensagem;

@@ -1,6 +1,6 @@
 // Cartão de disponibilidade do motorista (DS 5.2, protótipo "Minhas disponibilidades"): local, raio,
-// urgência, prazo, status e propostas pendentes, com "Usar esta". Não busca dados: a tela entrega a
-// disponibilidade pronta por props (ADR 0003).
+// urgência, prazo, status e propostas pendentes, com "Usar esta" e "Cancelar disponibilidade" (card
+// 034). Não busca dados: a tela entrega a disponibilidade pronta por props (ADR 0003).
 import { View, type ViewStyle } from 'react-native';
 
 import { Botao } from '@/components/atoms/Botao';
@@ -28,12 +28,14 @@ export interface PropsCartaoDisponibilidade {
   urgencia: Urgencia;
   status: StatusDisponibilidade;
   expiraEm: string;
-  /** Só a lista da proposta 4b traz o número; sem ele (plano B) a linha não aparece. */
+  /** Só `GET /disponibilidades/minhas` traz o número; sem ele (plano B) a linha não aparece. */
   propostasPendentes?: number;
   /** É a disponibilidade em uso: mostra "Ativa" em texto e não oferece "Usar esta". */
   ativa: boolean;
   /** "Usar esta": recebe o id. Sem ele, o botão não aparece. */
   aoUsar?: (id: string) => void;
+  /** "Cancelar disponibilidade": recebe o id. Só aparece em aberta e no prazo; sem ele, não aparece. */
+  aoCancelar?: (id: string) => void;
   /** Relógio para o status efetivo (CT-10). Padrão: agora. Injetável para teste. */
   agora?: Date;
 }
@@ -83,6 +85,11 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
       alignItems: 'center',
       gap: space[2],
     } satisfies ViewStyle,
+    acoes: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: space[3],
+    } satisfies ViewStyle,
   } as const;
 }
 
@@ -90,7 +97,8 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
  * Disponibilidade do motorista: `article` com o local como título (h2), "Ativa" quando é a em uso,
  * urgência, status (aberto vencido vira "Expirada"), raio, prazo e propostas pendentes. "Usar esta"
  * tem nome único por disponibilidade; só funciona em aberta, no prazo e que não seja a ativa
- * (nas demais fica desabilitado, como no protótipo).
+ * (nas demais fica desabilitado, como no protótipo). "Cancelar disponibilidade" só aparece em aberta
+ * e no prazo, também na ativa, e o nome acessível leva o local e o horário do prazo.
  */
 export function CartaoDisponibilidade({
   id,
@@ -102,6 +110,7 @@ export function CartaoDisponibilidade({
   propostasPendentes,
   ativa,
   aoUsar,
+  aoCancelar,
   agora,
 }: PropsCartaoDisponibilidade) {
   const estilos = useEstilos(criarEstilos);
@@ -110,7 +119,14 @@ export function CartaoDisponibilidade({
   const expirado = efetivo === 'expirado';
   const utilizavel = efetivo === 'aberto';
   const rotuloLocal = rotuloLocalDisponibilidade(local);
+  // Nome acessível único por item: o local repete entre disponibilidades da mesma cidade, então o
+  // horário do prazo entra no nome (o rótulo visível continua o do botão).
+  const nomeDoLocal = `${rotuloLocal.charAt(0).toLowerCase()}${rotuloLocal.slice(1)}`;
   const idTitulo = `disponibilidade-${id}-titulo`;
+  // A ativa não oferece "Usar esta", mas pode ser cancelada. CT-10 e MVP-22: cancelar só em aberta e
+  // no prazo (uma vencida já é "Expirada" e não tem botão).
+  const usar = ativa ? undefined : aoUsar;
+  const cancelar = utilizavel ? aoCancelar : undefined;
 
   const fatos: ItemDeFato[] = [
     { rotulo: 'Raio de busca', valor: rotuloRaio(raioKm) },
@@ -148,15 +164,28 @@ export function CartaoDisponibilidade({
       {propostasPendentes === undefined ? null : (
         <Texto cor="secundario">{rotuloPropostasPendentes(propostasPendentes)}</Texto>
       )}
-      {!ativa && aoUsar ? (
-        <Botao
-          variante="secundario"
-          desabilitado={!utilizavel}
-          aria-label={`Usar esta disponibilidade ${rotuloLocal.charAt(0).toLowerCase()}${rotuloLocal.slice(1)}`}
-          aoPressionar={() => aoUsar(id)}
-        >
-          Usar esta
-        </Botao>
+      {usar || cancelar ? (
+        <View style={estilos.acoes}>
+          {usar ? (
+            <Botao
+              variante="secundario"
+              desabilitado={!utilizavel}
+              aria-label={`Usar esta disponibilidade ${nomeDoLocal}`}
+              aoPressionar={() => usar(id)}
+            >
+              Usar esta
+            </Botao>
+          ) : null}
+          {cancelar ? (
+            <Botao
+              variante="perigo"
+              aria-label={`Cancelar disponibilidade ${nomeDoLocal}, expira em ${formatarDataHora(expiraEm)}`}
+              aoPressionar={() => cancelar(id)}
+            >
+              Cancelar disponibilidade
+            </Botao>
+          ) : null}
+        </View>
       ) : null}
     </View>
   );

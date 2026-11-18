@@ -17,7 +17,7 @@ const app = createServer(...criarHandlersComEstado(''), ...criarHandlers(''));
 // O site (4173) e o mock (4010) são origens diferentes: libera CORS para qualquer origem.
 const servidor = criarServidorHttp((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,PUT,OPTIONS');
   res.setHeader(
     'Access-Control-Allow-Headers',
     req.headers['access-control-request-headers'] ?? 'Content-Type,Authorization',

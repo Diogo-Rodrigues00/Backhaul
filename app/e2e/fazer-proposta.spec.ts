@@ -68,7 +68,7 @@ test.describe('fazer proposta', () => {
     ]);
     // Foco previsível: no bloco "Proposta enviada" do cartão, que ocupou o lugar dos botões.
     await expect(page.locator(`[id="proposta-enviada-${ID_GRAOS}"]`)).toBeFocused();
-    await expect(cartao.getByRole('button')).toHaveCount(0);
+    await expect(cartao.getByRole('button', { name: /Aceitar|Contraproposta/ })).toHaveCount(0);
   });
 
   test('aceitar o valor: confirma, não manda valor e o cartão vira "Proposta enviada"', async ({
@@ -120,7 +120,7 @@ test.describe('fazer proposta', () => {
   test('carga com proposta pendente não oferece botões de proposta', async ({ page }) => {
     const cartao = page.getByRole('article', { name: 'Produtos inflamáveis' });
     await expect(cartao.getByText('Proposta enviada', { exact: true })).toBeVisible();
-    await expect(cartao.getByRole('button')).toHaveCount(0);
+    await expect(cartao.getByRole('button', { name: /Aceitar|Contraproposta/ })).toHaveCount(0);
   });
 
   for (const esquema of ['light', 'dark'] as const) {

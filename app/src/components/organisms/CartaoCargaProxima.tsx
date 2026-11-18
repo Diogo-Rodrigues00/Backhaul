@@ -12,6 +12,7 @@ import { type Coordenada, rotuloDoLocal } from '@/lib/cidades';
 import type { NumeroEntrada } from '@/lib/formatacao';
 import type { Urgencia } from '@/lib/rotulos';
 import { statusEfetivo } from '@/lib/vencimento';
+import { BotaoMapa, idDoMapa, PainelMapa } from '@/components/organisms/MapaSobDemanda';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
@@ -38,6 +39,10 @@ export interface PropsCartaoCargaProxima {
   acoes?: ReactNode;
   /** Elemento "Proposta enviada": o card 025 leva o foco até ele depois do envio. */
   refPropostaEnviada?: Ref<View>;
+  /** Mapa da rota aberto neste cartão (a tela deixa um só aberto por vez). */
+  mapaAberto?: boolean;
+  /** Abre/fecha o mapa. Sem ele o cartão não mostra "Ver no mapa". */
+  aoAlternarMapa?: () => void;
   /** Relógio para o status efetivo (CT-10). Padrão: agora. Injetável para teste. */
   agora?: Date;
 }
@@ -91,12 +96,17 @@ export function CartaoCargaProxima({
   propostaEnviada = false,
   acoes,
   refPropostaEnviada,
+  mapaAberto = false,
+  aoAlternarMapa,
   agora,
 }: PropsCartaoCargaProxima) {
   const estilos = useEstilos(criarEstilos);
   const { colors } = useTema();
   const expirado = statusEfetivo('aberto', expiraEm, agora) === 'expirado';
   const idTitulo = `carga-${id}-titulo`;
+  const idMapa = idDoMapa(id);
+  const rotuloOrigem = rotuloDoLocal(origem) ?? LOCAL_NAO_IDENTIFICADO;
+  const rotuloDestino = rotuloDoLocal(destino) ?? LOCAL_NAO_IDENTIFICADO;
   // Borda do cartão por urgência (DS 6): asfalto no claro e âmbar/vermelho no escuro; Normal, comum.
   const cor =
     expirado || urgencia === 'normal' ? colors.border.subtle : colors.urgency[urgencia].border;
@@ -120,8 +130,8 @@ export function CartaoCargaProxima({
           idTitulo={idTitulo}
           tipoCarga={tipoCarga}
           empresa={empresa}
-          origem={rotuloDoLocal(origem) ?? LOCAL_NAO_IDENTIFICADO}
-          destino={rotuloDoLocal(destino) ?? LOCAL_NAO_IDENTIFICADO}
+          origem={rotuloOrigem}
+          destino={rotuloDestino}
           pesoKg={pesoKg}
           valorOferecido={valorOferecido}
           urgencia={urgencia}
@@ -146,6 +156,27 @@ export function CartaoCargaProxima({
           </View>
         ) : acoes ? (
           <View style={estilos.acoes}>{acoes}</View>
+        ) : null}
+        {aoAlternarMapa ? (
+          <View style={estilos.acoes}>
+            <BotaoMapa
+              aberto={mapaAberto}
+              aoAlternar={aoAlternarMapa}
+              idPainel={idMapa}
+              sobre={`da rota de ${tipoCarga}`}
+            />
+          </View>
+        ) : null}
+        {aoAlternarMapa && mapaAberto ? (
+          <PainelMapa
+            idPainel={idMapa}
+            descricao={`Mapa da rota de ${rotuloOrigem} a ${rotuloDestino}`}
+            pontos={[
+              { ...origem, tipo: 'origem' },
+              { ...destino, tipo: 'destino' },
+            ]}
+            linha={[origem, destino]}
+          />
         ) : null}
       </View>
     </View>

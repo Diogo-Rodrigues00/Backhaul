@@ -4,7 +4,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { View } from 'react-native';
 
-import { eFreteDoMotorista } from '@/api/fretes';
+import { eFreteDoMotorista, paraFreteDoMotorista } from '@/api/fretes';
 import { useAtualizarStatusFrete, useMeusFretes } from '@/api/fretes.hooks';
 import { useQueryClient } from '@/api/tanstack';
 import { chaves } from '@/api/chaves';
@@ -36,6 +36,11 @@ function mensagemDeErro(erro: unknown): string | undefined {
 
 function mensagemDoErro(erro: unknown): string {
   return erro instanceof ErroApi ? erro.mensagens.join(' ') : MENSAGEM_FALHA;
+}
+
+/** O 409 de "cadastre sua chave Pix antes de concluir a entrega": a API não manda um código, só o texto. */
+function pedeChavePix(erro: unknown): boolean {
+  return erro instanceof ErroApi && erro.mensagens.some((m) => /chave pix/i.test(m));
 }
 
 function eStatus(erro: unknown, status: number): boolean {
@@ -86,8 +91,12 @@ export default function CorpoMeusFretesMotorista() {
   const { refetch } = consulta;
 
   // O mesmo `GET /fretes/meus` serve a empresa; aqui só interessa a forma do motorista (`empresa`).
+  // `paraFreteDoMotorista` deixa de fora comissão e Pix: o motorista nunca vê a comissão (card 044).
   const dados = consulta.data;
-  const lista = useMemo(() => dados?.fretes.filter(eFreteDoMotorista), [dados]);
+  const lista = useMemo(
+    () => dados?.fretes.filter(eFreteDoMotorista).map(paraFreteDoMotorista),
+    [dados],
+  );
 
   // Pagamento feito pela empresa (CT-09): a frase vai à barra de novidades e à região viva.
   const [novidade, setNovidade] = useState('');
@@ -145,7 +154,14 @@ export default function CorpoMeusFretesMotorista() {
       if (eStatus(erro, 409)) {
         // Transição que a API não permite (o frete já andou em outro aparelho): mostra o motivo e recarrega.
         retornoDoFoco.current = cartoes.current.get(freteId) ?? null;
-        definirAviso(freteId, { variante: 'erro', texto: mensagemDoErro(erro) });
+        // O texto é o da API, sem troca; quando é a chave Pix que falta, o aviso ganha o atalho para a tela.
+        definirAviso(freteId, {
+          variante: 'erro',
+          texto: mensagemDoErro(erro),
+          acao: pedeChavePix(erro) ? (
+            <Link href="/motorista/chave-pix">Cadastrar chave Pix</Link>
+          ) : undefined,
+        });
         setAberto(false);
         void atualizar();
       } else {
@@ -214,6 +230,8 @@ export default function CorpoMeusFretesMotorista() {
                 coletaEm={frete.coleta_em}
                 entregaEm={frete.entrega_em}
                 statusPagamento={frete.status_pagamento}
+                origem={frete.origem}
+                destino={frete.destino}
                 aviso={avisos[frete.id]}
                 aoAvancar={aoAvancar}
               />

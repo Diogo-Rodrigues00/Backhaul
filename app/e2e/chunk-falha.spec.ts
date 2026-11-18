@@ -39,13 +39,16 @@ test.describe('chunk das consultas fora do ar', () => {
       page.getByRole('heading', { level: 1, name: 'Minhas disponibilidades' }),
     ).toBeVisible();
     await expect(page.getByRole('banner')).toBeVisible();
-    const erro = page.getByRole('alert').filter({ hasText: 'Algo deu errado' });
-    await expect(erro).toBeVisible({ timeout: 15_000 });
+    const aviso = page
+      .getByRole('alert')
+      .filter({ hasText: 'Não foi possível carregar esta tela.' });
+    await expect(aviso).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('list', { name: 'Disponibilidades publicadas' })).toHaveCount(0);
 
     await page.context().unroute(CHUNK_CONSULTAS);
-    await erro.getByRole('button', { name: 'Tentar de novo' }).click();
+    await aviso.getByRole('button', { name: 'Tentar de novo' }).click();
 
-    await expect(erro).toHaveCount(0);
     await expect(page.getByRole('list', { name: 'Disponibilidades publicadas' })).toBeVisible();
+    await expect(aviso).toHaveCount(0);
   });
 });

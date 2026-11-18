@@ -46,7 +46,7 @@ const VALIDOS = {
   email: '  contato@transportesrapidos.com  ',
   senha: 'senhaSegura8',
   razaoSocial: '  Transportes Rápidos LTDA ',
-  cnpj: '12.345.678/0001-99',
+  cnpj: '11.222.333/0001-81',
 };
 
 async function renderizarCadastro() {
@@ -77,8 +77,10 @@ function alerta() {
   return screen.container.queryAll((el) => el.props.role === 'alert')[0];
 }
 
+// Com `await`: no RNTL 14 o `fireEvent` é assíncrono, e sem ele o teste segue antes de a tela
+// terminar de reagir ao toque (e conta só alguns dos erros, conforme a carga da máquina).
 async function enviar() {
-  fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
 }
 
 /** Conta as requisições e segura cada resposta até `liberar()`, para testar o envio duplo. */
@@ -147,19 +149,19 @@ describe('Cadastro de empresa', () => {
         email: 'contato@transportesrapidos.com',
         senha: 'senhaSegura8',
         razao_social: 'Transportes Rápidos LTDA',
-        cnpj: '12.345.678/0001-99',
+        cnpj: '11.222.333/0001-81',
       },
     ]);
   });
 
   it('409: mostra a mensagem da API no resumo, limpa a senha e mantém os outros dados (MVP-05)', async () => {
-    servidor.use(http.post(URL_CADASTRO, () => respostaErro(409, 'e-mail ou CNPJ já cadastrado')));
+    servidor.use(http.post(URL_CADASTRO, () => respostaErro(409, 'cnpj já cadastrado')));
     await renderizarCadastro();
     await preencher();
     await enviar();
 
-    expect(await screen.findByText('e-mail ou CNPJ já cadastrado')).toBeOnTheScreen();
-    expect(alerta()).toHaveTextContent('e-mail ou CNPJ já cadastrado');
+    expect(await screen.findByText('cnpj já cadastrado')).toBeOnTheScreen();
+    expect(alerta()).toHaveTextContent('cnpj já cadastrado');
     expect(screen.getByLabelText('Senha').props.value).toBe('');
     expect(screen.getByLabelText('E-mail').props.value).toBe(VALIDOS.email);
     expect(screen.getByLabelText('Razão social').props.value).toBe(VALIDOS.razaoSocial);
@@ -212,7 +214,10 @@ describe('Cadastro de empresa', () => {
     await renderizarCadastro();
     await enviar();
 
-    expect((await screen.findAllByText('Preencha este campo.')).length).toBeGreaterThanOrEqual(4);
+    // Os quatro campos vazios aparecem juntos; `waitFor` cobre a máquina carregada.
+    await waitFor(() =>
+      expect(screen.getAllByText('Preencha este campo.').length).toBeGreaterThanOrEqual(4),
+    );
     expect(captura.chamadas).toBe(0);
     expect(mockEntrar).not.toHaveBeenCalled();
   });
@@ -233,6 +238,37 @@ describe('Cadastro de empresa', () => {
     expect(screen.getByText('Informe 14 dígitos.')).toBeOnTheScreen();
     expect(screen.getByText('Use no máximo 150 caracteres.')).toBeOnTheScreen();
     expect(captura.chamadas).toBe(0);
+  });
+
+  it.each([
+    ['dígito verificador errado', '11.222.333/0001-82'],
+    ['sequência repetida', '00.000.000/0000-00'],
+  ])(
+    'validação local: CNPJ com %s não chama a API e mostra a mensagem junto do campo',
+    async (_nome, cnpj) => {
+      const { captura } = contarRequisicoes();
+      await renderizarCadastro();
+      await preencher({ cnpj });
+      await enviar();
+
+      expect(
+        (await screen.findAllByText('CNPJ inválido. Confira os números.')).length,
+      ).toBeGreaterThan(0);
+      expect(screen.getByLabelText('CNPJ').props['aria-invalid']).toBe(true);
+      expect(captura.chamadas).toBe(0);
+      expect(mockEntrar).not.toHaveBeenCalled();
+    },
+  );
+
+  it('aceita o CNPJ só com dígitos', async () => {
+    const { captura, liberar } = contarRequisicoes();
+    liberar();
+    await renderizarCadastro();
+    await preencher({ cnpj: '11222333000181' });
+    await enviar();
+
+    await waitFor(() => expect(mockEntrar).toHaveBeenCalledTimes(1));
+    expect(captura.chamadas).toBe(1);
   });
 
   it('clique duplo gera 1 requisição (CT-01) e o botão mostra o progresso', async () => {

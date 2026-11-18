@@ -1,22 +1,31 @@
 // POST /propostas, GET /cargas/:id/propostas, POST /propostas/:id/responder (docs/api.md) e
-// GET /propostas/minhas (PROPOSTA relatório 4a: ainda não existe no backend).
+// GET /propostas/minhas (com os campos da carga: origem, destino, urgência, certificação e estado).
 import type {
-  CargaDaMinhaProposta,
-  CargaProxima,
   FreteCriado,
   MinhaProposta,
   PropostaCriada,
   PropostaRecebida,
-  StatusChamado,
 } from '../../src/api/tipos';
 
 import { cargaProximaNormal, cargaProximaUrgente, CARGA_URGENTE_ID } from './cargas';
 import { daquiAHoras, dataSemHora } from './datas';
 import { DISPONIBILIDADE_ABERTA_ID } from './disponibilidades';
+import { FRETE_ACEITO_ID } from './fretes';
+
+// Pontos das cargas de "Minhas propostas" que não estão em "Cargas próximas" (cidades do seed).
+const uberlandia = { lat: -18.9186, lng: -48.2772 };
+const uberaba = { lat: -19.7469, lng: -47.9319 };
+const araguari = { lat: -18.6456, lng: -48.1935 };
+const goiania = { lat: -16.6869, lng: -49.2648 };
+const catalao = { lat: -18.1656, lng: -47.944 };
+const araxa = { lat: -19.5902, lng: -46.9438 };
 
 export const PROPOSTA_PENDENTE_ID = 'bbbbbbbb-0000-4000-8000-000000000001';
 export const PROPOSTA_ACEITE_ID = 'bbbbbbbb-0000-4000-8000-000000000002';
 export const PROPOSTA_RECUSADA_ID = 'bbbbbbbb-0000-4000-8000-000000000003';
+// Propostas do João em "Minhas propostas" (card 043): uma expirada e uma recusada, para o chat encerrado.
+export const PROPOSTA_EXPIRADA_JOAO_ID = 'bbbbbbbb-0000-4000-8000-0000000000a1';
+export const PROPOSTA_RECUSADA_JOAO_ID = 'bbbbbbbb-0000-4000-8000-0000000000a4';
 
 /** Resposta do POST /propostas (201): contraproposta pendente. */
 export const propostaCriadaMock: PropostaCriada = {
@@ -134,23 +143,32 @@ export const freteCriadoMock: FreteCriado = {
   criado_em: daquiAHoras(0),
 };
 
-function resumoDaCarga(carga: CargaProxima, status: StatusChamado): CargaDaMinhaProposta {
+/** Uma linha de GET /propostas/minhas no formato real, para os testes variarem só o que importa. */
+export function minhaPropostaMock(parcial: Partial<MinhaProposta> = {}): MinhaProposta {
   return {
-    id: carga.id,
-    tipo_carga: carga.tipo_carga,
-    empresa: carga.empresa,
-    origem: carga.origem,
-    destino: carga.destino,
-    valor_oferecido: carga.valor_oferecido,
-    urgencia: carga.urgencia,
-    status,
-    certificacao_exigida: carga.certificacao_exigida,
-    expira_em: carga.expira_em,
+    id: 'bbbbbbbb-0000-4000-8000-0000000000a0',
+    tipo: 'aceite',
+    valor_proposto: cargaProximaNormal.valor_oferecido,
+    status: 'pendente',
+    criado_em: '2026-10-21T12:00:00.000Z',
+    chamado_carga_id: cargaProximaNormal.id,
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: cargaProximaNormal.tipo_carga,
+    valor_oferecido: cargaProximaNormal.valor_oferecido,
+    empresa: cargaProximaNormal.empresa,
+    frete_id: null,
+    origem: cargaProximaNormal.origem,
+    destino: cargaProximaNormal.destino,
+    urgencia: cargaProximaNormal.urgencia,
+    certificacao_exigida: cargaProximaNormal.certificacao_exigida,
+    carga_status: 'aberto',
+    carga_expira_em: cargaProximaNormal.expira_em,
+    ...parcial,
   };
 }
 
-// PROPOSTA relatório 4a. Ordem criado_em DESC. As duas últimas mostram "carga fechou"
-// (carga.status 'fechado') sem outra chamada.
+// Formato real de GET /propostas/minhas (docs/api.md): plano, `criado_em` DESC. A aceita traz o
+// `frete_id` do frete criado no aceite; as demais, `null`.
 export const minhasPropostasMock: MinhaProposta[] = [
   {
     id: PROPOSTA_PENDENTE_ID,
@@ -158,8 +176,18 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_proposto: 3200,
     status: 'pendente',
     criado_em: daquiAHoras(-3),
-    disponibilidade_id: DISPONIBILIDADE_ABERTA_ID,
-    carga: resumoDaCarga(cargaProximaUrgente, 'aberto'),
+    chamado_carga_id: cargaProximaUrgente.id,
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: cargaProximaUrgente.tipo_carga,
+    valor_oferecido: cargaProximaUrgente.valor_oferecido,
+    empresa: cargaProximaUrgente.empresa,
+    frete_id: null,
+    origem: cargaProximaUrgente.origem,
+    destino: cargaProximaUrgente.destino,
+    urgencia: cargaProximaUrgente.urgencia,
+    certificacao_exigida: cargaProximaUrgente.certificacao_exigida,
+    carga_status: 'aberto',
+    carga_expira_em: cargaProximaUrgente.expira_em,
   },
   {
     id: PROPOSTA_ACEITE_ID,
@@ -167,8 +195,19 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_proposto: 4200.5,
     status: 'aceita',
     criado_em: daquiAHoras(-20),
-    disponibilidade_id: DISPONIBILIDADE_ABERTA_ID,
-    carga: resumoDaCarga(cargaProximaNormal, 'fechado'),
+    chamado_carga_id: cargaProximaNormal.id,
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: cargaProximaNormal.tipo_carga,
+    valor_oferecido: cargaProximaNormal.valor_oferecido,
+    empresa: cargaProximaNormal.empresa,
+    frete_id: FRETE_ACEITO_ID,
+    origem: cargaProximaNormal.origem,
+    destino: cargaProximaNormal.destino,
+    urgencia: cargaProximaNormal.urgencia,
+    certificacao_exigida: cargaProximaNormal.certificacao_exigida,
+    // O aceite fechou a carga: é o esperado, e o cartão não a mostra como indisponível.
+    carga_status: 'fechado',
+    carga_expira_em: cargaProximaNormal.expira_em,
   },
   {
     id: PROPOSTA_RECUSADA_ID,
@@ -176,7 +215,116 @@ export const minhasPropostasMock: MinhaProposta[] = [
     valor_proposto: 2900,
     status: 'recusada',
     criado_em: daquiAHoras(-30),
-    disponibilidade_id: DISPONIBILIDADE_ABERTA_ID,
-    carga: resumoDaCarga(cargaProximaUrgente, 'fechado'),
+    chamado_carga_id: cargaProximaUrgente.id,
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: cargaProximaUrgente.tipo_carga,
+    valor_oferecido: cargaProximaUrgente.valor_oferecido,
+    empresa: cargaProximaUrgente.empresa,
+    frete_id: null,
+    origem: cargaProximaUrgente.origem,
+    destino: cargaProximaUrgente.destino,
+    urgencia: cargaProximaUrgente.urgencia,
+    certificacao_exigida: cargaProximaUrgente.certificacao_exigida,
+    carga_status: 'aberto',
+    carga_expira_em: cargaProximaUrgente.expira_em,
+  },
+  // Mais cinco para somar 8 (Lighthouse e E2E de "Minhas propostas"; card 026). As cargas destas não
+  // estão na lista de "Cargas próximas" do mock, então não mudam as marcações de lá.
+  {
+    id: PROPOSTA_EXPIRADA_JOAO_ID,
+    tipo: 'aceite',
+    valor_proposto: 1850,
+    status: 'expirada',
+    criado_em: daquiAHoras(-40),
+    chamado_carga_id: 'dddddddd-0000-4000-8000-000000000001',
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: 'Material de construção',
+    valor_oferecido: 1850,
+    empresa: 'Distribuidora Casa Forte',
+    frete_id: null,
+    origem: goiania,
+    destino: catalao,
+    urgencia: 'normal',
+    certificacao_exigida: null,
+    carga_status: 'aberto',
+    carga_expira_em: daquiAHoras(40),
+  },
+  {
+    id: 'bbbbbbbb-0000-4000-8000-0000000000a2',
+    tipo: 'contraproposta',
+    valor_proposto: 4500,
+    status: 'pendente',
+    criado_em: daquiAHoras(-50),
+    chamado_carga_id: 'dddddddd-0000-4000-8000-000000000002',
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: 'Produtos químicos inflamáveis',
+    valor_oferecido: 4800,
+    empresa: 'Química Triângulo Ltda.',
+    frete_id: null,
+    origem: uberaba,
+    destino: araxa,
+    urgencia: 'critico',
+    certificacao_exigida: 'MOPP - Classe 3 Inflamáveis',
+    // Prazo da carga vencido com a proposta ainda pendente: "Carga indisponível" (card 050).
+    carga_status: 'expirado',
+    carga_expira_em: daquiAHoras(-6),
+  },
+  {
+    id: 'bbbbbbbb-0000-4000-8000-0000000000a3',
+    tipo: 'aceite',
+    valor_proposto: 2400,
+    status: 'aceita',
+    criado_em: daquiAHoras(-60),
+    chamado_carga_id: 'dddddddd-0000-4000-8000-000000000003',
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: 'Carga seca paletizada',
+    valor_oferecido: 2400,
+    empresa: 'Transportes Rápidos LTDA',
+    frete_id: 'ffffffff-0000-4000-8000-000000000004',
+    origem: uberlandia,
+    destino: catalao,
+    urgencia: 'urgente',
+    certificacao_exigida: null,
+    carga_status: 'fechado',
+    carga_expira_em: daquiAHoras(10),
+  },
+  {
+    id: PROPOSTA_RECUSADA_JOAO_ID,
+    tipo: 'contraproposta',
+    valor_proposto: 3200,
+    status: 'recusada',
+    criado_em: daquiAHoras(-70),
+    chamado_carga_id: 'dddddddd-0000-4000-8000-000000000004',
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: 'Grãos a granel',
+    valor_oferecido: 3500,
+    empresa: 'Agro Cerrado Grãos S.A.',
+    frete_id: null,
+    origem: araguari,
+    destino: uberlandia,
+    urgencia: 'normal',
+    certificacao_exigida: null,
+    // Outra proposta da carga foi aceita: fechada, e a nossa ficou recusada.
+    carga_status: 'fechado',
+    carga_expira_em: daquiAHoras(20),
+  },
+  {
+    id: 'bbbbbbbb-0000-4000-8000-0000000000a5',
+    tipo: 'aceite',
+    valor_proposto: 980,
+    status: 'pendente',
+    criado_em: daquiAHoras(-80),
+    chamado_carga_id: 'dddddddd-0000-4000-8000-000000000005',
+    chamado_disp_id: DISPONIBILIDADE_ABERTA_ID,
+    tipo_carga: 'Encomendas urgentes',
+    valor_oferecido: 980,
+    empresa: 'Expresso Cerrado ME',
+    frete_id: null,
+    origem: araxa,
+    destino: uberaba,
+    urgencia: 'urgente',
+    certificacao_exigida: null,
+    carga_status: 'aberto',
+    carga_expira_em: daquiAHoras(18),
   },
 ];

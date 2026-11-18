@@ -1,6 +1,7 @@
 import {
   proximoPassoFrete,
   rotuloPagamento,
+  rotuloSituacaoCertificacao,
   rotuloStatusCarga,
   rotuloStatusDisponibilidade,
   rotuloStatusEntrega,
@@ -8,6 +9,18 @@ import {
   rotuloTipoProposta,
   rotuloUrgencia,
 } from './rotulos';
+
+describe('rotuloSituacaoCertificacao (card 031)', () => {
+  it('rotula as três situações em texto', () => {
+    expect(rotuloSituacaoCertificacao('pendente')).toBe('Aguardando aprovação');
+    expect(rotuloSituacaoCertificacao('aprovada')).toBe('Aprovada');
+    expect(rotuloSituacaoCertificacao('vencida')).toBe('Vencida');
+  });
+
+  it('valor novo da API vira traço, não "undefined"', () => {
+    expect(rotuloSituacaoCertificacao('suspensa' as never)).toBe('—');
+  });
+});
 
 describe('rotuloUrgencia (D-PO-13)', () => {
   it('rotula cada urgência com texto', () => {
@@ -78,7 +91,7 @@ describe('rotuloPagamento (D-PO-07)', () => {
   it('rotula retido, liberado e os demais valores do enum', () => {
     expect(rotuloPagamento('retido')).toBe('Pago, retido até a entrega');
     expect(rotuloPagamento('liberado')).toBe('Liberado ao motorista');
-    expect(rotuloPagamento('pendente')).toBe('Pendente');
+    expect(rotuloPagamento('pendente')).toBe('Pagamento pendente');
     expect(rotuloPagamento('estornado')).toBe('Estornado');
   });
 });

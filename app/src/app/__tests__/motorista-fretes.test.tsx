@@ -342,6 +342,53 @@ describe('meus fretes do motorista: avançar o status (D-PO-09)', () => {
     expect(anunciado).not.toHaveBeenCalledWith('Transporte iniciado');
   });
 
+  it('409 de chave Pix ao confirmar a entrega: texto da API no cartão e link "Cadastrar chave Pix"', async () => {
+    servidor.use(
+      http.patch(urlMock(`/fretes/${FRETE_EM_TRANSITO_ID}/status`), () =>
+        respostaErro(409, 'cadastre sua chave Pix antes de concluir a entrega'),
+      ),
+    );
+    await abrir();
+    await screen.findByRole('heading', { name: 'Grãos' });
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Confirmar entrega de Grãos' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Confirmar entrega' }));
+
+    // O texto é o da API, sem troca, e o atalho leva à tela da chave.
+    expect(
+      await screen.findByText('cadastre sua chave Pix antes de concluir a entrega'),
+    ).toBeOnTheScreen();
+    const link = await screen.findByRole('link', { name: 'Cadastrar chave Pix' });
+    expect(link.props.href).toBe('/motorista/chave-pix');
+    expect(comPapel('alert').length).toBeGreaterThan(0);
+    await waitFor(() => expect(comPapel('alertdialog')).toHaveLength(0));
+  });
+
+  it('409 de pagamento pendente ao iniciar o transporte: mostra o texto da API, sem atalho e sem travar o botão', async () => {
+    servidor.use(
+      http.patch(urlMock(`/fretes/${FRETE_ACEITO_ID}/status`), () =>
+        respostaErro(409, 'aguardando a confirmação do pagamento da empresa'),
+      ),
+    );
+    await abrir();
+    await screen.findByRole('heading', { name: 'Produtos inflamáveis' });
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Iniciar transporte de Produtos inflamáveis' }),
+    );
+    await fireEvent.press(await screen.findByRole('button', { name: 'Iniciar transporte' }));
+
+    expect(
+      await screen.findByText('aguardando a confirmação do pagamento da empresa'),
+    ).toBeOnTheScreen();
+    expect(screen.queryByRole('link', { name: 'Cadastrar chave Pix' })).not.toBeOnTheScreen();
+    // O botão do passo continua ali, habilitado, para tentar de novo quando a empresa pagar.
+    const botao = screen.getByRole('button', {
+      name: 'Iniciar transporte de Produtos inflamáveis',
+    });
+    expect(botao.props['aria-disabled'] ?? botao.props.accessibilityState?.disabled).toBeFalsy();
+  });
+
   it('falha 500 ao avançar: o erro aparece dentro do diálogo, que continua aberto', async () => {
     servidor.use(
       http.patch(urlMock(`/fretes/${FRETE_ACEITO_ID}/status`), () =>

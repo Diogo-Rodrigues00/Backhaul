@@ -32,7 +32,8 @@ export type Usuario = {
   tipo: TipoUsuario;
   ativo: boolean;
   criado_em: string;
-  nome: string;
+  /** null para o admin: o backend faz COALESCE de motorista e empresa, e o admin não tem nenhum. */
+  nome: string | null;
 };
 export type RespostaEu = { usuario: Usuario };
 
@@ -99,6 +100,9 @@ export type Carga = {
 };
 export type RespostaPublicarCarga = { carga: Carga };
 
+/** POST /cargas/:id/cancelar (só a empresa dona). Propostas pendentes da carga viram `recusada`. */
+export type RespostaCancelarCarga = { carga: { id: string; status: 'cancelado' } };
+
 /** GET /cargas/minhas: os campos de Carga mais nome da certificação e total de propostas. */
 export type CargaDaEmpresa = Carga & {
   /** null quando a carga não exige certificação. */
@@ -150,15 +154,21 @@ export type DisponibilidadePublicada = {
 };
 export type RespostaPublicarDisponibilidade = { disponibilidade: DisponibilidadePublicada };
 
-// PROPOSTA relatório 4b: GET /disponibilidades/minhas (ainda não existe no backend; conferir
-// quando entrar em docs/api.md). Só motorista. Ordem criado_em DESC. Query: nenhuma.
-// Texto da proposta: "`status` deve sair como `expirado` quando `status = 'aberto'` e
-// `expira_em <= now()`, porque o banco nunca grava `expirado`" (o backend calcula no SELECT).
+// GET /disponibilidades/minhas (docs/api.md, card 050). Só motorista. Ordem criado_em DESC. Query: nenhuma.
+// `status` é calculado no SELECT: `aberto` com `expira_em` vencido volta como `expirado` (o banco nunca
+// grava `expirado`). Lista vazia: `{ disponibilidades: [] }`.
 // Erros: 401 · 403 não é motorista · 404 perfil de motorista não encontrado.
 export type DisponibilidadeDoMotorista = DisponibilidadePublicada & {
   propostas_pendentes: number;
 };
 export type RespostaMinhasDisponibilidades = { disponibilidades: DisponibilidadeDoMotorista[] };
+
+// POST /disponibilidades/:id/cancelar (docs/api.md, só motorista dono). Sem corpo. Propostas pendentes
+// feitas com ela viram `recusada`. Erros: 400 id inválido · 401 · 403 · 404 não existe ou é de outro
+// motorista · 409 "disponibilidade não está mais aberta".
+export type RespostaCancelarDisponibilidade = {
+  disponibilidade: { id: string; status: 'cancelado' };
+};
 
 // ---------- Propostas ----------
 export type CorpoFazerProposta = {
@@ -215,40 +225,46 @@ export type FreteCriado = {
 export type RespostaResponderAceitar = { frete: FreteCriado };
 export type RespostaResponder = RespostaResponderRecusar | RespostaResponderAceitar;
 
-// PROPOSTA relatório 4a: GET /propostas/minhas (ainda não existe no backend; conferir quando
-// entrar em docs/api.md). Só motorista. Ordem criado_em DESC. Query opcional
-// `?status=pendente|aceita|recusada`. Incluir `carga.status` e `carga.expira_em` permite à tela
-// mostrar "carga fechou" sem outra chamada.
+// GET /propostas/minhas (docs/api.md). Só motorista. Formato PLANO, `criado_em` DESC. A API ignora
+// qualquer query (não há filtro `?status=`). `frete_id` só vem preenchido quando `status` é `aceita`.
+// Desde o card 050 traz também a carga (origem, destino, urgência, certificação e o estado dela).
 // Erros: 401 · 403 não é motorista · 404 `perfil de motorista não encontrado`.
-export type CargaDaMinhaProposta = {
-  id: string;
-  tipo_carga: string;
-  empresa: string;
-  origem: Coordenadas;
-  destino: Coordenadas;
-  valor_oferecido: Numerico;
-  urgencia: Urgencia;
-  status: StatusChamado;
-  certificacao_exigida: string | null;
-  expira_em: string;
-};
+/** `carga_status` é calculado pela API: `aberto` com prazo vencido volta como `expirado`. */
+export type StatusCargaDaProposta = 'aberto' | 'fechado' | 'cancelado' | 'expirado';
 export type MinhaProposta = {
   id: string;
   tipo: TipoProposta;
   valor_proposto: Numerico;
   status: StatusProposta;
   criado_em: string;
-  disponibilidade_id: string;
-  carga: CargaDaMinhaProposta;
+  chamado_carga_id: string;
+  chamado_disp_id: string;
+  tipo_carga: string;
+  valor_oferecido: Numerico;
+  empresa: string;
+  frete_id: string | null;
+  origem: Coordenadas;
+  destino: Coordenadas;
+  urgencia: Urgencia;
+  /** Nome da certificação exigida; `null` quando a carga não exige. */
+  certificacao_exigida: string | null;
+  carga_status: StatusCargaDaProposta;
+  carga_expira_em: string;
 };
 export type RespostaMinhasPropostas = { propostas: MinhaProposta[] };
 
 // ---------- Fretes ----------
 type FreteBase = {
   id: string;
+  /** Proposta que gerou o frete: guardado para o chat e o mapa (cards 042/043 e 035). */
+  proposta_id: string;
   tipo_carga: string;
   valor_final: Numerico;
   status_entrega: StatusEntrega;
+  /** Coleta (origem da carga), para os dois perfis. */
+  origem: Coordenadas;
+  /** Entrega (destino da carga), para os dois perfis. */
+  destino: Coordenadas;
   /** null até o frete ir para em_transito. */
   coleta_em: string | null;
   /** null até o frete ser entregue. */
@@ -257,11 +273,20 @@ type FreteBase = {
   /** null enquanto a empresa não pagou. */
   status_pagamento: StatusPagamento | null;
 };
-/** GET /fretes/meus para o motorista: traz os dados da empresa. */
+/**
+ * GET /fretes/meus para o motorista: traz os dados da empresa. Não traz comissão nem Pix: o motorista
+ * nunca vê a comissão (a API não a envia; a tela também não a lê).
+ */
 export type FreteDoMotorista = FreteBase & {
   empresa: { id: string; razao_social: string };
 };
-/** GET /fretes/meus para a empresa: traz os dados do motorista. */
+/** Comissão do frete como a API devolve para a empresa (`GET /fretes/meus`). Nunca calculada no app. */
+export type ComissaoDoFrete = {
+  percentual_comissao: Numerico;
+  valor_comissao: Numerico;
+  status_pagamento: StatusPagamento;
+};
+/** GET /fretes/meus para a empresa: traz os dados do motorista e a comissão (só a empresa vê). */
 export type FreteDaEmpresa = FreteBase & {
   motorista: {
     id: string;
@@ -269,6 +294,12 @@ export type FreteDaEmpresa = FreteBase & {
     veiculo_tipo: string;
     veiculo_placa: string;
   };
+  /** `null` enquanto não há transação (antes do pagamento). */
+  comissao: ComissaoDoFrete | null;
+  /** Só com o pagamento `pendente` (modo de teste): código copia e cola; `null` nos demais casos. */
+  pix_copia_cola: string | null;
+  /** ISO. Só com o pagamento `pendente`; `null` nos demais casos. */
+  pix_expira_em: string | null;
 };
 export type Frete = FreteDoMotorista | FreteDaEmpresa;
 export type RespostaMeusFretes = { fretes: Frete[] };
@@ -296,4 +327,175 @@ export type Transacao = {
   status_pagamento: StatusPagamento;
   criado_em: string;
 };
-export type RespostaPagamento = { transacao: Transacao };
+/**
+ * Cobrança Pix devolvida só no modo de teste do servidor (`PAGAMENTOS_MODO=sandbox`); no modo simulado
+ * não vem. Dado de cobrança: fica só em estado de tela (nunca em storage, cache persistente, URL ou log).
+ */
+export type PixPagamento = {
+  /** Código "copia e cola" (texto longo, sem espaços). */
+  copia_e_cola: string;
+  /** PNG do QR Code em base64 (sem o prefixo `data:`). */
+  qr_code_base64: string;
+  /** ISO: quando o código deixa de valer. */
+  expira_em: string;
+};
+export type RespostaPagamento = { transacao: Transacao; pix?: PixPagamento };
+
+// ---------- Certificações do motorista (contrato: GET e POST /certificacoes/minhas) ----------
+/** `pendente` aguarda o admin · `aprovada` libera cargas que exigem certificação · `vencida` passou da validade. */
+export type SituacaoCertificacao = 'pendente' | 'aprovada' | 'vencida';
+
+export type MinhaCertificacao = {
+  id: string;
+  certificacao_id: string;
+  nome: string;
+  numero_certificado: string;
+  /** AAAA-MM-DD. */
+  validade: string;
+  validado_por_admin: boolean;
+  situacao: SituacaoCertificacao;
+  criado_em: string;
+};
+export type RespostaMinhasCertificacoes = { certificacoes: MinhaCertificacao[] };
+
+/** POST /certificacoes/minhas: cadastra e reenvia (201 nos dois casos; 409 se já aprovada e vigente). */
+export type CorpoEnviarCertificacao = {
+  /** Id do catálogo (GET /certificacoes). */
+  certificacao_id: string;
+  /** Obrigatório, até 60 caracteres. */
+  numero_certificado: string;
+  /** AAAA-MM-DD, hoje ou futuro. */
+  validade: string;
+};
+export type CertificacaoEnviada = {
+  /** Id do registro do motorista (não é o id do catálogo). */
+  id: string;
+  certificacao_id: string;
+  numero_certificado: string;
+  validade: string;
+  validado_por_admin: boolean;
+  criado_em: string;
+};
+export type RespostaEnviarCertificacao = { certificacao: CertificacaoEnviada };
+
+// ---------- Certificações: fila do admin (contrato: GET /certificacoes/pendentes) ----------
+/**
+ * Resposta de GET /certificacoes/pendentes como o contrato a documenta. Traz cpf e cnh do motorista.
+ * Só o fetcher (`certificacoes.ts`) recebe este formato; nenhuma tela o recebe (ver CertificacaoPendente).
+ */
+export type CertificacaoPendenteDoContrato = {
+  id: string;
+  /** Nome da certificação (texto). */
+  certificacao: string;
+  numero_certificado: string;
+  validade: string;
+  criado_em: string;
+  motorista: {
+    id: string;
+    nome_completo: string;
+    cpf: string;
+    cnh: string;
+    veiculo_placa: string;
+  };
+};
+
+/** Certificação da fila do admin, como as telas a recebem: sem cpf e sem cnh (card 032). */
+export type CertificacaoPendente = {
+  id: string;
+  certificacao: string;
+  numero_certificado: string;
+  validade: string;
+  criado_em: string;
+  motorista: {
+    id: string;
+    nome_completo: string;
+    veiculo_placa: string;
+  };
+};
+export type RespostaCertificacoesPendentes = { certificacoes: CertificacaoPendente[] };
+
+/** POST /certificacoes/pendentes/:id/responder. `recusar` apaga o registro: o motorista pode reenviar. */
+export type AcaoCertificacao = 'aprovar' | 'recusar';
+export type RespostaResponderCertificacao =
+  | { certificacao: { id: string; validado_por_admin: true } }
+  | { certificacao: { id: string; recusada: true } };
+
+// ---------- Chat da proposta (contrato: GET e POST /propostas/:id/mensagens) ----------
+export type Mensagem = {
+  id: string;
+  /** Id do USUÁRIO que enviou (o mesmo de GET /eu → usuario.id), não o do perfil. */
+  remetente_id: string;
+  texto: string;
+  criado_em: string;
+};
+export type RespostaMensagens = { mensagens: Mensagem[] };
+
+export type CorpoEnviarMensagem = {
+  /** Até 1000 caracteres, sem telefone, e-mail ou link (o backend recusa com 400). */
+  texto: string;
+};
+export type MensagemEnviada = Mensagem & { proposta_id: string };
+export type RespostaEnviarMensagem = { mensagem: MensagemEnviada };
+
+// ---------- Admin (contrato: GET /admin/resumo, /admin/fretes, /admin/usuarios) ----------
+/** Valores em dinheiro vêm da API como estão; o app não recalcula comissão. */
+export type ResumoAdmin = {
+  motoristas: number;
+  empresas: number;
+  cargas_abertas: number;
+  propostas_pendentes: number;
+  fretes_aceitos: number;
+  fretes_em_transito: number;
+  fretes_entregues: number;
+  certificacoes_pendentes: number;
+  volume_liberado: Numerico;
+  /** Soma só as transações liberadas (frete entregue). */
+  comissao_total: Numerico;
+  /** Soma as transações que ainda aguardam a entrega. */
+  comissao_retida: Numerico;
+};
+export type RespostaResumoAdmin = { resumo: ResumoAdmin };
+
+export type FreteAdmin = {
+  id: string;
+  tipo_carga: string;
+  valor_final: Numerico;
+  status_entrega: StatusEntrega;
+  coleta_em: string | null;
+  entrega_em: string | null;
+  criado_em: string;
+  empresa: string;
+  motorista: string;
+  veiculo_placa: string;
+  /** null enquanto a empresa não pagou. */
+  status_pagamento: StatusPagamento | null;
+  /** null enquanto a empresa não pagou. */
+  valor_comissao: Numerico | null;
+};
+export type RespostaFretesAdmin = { fretes: FreteAdmin[] };
+
+export type UsuarioAdmin = {
+  id: string;
+  email: string;
+  tipo: TipoUsuario;
+  ativo: boolean;
+  criado_em: string;
+  /** null para o admin, que não tem perfil de motorista nem de empresa. */
+  nome: string | null;
+};
+export type RespostaUsuariosAdmin = { usuarios: UsuarioAdmin[] };
+
+/** PATCH /admin/usuarios/:id/ativo (só admin): bloqueia (`ativo: false`) ou reativa uma conta. */
+export type RespostaAlterarUsuarioAdmin = {
+  usuario: { id: string; email: string; tipo: TipoUsuario; ativo: boolean };
+};
+
+// Chave Pix do motorista (card 047): GET e PUT /motorista/chave-pix. Dado pessoal: nunca em log,
+// armazenamento, URL ou analytics.
+export type TipoChavePix = 'cpf' | 'cnpj' | 'email' | 'telefone' | 'aleatoria';
+/** Sem chave cadastrada os dois campos vêm `null`. */
+export type RespostaChavePix = {
+  chave_pix: string | null;
+  tipo_chave_pix: TipoChavePix | null;
+};
+export type CorpoChavePix = { tipo_chave_pix: TipoChavePix; chave_pix: string };

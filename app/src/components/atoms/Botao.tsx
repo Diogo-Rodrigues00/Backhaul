@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { useMovimentoReduzido } from '@/hooks/useMovimentoReduzido';
+import { QUEBRA_ONDE_PRECISAR } from '@/lib/quebraDeTexto';
 import type { TemaVisual } from '@/state/tema/montarTema';
 import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
@@ -133,6 +134,9 @@ function criarEstilos({ border, radius, space, touch }: TemaVisual) {
       gap: space[2],
       minHeight: touch.control,
       minWidth: touch.control,
+      // O Pressable do react-native-web nasce com flex-shrink 0: sem teto, um rótulo longo numa linha
+      // `flexWrap` fazia o botão passar da largura do pai (364 px em 320, card 046).
+      maxWidth: '100%',
       paddingVertical: space[2],
       paddingHorizontal: space[5],
       borderWidth: border.width,
@@ -262,7 +266,11 @@ export function Botao({
             <Texto
               peso="bold"
               cor={cor}
-              style={[estilos.rotulo, variante === 'texto' && estilos.sublinhado]}
+              style={[
+                estilos.rotulo,
+                QUEBRA_ONDE_PRECISAR,
+                variante === 'texto' && estilos.sublinhado,
+              ]}
             >
               {rotulo}
             </Texto>

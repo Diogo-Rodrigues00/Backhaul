@@ -1,3 +1,6 @@
+import { createRef } from 'react';
+import type { Text } from 'react-native';
+
 import { screen } from '@testing-library/react-native';
 
 import { renderizar } from '@/test-utils/renderComTema';
@@ -104,5 +107,29 @@ describe('ResumoCarga', () => {
       <ResumoCarga {...cargaComNulos} agora={new Date('2026-10-29T12:00:00-03:00')} />,
     );
     expect(screen.getByText('Expirada')).toBeOnTheScreen();
+  });
+});
+
+describe('ResumoCarga: refTitulo (foco por código no título da carga, card 033)', () => {
+  it('com idTitulo e refTitulo: o título é heading com a ref preenchida e tabIndex -1', async () => {
+    const ref = createRef<Text>();
+    await renderizar(<ResumoCarga {...cargaCompleta} idTitulo="titulo-da-carga" refTitulo={ref} />);
+    const titulo = screen.getByRole('heading', { name: 'Eletrônicos' });
+    expect(titulo.props.nativeID).toBe('titulo-da-carga');
+    expect(titulo.props.tabIndex).toBe(-1);
+    expect(ref.current).not.toBeNull();
+  });
+
+  it('com idTitulo e sem refTitulo: o título não ganha tabIndex (só recebe foco quem pede)', async () => {
+    await renderizar(<ResumoCarga {...cargaCompleta} idTitulo="titulo-da-carga" />);
+    const titulo = screen.getByRole('heading', { name: 'Eletrônicos' });
+    expect(titulo.props.tabIndex).toBeUndefined();
+  });
+
+  it('sem idTitulo, a ref não é preenchida (o tipo da carga nem é heading)', async () => {
+    const ref = createRef<Text>();
+    await renderizar(<ResumoCarga {...cargaCompleta} refTitulo={ref} />);
+    expect(screen.queryByRole('heading', { name: 'Eletrônicos' })).toBeNull();
+    expect(ref.current).toBeNull();
   });
 });

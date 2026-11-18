@@ -134,7 +134,7 @@ describe('sessao', () => {
       email: 'nova@empresa.test',
       senha: 'senha12345',
       razao_social: 'Nova LTDA',
-      cnpj: '12.345.678/0001-99',
+      cnpj: '11.222.333/0001-81',
     };
     await act(async () => {
       await result.current.mutateAsync(dados);
@@ -176,7 +176,7 @@ describe('sessao', () => {
         email: 'novo@motorista.test',
         senha: 'senha12345',
         nome_completo: 'Novo Motorista',
-        cpf: '123.456.789-01',
+        cpf: '529.982.247-25',
         cnh: '11122233344',
         veiculo_tipo: 'carreta',
         veiculo_placa: 'ABC1D23',
@@ -492,15 +492,43 @@ describe('propostas', () => {
     });
   });
 
-  it('useMinhasPropostas (proposta 4a) mostra a carga e o status da carga', async () => {
+  it('useMinhasPropostas devolve o formato plano do contrato', async () => {
     entrarComoMock('mock-motorista');
     const { wrapper } = preparar();
     const { result } = await renderHook(() => useMinhasPropostas(), { wrapper });
     await esperarSucesso(result);
     const propostas = result.current.data?.propostas ?? [];
-    expect(propostas.map((p) => p.status)).toEqual(['pendente', 'aceita', 'recusada']);
-    expect(propostas[0]?.carga).toMatchObject({ status: 'aberto', empresa: expect.any(String) });
-    expect(propostas[1]?.carga.status).toBe('fechado');
+    // Fixture de 8 propostas (mocks/fixtures/propostas.ts, minhasPropostasMock), na ordem da API.
+    expect(propostas.map((p) => p.status)).toEqual([
+      'pendente',
+      'aceita',
+      'recusada',
+      'expirada',
+      'pendente',
+      'aceita',
+      'recusada',
+      'pendente',
+    ]);
+    expect(propostas[0]).toMatchObject({
+      chamado_carga_id: expect.any(String),
+      chamado_disp_id: expect.any(String),
+      tipo_carga: expect.any(String),
+      valor_oferecido: expect.any(Number),
+      empresa: expect.any(String),
+      frete_id: null,
+    });
+    expect(propostas[0]).not.toHaveProperty('carga');
+    // `frete_id` só vem preenchido na proposta aceita.
+    expect(propostas.map((p) => p.frete_id !== null)).toEqual([
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+    ]);
   });
 
   it('useMinhasPropostas: 401 vira sessão', async () => {

@@ -1,6 +1,7 @@
 // Cartão de carga (ResumoCarga, DS 5.2 e 6): o mesmo conteúdo em todas as telas (empresa, motorista).
 // Não busca dados nem calcula nada: recebe rótulos prontos e valores como a API devolveu.
-import { View } from 'react-native';
+import type { Ref } from 'react';
+import { View, type Text } from 'react-native';
 
 import { Etiqueta, type VarianteEtiqueta } from '@/components/atoms/Etiqueta';
 import { MarcadorKm } from '@/components/atoms/MarcadorKm';
@@ -41,6 +42,8 @@ export interface PropsResumoCarga {
    * rotular por ele (`aria-labelledby`). O selo vem antes na ordem de leitura: urgência, depois tipo.
    */
   idTitulo?: string;
+  /** Foco por código no título da carga (com `idTitulo`), ex.: depois de cancelar a carga (card 033). */
+  refTitulo?: Ref<Text>;
   /** Relógio para o status efetivo (CT-10). Padrão: agora. Injetável para teste. */
   agora?: Date;
 }
@@ -75,6 +78,7 @@ export function ResumoCarga({
   status,
   distanciaKm,
   idTitulo,
+  refTitulo,
   agora,
 }: PropsResumoCarga) {
   const estilos = useEstilos(criarEstilos);
@@ -110,7 +114,14 @@ export function ResumoCarga({
         ) : null}
       </View>
       {idTitulo ? (
-        <Texto nivel="lg" role="heading" aria-level={2} nativeID={idTitulo}>
+        <Texto
+          nivel="lg"
+          role="heading"
+          aria-level={2}
+          nativeID={idTitulo}
+          ref={refTitulo}
+          tabIndex={refTitulo ? -1 : undefined}
+        >
           {tipoCarga}
         </Texto>
       ) : (

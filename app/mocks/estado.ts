@@ -15,6 +15,7 @@ import { randomUUID } from 'node:crypto';
 
 import type {
   Coordenadas,
+  SituacaoCertificacao,
   StatusChamado,
   StatusEntrega,
   StatusPagamento,
@@ -23,7 +24,8 @@ import type {
   TipoUsuario,
   Urgencia,
 } from '../src/api/tipos';
-import { certificacoesMock } from './fixtures/certificacoes';
+import { certificacoesMock, CERT_MOPP_3_ID } from './fixtures/certificacoes';
+import { dataDaquiADias } from './fixtures/datas';
 
 export const DOMINIO_FLUXO = '@fluxo.test';
 export const PREFIXO_TOKEN_FLUXO = 'fluxo-';
@@ -40,16 +42,38 @@ export const MOPP_CLASSE_3 = certificacoesMock[0];
 export type UsuarioFluxo = {
   id: string;
   email: string;
-  tipo: Exclude<TipoUsuario, 'admin'>;
+  tipo: TipoUsuario;
   token: string;
-  nome: string;
+  /** null para o admin: a API também não tem nome para ele (perfil de motorista e de empresa ausentes). */
+  nome: string | null;
   criadoEm: string;
   // Motorista.
   cpf?: string;
+  cnh?: string;
   veiculoTipo?: string;
   veiculoPlaca?: string;
   capacidadeKg?: number;
-  certificacoes?: { certificacaoId: string; nome: string; validade: string; aprovada: boolean }[];
+  certificacoes?: CertificacaoFluxo[];
+};
+
+/** Registro de certificação do motorista (motorista_certificacoes). `aprovada` = validado_por_admin. */
+export type CertificacaoFluxo = {
+  id: string;
+  certificacaoId: string;
+  nome: string;
+  numero_certificado: string;
+  /** AAAA-MM-DD. */
+  validade: string;
+  aprovada: boolean;
+  criado_em: string;
+};
+
+export type MensagemFluxo = {
+  id: string;
+  propostaId: string;
+  remetenteId: string;
+  texto: string;
+  criado_em: string;
 };
 
 export type CargaFluxo = {
@@ -110,6 +134,27 @@ export type TransacaoFluxo = {
   valor_comissao: number;
   status_pagamento: StatusPagamento;
   criado_em: string;
+  /** Só no modo Pix (card 048): cobrança devolvida no POST. */
+  pix?: { copia_e_cola: string; qr_code_base64: string; expira_em: string };
+  /** Só no modo Pix: quantas leituras de GET /fretes/meus faltam para o "webhook" confirmar (`retido`). */
+  leiturasAteConfirmar?: number;
+};
+
+/**
+ * Modo de teste do Pix (card 048), imitando `PAGAMENTOS_MODO=sandbox` do backend: o POST de pagamento
+ * devolve `pendente` + `pix`, e o pagamento vira `retido` depois de N leituras da lista da empresa ou
+ * quando o teste chama `POST /__mock/pix/pagar`. Desligado (padrão), vale o modo simulado (`retido`, sem `pix`).
+ */
+export type ModoPix = {
+  ativo: boolean;
+  /** Leituras da lista até confirmar sozinho; `null` = só quando o teste "paga". */
+  leiturasAteConfirmar: number | null;
+  /** O gateway falha: o POST responde 502. */
+  falharGateway: boolean;
+  /** Tamanho do copia e cola (para testar quebra de linha); `null` = código de tamanho realista. */
+  tamanhoCodigo: number | null;
+  /** Validade do Pix a partir do POST; negativo = já nasce expirado. */
+  expiraEmSegundos: number;
 };
 
 export type EstadoFluxo = {
@@ -119,8 +164,20 @@ export type EstadoFluxo = {
   propostas: PropostaFluxo[];
   fretes: FreteFluxo[];
   transacoes: TransacaoFluxo[];
+  mensagens: MensagemFluxo[];
   sequenciaCadastro: number;
+  pix: ModoPix;
 };
+
+export function modoPixDesligado(): ModoPix {
+  return {
+    ativo: false,
+    leiturasAteConfirmar: null,
+    falharGateway: false,
+    tamanhoCodigo: null,
+    expiraEmSegundos: 30 * 60,
+  };
+}
 
 const HORA_MS = 60 * 60 * 1000;
 
@@ -137,7 +194,25 @@ function daquiAHoras(horas: number): string {
 
 export const ID_EMPRESA_FLUXO = '11111111-0000-4000-8000-00000000f001';
 export const ID_MOTORISTA_MOPP_FLUXO = '22222222-0000-4000-8000-00000000f001';
+export const ID_ADMIN_FLUXO = '33333333-0000-4000-8000-00000000f001';
 export const ID_CARGA_GRAOS_FLUXO = 'cccccccc-0000-4000-8000-00000000f001';
+
+/** Data de hoje em AAAA-MM-DD (mesma conta do backend ao validar a certificação). */
+function hojeIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Situação da certificação, como GET /certificacoes/minhas devolve: pendente (aguarda o admin),
+ * aprovada (aprovada e na validade) ou vencida (aprovada, mas a validade já passou).
+ */
+export function situacaoDaCertificacao(
+  certificacao: CertificacaoFluxo,
+  hoje: string = hojeIso(),
+): SituacaoCertificacao {
+  if (!certificacao.aprovada) return 'pendente';
+  return certificacao.validade < hoje ? 'vencida' : 'aprovada';
+}
 
 function semente(): EstadoFluxo {
   const criadoEm = agoraIso();
@@ -159,18 +234,31 @@ function semente(): EstadoFluxo {
         token: `${PREFIXO_TOKEN_FLUXO}motorista`,
         nome: 'João da Silva',
         criadoEm,
-        cpf: '11122233344',
+        cpf: '11144477735',
+        cnh: '11122233344',
         veiculoTipo: 'carreta',
         veiculoPlaca: 'ABC1D23',
         capacidadeKg: 15000,
         certificacoes: [
           {
-            certificacaoId: MOPP_CLASSE_3?.id ?? '',
+            id: 'dddddddd-0000-4000-8000-0000000000f1',
+            certificacaoId: MOPP_CLASSE_3?.id ?? CERT_MOPP_3_ID,
             nome: MOPP_CLASSE_3?.nome ?? 'MOPP',
-            validade: '2030-05-01',
+            numero_certificado: '123456',
+            validade: dataDaquiADias(900),
             aprovada: true,
+            criado_em: criadoEm,
           },
         ],
+      },
+      {
+        // O admin da demo: entra com admin@fluxo.test e aprova certificações. Não tem nome (como a API).
+        id: ID_ADMIN_FLUXO,
+        email: `admin${DOMINIO_FLUXO}`,
+        tipo: 'admin',
+        token: `${PREFIXO_TOKEN_FLUXO}admin`,
+        nome: null,
+        criadoEm,
       },
     ],
     // Uma carga comum, sem certificação: é o que o motorista SEM MOPP enxerga.
@@ -194,7 +282,9 @@ function semente(): EstadoFluxo {
     propostas: [],
     fretes: [],
     transacoes: [],
+    mensagens: [],
     sequenciaCadastro: 0,
+    pix: modoPixDesligado(),
   };
 }
 
@@ -226,6 +316,7 @@ export function registrarMotorista(dados: {
   email: string;
   nome: string;
   cpf: string;
+  cnh: string;
   veiculoTipo: string;
   veiculoPlaca: string;
   capacidadeKg: number;
@@ -239,6 +330,7 @@ export function registrarMotorista(dados: {
     nome: dados.nome,
     criadoEm: agoraIso(),
     cpf: dados.cpf,
+    cnh: dados.cnh,
     veiculoTipo: dados.veiculoTipo,
     veiculoPlaca: dados.veiculoPlaca,
     capacidadeKg: dados.capacidadeKg,
@@ -266,8 +358,7 @@ export function motoristaPodePegar(motorista: UsuarioFluxo, carga: CargaFluxo): 
   return (motorista.certificacoes ?? []).some(
     (c) =>
       c.certificacaoId === carga.certificacao_requerida_id &&
-      c.aprovada &&
-      Date.parse(c.validade) > Date.now(),
+      situacaoDaCertificacao(c) === 'aprovada',
   );
 }
 

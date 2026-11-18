@@ -50,7 +50,8 @@ function criarEstilos({ border, colors, radius, space }: TemaVisual) {
 
 /**
  * Resumo do pagamento: "Valor do frete", "Percentual de comissão", "Comissão da plataforma" e
- * "Situação do pagamento", com rótulo explícito em cada valor. Aparece só depois do 201.
+ * "Situação do pagamento", com rótulo explícito em cada valor. Aparece quando há transação: logo após o
+ * 201 ou, depois de recarregar, quando a lista de fretes traz a comissão (card 044).
  * O `refTitulo` recebe o foco (`tabIndex={-1}` na web); o leitor de tela lê o título e depois os fatos.
  */
 export function ResumoPagamento({

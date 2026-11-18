@@ -3,8 +3,9 @@ import { createContext } from 'react';
 import type { Disponibilidade } from '@/lib/disponibilidadeAtiva';
 
 /**
- * De onde vem a lista: `api` é `GET /disponibilidades/minhas` (proposta 4b); `local` é o plano B,
- * em que a rota ainda não existe (404) e a única entrada é a disponibilidade publicada neste aparelho.
+ * De onde vem a lista: `api` é `GET /disponibilidades/minhas` (a lista real, que prevalece sempre que a
+ * rota responde); `local` é o plano B, quando a rota falha (404 ou rede) e a única entrada é a
+ * disponibilidade publicada neste aparelho.
  */
 export type OrigemDisponibilidades = 'api' | 'local';
 
@@ -24,10 +25,19 @@ export interface ValorDisponibilidadeAtiva {
    * ativa e, no plano B, a lista passa a mostrá-la. Guarda a cópia no aparelho.
    */
   registrarPublicada: (disponibilidade: Disponibilidade) => void;
+  /**
+   * Depois de `POST /disponibilidades/:id/cancelar` (200): a disponibilidade sai da ativa. Se era a
+   * escolhida, a escolha guardada é apagada; no plano B, a cópia guardada no aparelho também. Devolve a
+   * nova ativa (ou `null`) para a tela anunciar a troca. A lista na API é relida pelo hook de cancelar.
+   */
+  marcarCancelada: (id: string) => Disponibilidade | null;
   /** Lista da tela "Minhas disponibilidades", na ordem da fonte (a API devolve `criado_em` DESC). */
   disponibilidades: readonly Disponibilidade[];
   origem: OrigemDisponibilidades;
-  /** Erro de verdade ao ler a lista (rede, 5xx, 401 tratado pela sessão); 404 não é erro (plano B). */
+  /**
+   * Erro de verdade ao ler a lista (rede, 5xx, 401 tratado pela sessão); 404 não é erro (plano B). Com
+   * erro, `ativa` ainda sai da cópia guardada no aparelho, para "Cargas próximas" não parar.
+   */
   erro: unknown;
   /** Lê a lista de novo (botão "Atualizar" e "Tentar de novo"). */
   atualizar: () => Promise<unknown>;

@@ -122,6 +122,19 @@ describe('DialogoConfirmacao (web): foco com fade', () => {
     expect(document.activeElement).toBe(botaoPorNome('Cancelar'));
   });
 
+  it('em "Cancelar carga" (perigo), o foco inicial vai a "Voltar", não à ação destrutiva', async () => {
+    const extras: Extras = {
+      rotuloCancelar: 'Voltar',
+      rotuloConfirmar: 'Cancelar carga',
+      variante: 'perigo',
+    };
+    await act(async () => raiz.render(comTema(<Cena extras={extras} />)));
+    await act(async () => porId('origem').focus());
+    await act(async () => porId('origem').click());
+    await terminarAnimacao();
+    expect(document.activeElement).toBe(botaoPorNome('Voltar'));
+  });
+
   it('Esc fecha e o foco volta ao botão que abriu', async () => {
     const aoFechar = jest.fn();
     await act(async () => raiz.render(comTema(<Cena aoFechar={aoFechar} />)));
@@ -241,5 +254,27 @@ describe('DialogoConfirmacao (web): papéis e rolagem', () => {
     const alerta = document.querySelector('[role="alert"]');
     expect(alerta?.textContent).toBe('Falhou.');
     expect(caixa()?.contains(alerta)).toBe(true);
+  });
+});
+
+describe('DialogoConfirmacao (web): botão seguro com outro rótulo (card 034)', () => {
+  it('com rotuloCancelar "Voltar" e confirmação destrutiva, o foco inicial vai a "Voltar"', async () => {
+    await act(async () =>
+      raiz.render(
+        comTema(
+          <Cena
+            extras={{
+              rotuloCancelar: 'Voltar',
+              rotuloConfirmar: 'Cancelar disponibilidade',
+              variante: 'perigo',
+            }}
+          />,
+        ),
+      ),
+    );
+    await act(async () => porId('origem').focus());
+    await act(async () => porId('origem').click());
+    await terminarAnimacao();
+    expect(document.activeElement).toBe(botaoPorNome('Voltar'));
   });
 });

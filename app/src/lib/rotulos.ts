@@ -58,7 +58,7 @@ const ROTULOS_STATUS_ENTREGA: Record<StatusEntrega, string> = {
 
 // D-PO-07: null (ainda não pago) tem rótulo próprio; os demais valores do enum saem em pt-BR.
 const ROTULOS_PAGAMENTO: Record<StatusPagamento, string> = {
-  pendente: 'Pendente',
+  pendente: 'Pagamento pendente',
   retido: 'Pago, retido até a entrega',
   liberado: 'Liberado ao motorista',
   estornado: 'Estornado',
@@ -104,4 +104,18 @@ export function rotuloPagamento(status: StatusPagamento | null): string {
 export function proximoPassoFrete(status: StatusEntrega): ProximoPassoFrete | null {
   const passo = PROXIMO_PASSO_FRETE[status];
   return passo ? { ...passo } : null;
+}
+
+/** Mesmos valores de `SituacaoCertificacao` do contrato (`src/api/tipos.ts`); lib não importa api. */
+export type SituacaoCertificacao = 'pendente' | 'aprovada' | 'vencida';
+
+// Card 031: a situação sempre em texto (o ícone e a cor só reforçam).
+const ROTULOS_SITUACAO_CERTIFICACAO: Record<SituacaoCertificacao, string> = {
+  pendente: 'Aguardando aprovação',
+  aprovada: 'Aprovada',
+  vencida: 'Vencida',
+};
+
+export function rotuloSituacaoCertificacao(situacao: SituacaoCertificacao): string {
+  return ROTULOS_SITUACAO_CERTIFICACAO[situacao] ?? SEM_ROTULO;
 }

@@ -13,6 +13,8 @@ const base: PropsCartaoFreteMotorista = {
   coletaEm: null,
   entregaEm: null,
   statusPagamento: null,
+  origem: { lat: -18.9141, lng: -48.2749 },
+  destino: { lat: -19.7472, lng: -47.9381 },
   aoAvancar: () => undefined,
 };
 

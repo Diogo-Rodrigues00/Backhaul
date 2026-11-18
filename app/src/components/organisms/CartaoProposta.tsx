@@ -1,7 +1,7 @@
 // Cartão de uma proposta recebida (PropostaCard da empresa, DS 5.2, card 021). Não busca nem envia
 // nada: recebe os valores como a API devolveu e avisa a tela quando a empresa pede para aceitar ou
 // recusar (a confirmação, D-PO-08, é da tela).
-import { useEffect, useId, useRef, useState, type Ref } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from 'react';
 import { Animated, Platform, View, type ViewStyle } from 'react-native';
 
 import { Botao } from '@/components/atoms/Botao';
@@ -9,6 +9,7 @@ import { Etiqueta, type VarianteEtiqueta } from '@/components/atoms/Etiqueta';
 import { Preco } from '@/components/atoms/Preco';
 import { Texto } from '@/components/atoms/Texto';
 import { Titulo } from '@/components/atoms/Titulo';
+import { BotaoConversa } from '@/components/molecules/BotaoConversa';
 import { ResumoMotorista, type PropsResumoMotorista } from '@/components/molecules/ResumoMotorista';
 import { useMovimentoReduzido } from '@/hooks/useMovimentoReduzido';
 import { formatarDataHora, formatarMoeda, type NumeroEntrada } from '@/lib/formatacao';
@@ -41,6 +42,16 @@ export interface PropsCartaoProposta {
   /** Recebe o botão que abriu o pedido, para o diálogo devolver o foco a ele. */
   aoAceitar: (origem: View | null) => void;
   aoRecusar: (origem: View | null) => void;
+  /**
+   * Chat da proposta (card 042, ADR 0016). Com `aoAlternarConversa` e `idConversa` o cartão mostra
+   * o `BotaoConversa` ("Abrir conversa" / "Fechar conversa"); `conversa` é o painel, que a tela
+   * monta sob demanda só enquanto `conversaAberta`.
+   */
+  conversaAberta?: boolean;
+  aoAlternarConversa?: () => void;
+  /** Mesmo `id` do painel em `conversa` (alvo do `aria-controls`); veja `idDoPainelDaConversa`. */
+  idConversa?: string;
+  conversa?: ReactNode;
   /** Raiz do cartão: a tela leva o foco para cá quando o botão que o tinha some. */
   ref?: Ref<View>;
 }
@@ -97,6 +108,13 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
       gap: space[2],
     } satisfies ViewStyle,
     acoes: { gap: space[3], marginTop: space[2] } satisfies ViewStyle,
+    conversa: {
+      flexBasis: '100%',
+      flexGrow: 1,
+      minWidth: 0,
+      paddingTop: space[4],
+      borderTopWidth: border.width,
+    } satisfies ViewStyle,
   } as const;
 }
 
@@ -156,6 +174,10 @@ export function CartaoProposta({
   podeResponder,
   aoAceitar,
   aoRecusar,
+  conversaAberta = false,
+  aoAlternarConversa,
+  idConversa,
+  conversa,
   ref,
 }: PropsCartaoProposta) {
   const estilos = useEstilos(criarEstilos);
@@ -219,7 +241,18 @@ export function CartaoProposta({
             </Botao>
           </View>
         ) : null}
+        {aoAlternarConversa && idConversa ? (
+          <BotaoConversa
+            aberta={conversaAberta}
+            nome={motorista.nome}
+            idDoPainel={idConversa}
+            aoAlternar={aoAlternarConversa}
+          />
+        ) : null}
       </View>
+      {conversaAberta && conversa ? (
+        <View style={[estilos.conversa, { borderTopColor: colors.border.subtle }]}>{conversa}</View>
+      ) : null}
     </View>
   );
 }

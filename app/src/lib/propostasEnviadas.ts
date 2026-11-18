@@ -1,7 +1,7 @@
-// Plano B das propostas enviadas (D-PO-05): enquanto `GET /propostas/minhas` (proposta 4a) não
-// existe no backend, o aparelho lembra quais cargas já receberam proposta deste motorista. O card
-// 025 chama `registrarPropostaEnviada` no 201 de `POST /propostas`; "Cargas próximas" lê a lista
-// para marcar "Proposta enviada". Quando a rota existir, a lista da API prevalece (ver a tela).
+// Plano B das propostas enviadas (D-PO-05): se `GET /propostas/minhas` falhar (404, rede, 5xx), o
+// aparelho lembra quais cargas já receberam proposta deste motorista. O card 025 chama
+// `registrarPropostaEnviada` no 201 de `POST /propostas`; "Cargas próximas" lê a lista para marcar
+// "Proposta enviada". Com a resposta 200 da rota, a lista da API sempre prevalece (ver a tela).
 // A lista pertence a quem a fez: `entrar` e `sair` a apagam, como a disponibilidade ativa (ADR 0006).
 import { CHAVES, gravar, ler } from './armazenamento';
 

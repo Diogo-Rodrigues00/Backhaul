@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 
+import { gerarCnpj } from './documentos';
 import { expect, test } from './fixtures';
 
 // Card 016 (MVP-05): cadastro de empresa contra o mock da API (localhost:4010).
@@ -23,7 +24,7 @@ test.describe('cadastro de empresa', () => {
     await page.getByLabel('E-mail').fill('nova@empresa.test');
     await page.getByLabel('Senha', { exact: true }).fill('senhaSegura8');
     await page.getByLabel('Razão social').fill('Transportes Rápidos LTDA');
-    await page.getByLabel('CNPJ').fill('12.345.678/0001-99');
+    await page.getByLabel('CNPJ').fill(gerarCnpj());
     await page.getByRole('button', { name: 'Criar conta' }).click();
 
     await expect(page).toHaveURL(/\/empresa\/cargas$/);
@@ -35,7 +36,7 @@ test.describe('cadastro de empresa', () => {
     await page.getByLabel('E-mail').fill('existente@mock.test');
     await page.getByLabel('Senha', { exact: true }).fill('senhaSegura8');
     await page.getByLabel('Razão social').fill('Transportes Rápidos LTDA');
-    await page.getByLabel('CNPJ').fill('12.345.678/0001-99');
+    await page.getByLabel('CNPJ').fill('11.222.333/0001-81');
     await page.getByRole('button', { name: 'Criar conta' }).click();
 
     await expect(page.getByRole('alert')).toContainText('email já cadastrado');

@@ -50,4 +50,10 @@ describe('ListaDeFatos na web', () => {
     );
     expect(marcado).toMatch(/<dd[^>]*><span>Aberta<\/span><\/dd>/);
   });
+
+  it('o valor em texto quebra onde precisar (overflow-wrap: anywhere), sem estourar 320 px', () => {
+    const marcado = html(<ListaDeFatos itens={[{ rotulo: 'E-mail', valor: 'a'.repeat(120) }]} />);
+    // O estilo vai inline no elemento do valor; `anywhere` reduz a largura mínima do conteúdo.
+    expect(marcado).toMatch(/overflow-wrap:\s*anywhere/);
+  });
 });

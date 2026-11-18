@@ -5,17 +5,17 @@ import type { NivelFonte } from '@/theme/tipografia';
 
 import { Texto, type PropsTexto } from './Texto';
 
-export type NivelTitulo = 1 | 2 | 3;
+export type NivelTitulo = 1 | 2 | 3 | 4;
 
-// Nível semântico → degrau da escala (DS 3.3): h1 = 3xl, h2 = xl, h3 = lg.
-const NIVEL_VISUAL: Record<NivelTitulo, NivelFonte> = { 1: '3xl', 2: 'xl', 3: 'lg' };
+// Nível semântico → degrau da escala (DS 3.3): h1 = 3xl, h2 = xl, h3 = lg, h4 = base em negrito.
+const NIVEL_VISUAL: Record<NivelTitulo, NivelFonte> = { 1: '3xl', 2: 'xl', 3: 'lg', 4: 'base' };
 // h1 em tela estreita (até 720 px): 30/36, que é o degrau 2xl (DS 3.3).
 const NIVEL_VISUAL_H1_ESTREITO: NivelFonte = '2xl';
 // Web: o CSS global (css.ts) troca o tamanho por @media usando este atributo, sem JavaScript.
 const ATRIBUTOS_H1: Readonly<Record<string, string>> = { titulo: '1' };
 
 export interface PropsTitulo extends Omit<PropsTexto, 'nivel' | 'role'> {
-  /** Nível do título no documento: 1 (um por tela), 2 ou 3, sem saltos. */
+  /** Nível do título no documento: 1 (um por tela), 2, 3 ou 4, sem saltos. */
   nivel: NivelTitulo;
 }
 
@@ -34,6 +34,7 @@ export function Titulo({ nivel, ...resto }: PropsTitulo) {
     <Texto
       nivel={estreitoNoIphone ? NIVEL_VISUAL_H1_ESTREITO : NIVEL_VISUAL[nivel]}
       role="heading"
+      peso={nivel === 4 ? 'bold' : undefined}
       aria-level={nivel}
       dataSet={nivel === 1 ? ATRIBUTOS_H1 : undefined}
       {...resto}

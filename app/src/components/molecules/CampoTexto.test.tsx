@@ -121,4 +121,18 @@ describe('CampoTexto', () => {
     expect(estilo.minHeight).toBe(48);
     expect(estilo.borderWidth).toBe(3);
   });
+
+  it('multiline: altura mínima maior e texto no alto; o campo comum não muda', async () => {
+    await renderizar(
+      <>
+        <CampoTexto rotulo="Mensagem" multiline numberOfLines={3} />
+        <CampoTexto rotulo="Nome" />
+      </>,
+    );
+    const longo = StyleSheet.flatten(screen.getByLabelText('Mensagem').props.style);
+    const curto = StyleSheet.flatten(screen.getByLabelText('Nome').props.style);
+    expect(longo.minHeight).toBeGreaterThan(curto.minHeight as number);
+    expect(longo.textAlignVertical).toBe('top');
+    expect(curto.textAlignVertical).toBeUndefined();
+  });
 });

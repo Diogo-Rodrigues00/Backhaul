@@ -9,7 +9,7 @@ import type { RespostaMinhasPropostas } from '@/api/tipos';
 import type { AvisoDaProposta } from '@/components/organisms/AcoesProposta';
 import type { PedidoProposta } from '@/components/organisms/FormularioProposta';
 import { anunciar } from '@/lib/a11y';
-import { lerErroDaProposta, type DesfechoErroProposta } from '@/lib/fazerProposta';
+import { lerErroDaProposta, type ErroDaProposta } from '@/lib/fazerProposta';
 import {
   lerPropostasEnviadas,
   registrarPropostaEnviada,
@@ -21,7 +21,7 @@ const adicionar = (conjunto: ReadonlySet<string>, id: string): ReadonlySet<strin
   new Set(conjunto).add(id);
 
 export interface EntradaPropostas {
-  /** `GET /propostas/minhas` (proposta 4a); `undefined` enquanto não chegou ou se a rota falhou. */
+  /** `GET /propostas/minhas`; `undefined` enquanto não chegou ou se a rota falhou. */
   daApi: RespostaMinhasPropostas | undefined;
   /** `chamado_disp_id`: a disponibilidade ativa. */
   disponibilidadeId: string | undefined;
@@ -80,7 +80,7 @@ export function usePropostasDoMotorista({
 
   const pendentes = useMemo(() => {
     const base = daApi
-      ? daApi.propostas.filter((p) => p.status === 'pendente').map((p) => p.carga.id)
+      ? daApi.propostas.filter((p) => p.status === 'pendente').map((p) => p.chamado_carga_id)
       : guardadas.map((p) => p.cargaId);
     return new Set([...base, ...enviadasAgora]);
   }, [daApi, guardadas, enviadasAgora]);
@@ -88,7 +88,7 @@ export function usePropostasDoMotorista({
   // D-PO-05: contraproposta em qualquer status (pendente, aceita, recusada) esgota a única.
   const comContraproposta = useMemo(() => {
     const base = daApi
-      ? daApi.propostas.filter((p) => p.tipo === 'contraproposta').map((p) => p.carga.id)
+      ? daApi.propostas.filter((p) => p.tipo === 'contraproposta').map((p) => p.chamado_carga_id)
       : guardadas.filter((p) => p.tipo === 'contraproposta').map((p) => p.cargaId);
     return new Set([...base, ...contrapropostasAgora]);
   }, [daApi, guardadas, contrapropostasAgora]);
@@ -112,12 +112,19 @@ export function usePropostasDoMotorista({
     [],
   );
   const marcadores = useRef(new Map<string, View>());
+  const avisosDosCartoes = useRef(new Map<string, View>());
   const refAvisoDaCarga = useRef<View>(null);
 
   /** `ref` do marcador "Proposta enviada" do cartão da carga. */
   const registrarMarcador = useCallback((cargaId: string, no: View | null) => {
     if (no) marcadores.current.set(cargaId, no);
     else marcadores.current.delete(cargaId);
+  }, []);
+
+  /** `ref` do aviso que fica no cartão da carga (falha explicada pela API). */
+  const registrarAviso = useCallback((cargaId: string, no: View | null) => {
+    if (no) avisosDosCartoes.current.set(cargaId, no);
+    else avisosDosCartoes.current.delete(cargaId);
   }, []);
 
   const abrir = (novo: PedidoProposta, origem: View | null) => {
@@ -149,11 +156,9 @@ export function usePropostasDoMotorista({
     }
   };
 
-  const falhou = (
-    feito: PedidoProposta,
-    desfecho: Exclude<DesfechoErroProposta, 'outro'>,
-    mensagem: string,
-  ) => {
+  /** Falha que a API explicou: sai do diálogo e fica no cartão (ou na lista, se a carga saiu). */
+  const falhou = (feito: PedidoProposta, lido: ErroDaProposta) => {
+    const { desfecho, mensagem, link } = lido;
     anunciar(mensagem);
     if (desfecho === 'carga-indisponivel') {
       // A carga saiu do ar (fechada, cancelada, vencida): avisa e recarrega a lista.
@@ -165,9 +170,11 @@ export function usePropostasDoMotorista({
     if (desfecho === 'contraproposta-repetida') {
       setContrapropostasAgora((atuais) => adicionar(atuais, feito.cargaId));
     }
+    // O foco volta ao aviso do próprio cartão (ele existe quando o diálogo fecha).
+    alvoDoRetorno.current = () => avisosDosCartoes.current.get(feito.cargaId) ?? null;
     setAvisos((atuais) => ({
       ...atuais,
-      [feito.cargaId]: { mensagem, linkDisponibilidades: desfecho === 'disponibilidade' },
+      [feito.cargaId]: link === undefined ? { mensagem } : { mensagem, link },
     }));
   };
 
@@ -187,7 +194,7 @@ export function usePropostasDoMotorista({
         setErro(lido.mensagem);
         return;
       }
-      falhou(pedido, lido.desfecho, lido.mensagem);
+      falhou(pedido, lido);
       setAberto(false);
       return;
     }
@@ -213,6 +220,7 @@ export function usePropostasDoMotorista({
     avisoDaCarga,
     refAvisoDaCarga,
     registrarMarcador,
+    registrarAviso,
     abrir,
     dialogo,
     lerGuardadas,

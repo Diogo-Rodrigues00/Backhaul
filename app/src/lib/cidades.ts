@@ -88,3 +88,35 @@ export function rotuloDoLocal(
   const cidade = cidadeMaisProxima(ponto, lista);
   return cidade ? `${cidade.nome} - ${cidade.uf}` : null;
 }
+
+/** Distância máxima (km) para um ponto ser a cidade da lista; mais longe, mostra as coordenadas. */
+export const TOLERANCIA_CIDADE_KM = 1;
+/** Texto de um local sem coordenadas válidas (mesmo texto dos cartões de carga). */
+export const LOCAL_SEM_IDENTIFICACAO = 'Local não identificado';
+
+/** Coordenadas em texto legível, com vírgula decimal: "Latitude -18,9186, longitude -48,2772". */
+export function rotuloDaCoordenada(ponto: Coordenada): string {
+  const formatar = (numero: number) => numero.toFixed(4).replace('.', ',');
+  return `Latitude ${formatar(ponto.lat)}, longitude ${formatar(ponto.lng)}`;
+}
+
+/**
+ * Rótulo "Nome - UF" quando o ponto bate com uma cidade da lista (dentro de `tolerancia` km); senão as
+ * coordenadas em texto. Sem coordenadas (campo ausente na resposta) ou inválidas, "Local não
+ * identificado". Usado por origem e destino de "Meus fretes" (card 044): o ponto vem da carga, que é
+ * sempre o centro de uma cidade da lista.
+ */
+export function rotuloDoPonto(
+  ponto: Coordenada | null | undefined,
+  lista: readonly Cidade[] = cidades,
+  tolerancia: number = TOLERANCIA_CIDADE_KM,
+): string {
+  if (!ponto || !coordenadaValida(ponto)) {
+    return LOCAL_SEM_IDENTIFICACAO;
+  }
+  const cidade = cidadeMaisProxima(ponto, lista);
+  if (cidade && distanciaKm(ponto, cidade) <= tolerancia) {
+    return `${cidade.nome} - ${cidade.uf}`;
+  }
+  return rotuloDaCoordenada(ponto);
+}

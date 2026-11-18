@@ -50,6 +50,18 @@ export function eNumeroPositivo(valor: unknown): valor is number {
   return typeof valor === 'number' && Number.isFinite(valor) && valor > 0;
 }
 
+// Mesmo formato que o backend exige nos ids de URL (backend/src/validacao.ts, REGEX_UUID).
+const REGEX_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function eUuid(valor: string): boolean {
+  return REGEX_UUID.test(valor);
+}
+
+/** Parâmetro de rota (`:id`) como texto; o MSW pode devolver lista, então qualquer outra coisa vira vazio. */
+export function textoDoParametro(valor: unknown): string {
+  return typeof valor === 'string' ? valor : '';
+}
+
 export function eDataFutura(valor: unknown): boolean {
   if (typeof valor !== 'string') {
     return false;

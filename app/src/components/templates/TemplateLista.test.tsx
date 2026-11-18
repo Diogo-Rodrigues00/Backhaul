@@ -2,10 +2,13 @@ import { fireEvent, screen, within } from '@testing-library/react-native';
 import { StyleSheet, Text } from 'react-native';
 
 import { Cabecalho } from '@/components/organisms/Cabecalho';
+import { anunciar } from '@/lib/a11y';
 import { renderizarComRota } from '@/test-utils/renderComRota';
+import { comTema, renderizar } from '@/test-utils/renderComTema';
 
-import { TemplateLista, type PropsTemplateLista } from './TemplateLista';
+import { ConteudoLista, TemplateLista, type PropsTemplateLista } from './TemplateLista';
 
+jest.mock('@/lib/a11y', () => ({ ...jest.requireActual('@/lib/a11y'), anunciar: jest.fn() }));
 jest.mock('expo-router/head', () => ({ __esModule: true, default: () => null }));
 jest.mock('@/hooks/useMovimentoReduzido', () => ({ useMovimentoReduzido: jest.fn(() => false) }));
 jest.mock('@/hooks/useLoopAnimado', () => ({
@@ -180,5 +183,41 @@ describe('TemplateLista: altura reservada (CLS 0)', () => {
       await unmount();
     }
     expect(alturas).toEqual([360, 360, 360, 360]);
+  });
+});
+
+describe('ConteudoLista: anúncio ao atualizar', () => {
+  beforeEach(() => jest.mocked(anunciar).mockClear());
+
+  function conteudo(atualizando: boolean, anuncioAtualizado?: string) {
+    return (
+      <ConteudoLista
+        estado="pronto"
+        textoCarregando="Carregando…"
+        aoAtualizar={() => {}}
+        atualizando={atualizando}
+        anuncioAtualizado={anuncioAtualizado}
+      >
+        <Text>Resumo</Text>
+      </ConteudoLista>
+    );
+  }
+
+  it('anuncia o texto de `anuncioAtualizado` quando a atualização termina', async () => {
+    const tela = await renderizar(conteudo(true, 'Resumo atualizado'));
+    expect(anunciar).not.toHaveBeenCalled();
+    await tela.rerender(comTema(conteudo(false, 'Resumo atualizado')));
+    expect(anunciar).toHaveBeenCalledWith('Resumo atualizado');
+  });
+
+  it('sem `anuncioAtualizado`, anuncia "Lista atualizada"; com texto vazio, não anuncia', async () => {
+    const tela = await renderizar(conteudo(true));
+    await tela.rerender(comTema(conteudo(false)));
+    expect(anunciar).toHaveBeenCalledWith('Lista atualizada');
+
+    jest.mocked(anunciar).mockClear();
+    await tela.rerender(comTema(conteudo(true, '')));
+    await tela.rerender(comTema(conteudo(false, '')));
+    expect(anunciar).not.toHaveBeenCalled();
   });
 });

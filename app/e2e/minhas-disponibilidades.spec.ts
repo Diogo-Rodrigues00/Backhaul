@@ -49,6 +49,20 @@ test.describe('minhas disponibilidades', () => {
     ).toBeVisible();
   });
 
+  // Card 050: a lista é a de GET /disponibilidades/minhas; status e propostas pendentes vêm em texto.
+  test('mostra as propostas pendentes de cada uma e a vencida como "Expirada" em texto', async ({
+    page,
+  }) => {
+    await page.goto('/motorista/disponibilidades');
+    const lista = page.getByRole('list', { name: 'Disponibilidades publicadas' });
+    await expect(lista.getByRole('listitem')).toHaveCount(3);
+    await expect(lista.getByText('1 proposta pendente')).toHaveCount(1);
+    await expect(lista.getByText('0 propostas pendentes')).toHaveCount(2);
+    await expect(lista.getByText('Aberta', { exact: true })).toHaveCount(2);
+    await expect(lista.getByText('Expirada', { exact: true })).toHaveCount(1);
+    await expect(lista.getByText('Prazo vencido em')).toHaveCount(1);
+  });
+
   test('"Publicar disponibilidade" é um link para a tela de publicação', async ({ page }) => {
     await page.goto('/motorista/disponibilidades');
     const link = page.getByRole('link', { name: 'Publicar disponibilidade' }).first();

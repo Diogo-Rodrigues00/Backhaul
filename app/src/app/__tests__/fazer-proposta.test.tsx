@@ -21,6 +21,7 @@ import {
 
 import { CARGA_NORMAL_ID, CARGA_URGENTE_ID } from '../../../mocks/fixtures/cargas';
 import { DISPONIBILIDADE_ABERTA_ID } from '../../../mocks/fixtures/disponibilidades';
+import { minhaPropostaMock } from '../../../mocks/fixtures/propostas';
 import { servidor, urlMock } from '../../../mocks/node';
 import { respostaErro, respostaHtml } from '../../../mocks/respostas';
 
@@ -78,7 +79,7 @@ describe('Fazer proposta: botões do cartão', () => {
 
     const pendente = cartaoDa('Produtos inflamáveis');
     expect(pendente.getByText('Proposta enviada')).toBeOnTheScreen();
-    expect(pendente.queryByRole('button')).toBeNull();
+    expect(pendente.queryByRole('button', { name: /Aceitar|Contraproposta/ })).toBeNull();
   });
 
   it('depois de uma contraproposta recusada, some "Contraproposta" e "Aceitar" continua (D-PO-05)', async () => {
@@ -86,26 +87,11 @@ describe('Fazer proposta: botões do cartão', () => {
       http.get(urlMock('/propostas/minhas'), () =>
         HttpResponse.json({
           propostas: [
-            {
-              id: 'bbbbbbbb-0000-4000-8000-0000000000a1',
+            minhaPropostaMock({
               tipo: 'contraproposta',
               valor_proposto: 3900,
               status: 'recusada',
-              criado_em: '2026-10-21T12:00:00.000Z',
-              disponibilidade_id: DISPONIBILIDADE_ABERTA_ID,
-              carga: {
-                id: CARGA_NORMAL_ID,
-                tipo_carga: CARGA,
-                empresa: 'Transportes Rápidos LTDA',
-                origem: { lat: -18.6456, lng: -48.1935 },
-                destino: { lat: -18.9186, lng: -48.2772 },
-                valor_oferecido: 4200.5,
-                urgencia: 'normal',
-                status: 'aberto',
-                certificacao_exigida: null,
-                expira_em: '2030-01-01T00:00:00.000Z',
-              },
-            },
+            }),
           ],
         }),
       ),
@@ -134,11 +120,11 @@ describe('Fazer proposta: botões do cartão', () => {
 
     // Pendente guardada para a carga: só "Proposta enviada".
     await waitFor(() => expect(cartaoDa(CARGA).getByText('Proposta enviada')).toBeOnTheScreen());
-    expect(cartaoDa(CARGA).queryByRole('button')).toBeNull();
+    expect(cartaoDa(CARGA).queryByRole('button', { name: /Aceitar|Contraproposta/ })).toBeNull();
   });
 });
 
-// Contra a API real a rota 4a (GET /propostas/minhas) ainda não existe: os botões têm de aparecer
+// Plano B: se GET /propostas/minhas falhar (404, 5xx, rede), os botões têm de aparecer
 // mesmo assim, e a carga já proposta neste aparelho continua só com "Proposta enviada".
 describe('Fazer proposta: sem GET /propostas/minhas', () => {
   it.each([
@@ -160,7 +146,7 @@ describe('Fazer proposta: sem GET /propostas/minhas', () => {
     expect(botaoDoCartao(CARGA, 'Contraproposta')).toBeOnTheScreen();
     const proposta = cartaoDa('Produtos inflamáveis');
     expect(proposta.getByText('Proposta enviada')).toBeOnTheScreen();
-    expect(proposta.queryByRole('button')).toBeNull();
+    expect(proposta.queryByRole('button', { name: /Aceitar|Contraproposta/ })).toBeNull();
   });
 
   it('a carga já proposta nunca mostra botões, nem enquanto o aparelho é lido', async () => {
@@ -174,7 +160,9 @@ describe('Fazer proposta: sem GET /propostas/minhas', () => {
     await abrirComLista();
     await aguardarAcoes(CARGA);
     // Os botões só surgem juntos, depois de saber quem já tem proposta.
-    expect(cartaoDa('Produtos inflamáveis').queryByRole('button')).toBeNull();
+    expect(
+      cartaoDa('Produtos inflamáveis').queryByRole('button', { name: /Aceitar|Contraproposta/ }),
+    ).toBeNull();
   });
 });
 
@@ -204,7 +192,7 @@ describe('Fazer proposta: aceite', () => {
     ]);
     expect(recebidos[0]).not.toHaveProperty('valor_proposto');
     expect(anuncios.mensagens).toContain('Proposta enviada');
-    expect(cartaoDa(CARGA).queryByRole('button')).toBeNull();
+    expect(cartaoDa(CARGA).queryByRole('button', { name: /Aceitar|Contraproposta/ })).toBeNull();
     anuncios.parar();
   });
 
