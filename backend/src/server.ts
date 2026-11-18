@@ -58,12 +58,24 @@ app.get("/saude", async (_req, res) => {
   }
 });
 
+// Rota que não existe: sem isto o Express responderia com uma página HTML, e o app,
+// que sempre espera JSON, não conseguiria mostrar uma mensagem decente.
+// Fica DEPOIS de todas as rotas: só chega aqui quem não casou com nenhuma.
+app.use((_req, res) => {
+  res.status(404).json({ erro: "rota não encontrada" });
+});
+
 // Tratador de erros: o Express 5 manda para cá qualquer erro lançado numa rota
 // (inclusive em funções async). Tem que ter 4 parâmetros para o Express reconhecê-lo.
 app.use((erro: any, _req: Request, res: Response, _next: NextFunction) => {
   // JSON malformado no corpo: o express.json() já marca esse erro com status 400.
   if (erro?.type === "entity.parse.failed") {
     res.status(400).json({ erro: "JSON inválido no corpo da requisição" });
+    return;
+  }
+  // Corpo maior que o limite do express.json() (100 kb por padrão): 413 = "conteúdo grande demais".
+  if (erro?.type === "entity.too.large") {
+    res.status(413).json({ erro: "corpo da requisição muito grande" });
     return;
   }
   // Qualquer outra coisa é falha nossa. O detalhe vai pro log, não pro cliente.

@@ -18,7 +18,9 @@ Este arquivo é o combinado entre o backend e as telas. **Quem quiser mudar uma 
 | 401 | Sem token, token inválido/expirado ou login errado | `{ "erro": "token ausente" }` |
 | 403 | Usuário logado, mas o tipo dele não pode usar a rota | `{ "erro": "..." }` |
 | 404 | Item não encontrado | `{ "erro": "..." }` |
+| 404 | Rota que não existe | `{ "erro": "rota não encontrada" }` (JSON, não HTML) |
 | 409 | Valor repetido (e-mail, CPF ou CNPJ) ou conflito de estado (carga fechada, proposta já respondida, contraproposta repetida, transição de status de frete inválida, frete já pago, mensagem em proposta recusada/expirada) | `{ "erro": "cnpj já cadastrado" }` |
+| 413 | Corpo da requisição maior que 100 kb | `{ "erro": "corpo da requisição muito grande" }` |
 | 500 | Falha interna (o detalhe fica só no log do servidor) | `{ "erro": "erro interno" }` |
 
 ---
