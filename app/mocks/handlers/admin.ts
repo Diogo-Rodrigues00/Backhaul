@@ -18,5 +18,18 @@ export function criarHandlersAdmin(baseUrl: string) {
       const { resposta } = autenticar(request, ['admin']);
       return resposta ?? HttpResponse.json({ usuarios: usuariosAdminMock });
     }),
+    http.patch(`${baseUrl}/admin/usuarios/:id/ativo`, async ({ request, params }) => {
+      const { resposta } = autenticar(request, ['admin']);
+      if (resposta) return resposta;
+      const corpo = (await request.json().catch(() => ({}))) as { ativo?: unknown };
+      const usuario = usuariosAdminMock.find((u) => u.id === params.id);
+      if (!usuario) return HttpResponse.json({ erro: 'usuário não encontrado' }, { status: 404 });
+      if (typeof corpo.ativo !== 'boolean') {
+        return HttpResponse.json({ erros: ['ativo deve ser true ou false'] }, { status: 400 });
+      }
+      return HttpResponse.json({
+        usuario: { id: usuario.id, email: usuario.email, tipo: usuario.tipo, ativo: corpo.ativo },
+      });
+    }),
   ];
 }

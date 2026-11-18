@@ -3,6 +3,7 @@
 import { useId } from 'react';
 import { View, type ViewStyle } from 'react-native';
 
+import { Botao } from '@/components/atoms/Botao';
 import { Titulo } from '@/components/atoms/Titulo';
 import { ListaDeFatos, type ItemDeFato } from '@/components/molecules/ListaDeFatos';
 import { rotuloDoPerfil, type TipoPerfil } from '@/lib/areas';
@@ -13,6 +14,9 @@ import { useEstilos } from '@/state/tema/useEstilos';
 import { useTema } from '@/state/tema/useTema';
 
 export interface PropsCartaoUsuarioAdmin {
+  id?: string;
+  /** "Bloquear" / "Reativar": recebe o id. Sem ele, ou na conta de admin, o botão não aparece. */
+  aoAlterar?: (id: string) => void;
   /** `null` para o admin. */
   nome: string | null;
   email: string;
@@ -34,6 +38,8 @@ function criarEstilos({ border, radius, space }: TemaVisual) {
 
 /** Usuário na lista do admin: `article` com nome (ou e-mail) em `h3` e os fatos em `<dl>`. */
 export function CartaoUsuarioAdmin({
+  id,
+  aoAlterar,
   nome,
   email,
   tipo,
@@ -63,6 +69,15 @@ export function CartaoUsuarioAdmin({
         {nome ?? email}
       </Titulo>
       <ListaDeFatos itens={itens} />
+      {id !== undefined && aoAlterar !== undefined && tipo !== 'admin' ? (
+        <Botao
+          variante={ativo ? 'perigo' : 'secundario'}
+          aria-label={`${ativo ? 'Bloquear' : 'Reativar'} ${nome ?? email}`}
+          aoPressionar={() => aoAlterar(id)}
+        >
+          {ativo ? 'Bloquear' : 'Reativar'}
+        </Botao>
+      ) : null}
     </View>
   );
 }
