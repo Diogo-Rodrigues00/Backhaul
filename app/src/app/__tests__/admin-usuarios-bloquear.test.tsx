@@ -1,7 +1,7 @@
 // Usuários do admin: bloquear e reativar. Tela real com a área protegida e a API de mock (MSW).
 // O clique muda o estado do render para o próximo teste do arquivo: por isso a leitura vem primeiro.
 import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
-import { http } from 'msw';
+import { http, HttpResponse } from 'msw';
 
 import { apagar, CHAVES, gravar } from '@/lib/armazenamento';
 import { abrirListaAdmin, aguardarSessao } from '@/test-utils/cenarioListasAdmin';
@@ -39,7 +39,9 @@ describe('Usuários do admin: bloquear e reativar', () => {
     await abrir();
 
     expect(screen.getByRole('button', { name: 'Bloquear João da Silva' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Bloquear Transportes Rápidos LTDA' })).toBeOnTheScreen();
+    expect(
+      screen.getByRole('button', { name: 'Bloquear Transportes Rápidos LTDA' }),
+    ).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Reativar Maria Souza' })).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: /admin@mock\.test/ })).toBeNull();
   });
@@ -49,10 +51,9 @@ describe('Usuários do admin: bloquear e reativar', () => {
     servidor.use(
       http.patch(urlMock('/admin/usuarios/:id/ativo'), async ({ request }) => {
         corpoEnviado = await request.json();
-        return new Response(
-          JSON.stringify({ usuario: { id: 'x', email: 'e', tipo: 'motorista', ativo: false } }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        );
+        return HttpResponse.json({
+          usuario: { id: 'x', email: 'e', tipo: 'motorista', ativo: false },
+        });
       }),
     );
     await abrir();

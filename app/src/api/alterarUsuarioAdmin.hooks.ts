@@ -12,7 +12,8 @@ import { chaves } from './chaves';
 export function useAlterarUsuarioAdmin() {
   const cliente = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ativo }: { id: string; ativo: boolean }) => alterarAtivoUsuarioAdmin(id, ativo),
+    mutationFn: ({ id, ativo }: { id: string; ativo: boolean }) =>
+      alterarAtivoUsuarioAdmin(id, ativo),
     onSuccess: () =>
       Promise.all([
         cliente.invalidateQueries({ queryKey: chaves.admin.usuarios() }),
