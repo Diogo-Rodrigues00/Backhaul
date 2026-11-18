@@ -35,3 +35,8 @@ O navegador só deixa o site do app ler a API se a origem estiver em `CORS_ORIGI
 
 ## 11. CI no GitHub Actions
 Todo PR do backend roda `tsc --noEmit` e os testes (`npm test`). Os testes cobrem funções puras (validações, comissão, transições); testes de rota com banco real ficaram como evolução.
+
+## 12. Limite de tentativas, proxy e SSL no deploy
+- **Limite de tentativas por IP** em `POST /login` e `POST /cadastro/*` (`middleware/limite-tentativas.ts`): sem isso, um robô testa senhas sem parar. É um contador em memória (janela fixa). Serve para uma instância só, que é o nosso caso no Render; com várias instâncias o certo seria Redis.
+- **`trust proxy` = 1**: o Render fica na frente da API; sem isso todo cliente teria o IP do proxy e dividiria o mesmo limite. O valor é 1 (e não `true`) para não aceitar IP forjado em `X-Forwarded-For`.
+- **SSL e timeout no banco** (`db.ts`): o Neon exige conexão criptografada (a URL traz `sslmode=require`; `DATABASE_SSL=true` força caso falte) e pausa quando ocioso, então a primeira conexão pode demorar: o pool espera até 30 s em vez de pendurar para sempre.

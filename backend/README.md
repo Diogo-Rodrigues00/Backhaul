@@ -43,6 +43,11 @@ O `.env` **não** vai para o servidor: as variáveis abaixo são cadastradas no 
 | `JWT_SECRET`   | sim | Segredo que assina os tokens de login. Texto longo e aleatório; trocar invalida todos os tokens |
 | `PORT`         | não (padrão `3000`) | Porta da API. Na hospedagem, quem define é o próprio serviço |
 | `CORS_ORIGIN`  | em produção | Sites que podem chamar a API pelo navegador, separados por vírgula (ex.: `http://localhost:8081,https://backhaul.exemplo.com`) |
+| `DATABASE_SSL` | não | `true` força SSL com o banco (Neon exige; normalmente a URL já traz `sslmode=require`) |
+| `PAGAMENTOS_MODO` | não (padrão `simulado`) | `sandbox` usa o ambiente de teste do Asaas e exige `ASAAS_API_KEY` e `ASAAS_WEBHOOK_TOKEN` |
+| `PAGAMENTOS_REPASSE` | não | Com `PAGAMENTOS_MODO=sandbox`, `simulado` mantém a cobrança Pix real e simula só o repasse |
+
+Passo a passo completo de publicação e checklist antes da demo: [`../docs/deploy.md`](../docs/deploy.md).
 
 Sem `DATABASE_URL` ou `JWT_SECRET` o servidor nem sobe: ele avisa logo na inicialização, em vez de falhar na primeira requisição.
 

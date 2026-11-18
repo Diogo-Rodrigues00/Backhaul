@@ -8,49 +8,29 @@ Plataforma de conexão de fretes por urgência — conecta caminhoneiros dispon�
 
 ```
 backhaul/
-├── database/
-│   ├── schema.sql          # script SQL de criação do banco (DDL)
-│   └── modelo_er.png       # diagrama entidade-relacionamento
-├── docs/
-│   ├── termo_abertura.md   # justificativa, objetivo, escopo, riscos, equipe
-│   ├── cronograma.md       # planejamento CP-1 a CP-5
-│   └── atas/               # atas de reunião semanais
-└── README.md               # este arquivo
+├── backend/        # API Node.js + TypeScript (Express). Ver backend/README.md
+├── app/            # App React Native (Expo) + PWA. Ver app/README.md
+├── database/       # schema.sql, migrações, seeds e diagrama ER
+├── docs/           # termo de abertura, API, decisões, pagamentos, deploy, guia de estudo
+├── render.yaml     # referência da configuração da API no Render
+└── .github/        # CI do backend e do app, workflow para acordar a API
 ```
 
-## Status atual — Checkpoint 1 (Banco de Dados)
+## Status atual
 
-**Concluído**
-- [x] Modelagem do banco (11 tabelas)
-- [x] Script SQL de criação, versionado no GitHub (2 commits mostrando evolução)
-- [x] Extensões PostgreSQL + PostGIS instaladas e funcionando
-- [x] Diagrama ER
-- [x] Termo de abertura, cronograma e atas (S03/S04) em `/docs`
+O MVP está implementado e publicado: cadastro e login, cargas, disponibilidades, propostas com chat, fretes com pagamento por Pix (sandbox, repasse simulado), painel admin e busca por proximidade com PostGIS.
 
-**Em andamento**
-- [ ] Script de dados de exemplo (INSERTs)
-- [ ] README explicando as tabelas (`database/README.md`)
-- [ ] Board/Kanban configurado no GitHub
-- [ ] Atas preenchidas com dados reais das reuniões (participantes, horário)
-
-## Quem faz o quê agora
-
-| Responsável | Tarefa | Status |
-|---|---|---|
-| Diogo | Script SQL de dados de exemplo (INSERTs) | 🔄 Em andamento |
-| guilherme508 | README explicando tabelas e relacionamentos | ✅ Concluído   |
-| MateuHuTv | Configurar Board/Kanban no GitHub (Issues + labels) | ⏳ A fazer |
-| GustavoF | Preencher atas reais (S03/S04) + revisar cronograma | ⏳ A fazer |
-| PedroAugusto2208 | Apoio geral e revisão da entrega do checkpoint | ⏳ A fazer |
-
-Essa tabela é atualizada a cada checkpoint — ver histórico completo de decisões em [`docs/termo_abertura.md`](docs/termo_abertura.md#8-equipe-e-responsabilidades).
+- **Contrato da API:** [`docs/api.md`](docs/api.md)
+- **Como publicar e checklist da demo:** [`docs/deploy.md`](docs/deploy.md)
+- **Pagamentos e caminho para produção:** [`docs/pagamentos.md`](docs/pagamentos.md)
+- **Riscos e garantias:** [`docs/garantias-e-riscos.md`](docs/garantias-e-riscos.md)
+- **Guia de estudo para a defesa:** [`docs/guia-de-estudo.md`](docs/guia-de-estudo.md)
 
 ## Stack técnica
 
-- **Apps:** React Native
-- **Backend:** Node.js + TypeScript
-- **Banco de dados:** PostgreSQL + PostGIS
-- **Nuvem:** AWS
+- **App:** React Native (Expo), com versão web publicada como PWA na Vercel
+- **Backend:** Node.js + TypeScript (Express), no Render
+- **Banco de dados:** PostgreSQL + PostGIS, no Neon
 
 ## Como contribuir (fluxo básico do grupo)
 
