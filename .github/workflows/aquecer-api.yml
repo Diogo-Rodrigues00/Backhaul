@@ -1,0 +1,26 @@
+# Acorda a API (Render) e o banco (Neon) antes de uma demonstração.
+# Manual de propósito: agendado, manteria o Neon sempre ligado e gastaria o plano grátis.
+# Precisa da variável de repositório API_URL (Settings > Secrets and variables > Actions > Variables).
+name: aquecer-api
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  aquecer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Chama /saude até o banco responder
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then echo "Defina a variável API_URL do repositório."; exit 1; fi
+          for i in 1 2 3 4 5 6; do
+            echo "Tentativa $i"
+            if curl -fsS --max-time 60 "${API_URL%/}/saude"; then echo; echo "API e banco acordados."; exit 0; fi
+            sleep 10
+          done
+          echo "A API não respondeu a tempo."; exit 1
