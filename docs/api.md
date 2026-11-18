@@ -21,6 +21,7 @@ Este arquivo é o combinado entre o backend e as telas. **Quem quiser mudar uma 
 | 404 | Rota que não existe | `{ "erro": "rota não encontrada" }` (JSON, não HTML) |
 | 409 | Valor repetido (e-mail, CPF ou CNPJ) ou conflito de estado (carga fechada, proposta já respondida, contraproposta repetida, transição de status de frete inválida, frete já pago, mensagem em proposta recusada/expirada) | `{ "erro": "cnpj já cadastrado" }` |
 | 413 | Corpo da requisição maior que 100 kb | `{ "erro": "corpo da requisição muito grande" }` |
+| 429 | Tentativas demais do mesmo IP em `POST /login` (20 a cada 15 min) ou `POST /cadastro/*` (30 por hora). Header `Retry-After` em segundos | `{ "erro": "muitas tentativas, tente novamente em instantes" }` |
 | 500 | Falha interna (o detalhe fica só no log do servidor) | `{ "erro": "erro interno" }` |
 
 ---

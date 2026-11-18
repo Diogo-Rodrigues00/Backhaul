@@ -1,0 +1,29 @@
+# Referência da infraestrutura da API no Render (Blueprint).
+# O serviço de produção foi criado pelo painel; este arquivo documenta a configuração esperada
+# e permite recriá-lo (New > Blueprint) se for preciso. Segredos NUNCA entram aqui: sync: false
+# faz o Render pedir o valor no painel.
+services:
+  - type: web
+    name: backhaul-api
+    runtime: node
+    plan: free
+    branch: main
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /saude
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PAGAMENTOS_MODO
+        value: simulado
+      - key: ASAAS_API_KEY
+        sync: false
+      - key: ASAAS_WEBHOOK_TOKEN
+        sync: false
