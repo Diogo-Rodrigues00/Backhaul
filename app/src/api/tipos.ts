@@ -485,6 +485,11 @@ export type UsuarioAdmin = {
 };
 export type RespostaUsuariosAdmin = { usuarios: UsuarioAdmin[] };
 
+/** PATCH /admin/usuarios/:id/ativo (só admin): bloqueia (`ativo: false`) ou reativa uma conta. */
+export type RespostaAlterarUsuarioAdmin = {
+  usuario: { id: string; email: string; tipo: TipoUsuario; ativo: boolean };
+};
+
 // Chave Pix do motorista (card 047): GET e PUT /motorista/chave-pix. Dado pessoal: nunca em log,
 // armazenamento, URL ou analytics.
 export type TipoChavePix = 'cpf' | 'cnpj' | 'email' | 'telefone' | 'aleatoria';
