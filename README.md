@@ -4,6 +4,17 @@ Plataforma de conexão de fretes por urgência — conecta caminhoneiros dispon�
 
 > Documentação completa do projeto (justificativa, objetivo, escopo, riscos) está em [`docs/termo_abertura.md`](docs/termo_abertura.md).
 
+## Grupo
+
+**Grupo:** Backhaul
+
+| Integrante | GitHub |
+|---|---|
+| Pedro Augusto Rodrigues Martins | [PedroAugusto2208](https://github.com/PedroAugusto2208) |
+| Matheus Hubert Tavares | [MateuHuTv](https://github.com/MateuHuTv) |
+| Diogo Silva Rodrigues Nunes | [Diogo-Rodrigues00](https://github.com/Diogo-Rodrigues00) |
+| Guilherme Primo | [guilherme508](https://github.com/guilherme508) |
+
 ## Estrutura do repositório
 
 ```

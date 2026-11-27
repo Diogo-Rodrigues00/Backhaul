@@ -73,13 +73,12 @@ Conectar caminhoneiros disponíveis a fretes urgentes próximos, de forma rápid
 
 ## 8. Equipe e Responsabilidades
 
-| Nome / Usuário GitHub | Responsabilidade |
+| Integrante | GitHub |
 |---|---|
-| Diogo ([Diogo-Rodrigues00](https://github.com/Diogo-Rodrigues00)) | _[preencher]_ |
-| [PedroAugusto2208](https://github.com/PedroAugusto2208) | _[preencher]_ |
-| [MateuHuTv](https://github.com/MateuHuTv) | _[preencher]_ |
-| [GustavoF](https://github.com/GustavoF) | _[preencher]_ |
-| [guilherme508](https://github.com/guilherme508) | _[preencher]_ |
+| Pedro Augusto Rodrigues Martins | [PedroAugusto2208](https://github.com/PedroAugusto2208) |
+| Matheus Hubert Tavares | [MateuHuTv](https://github.com/MateuHuTv) |
+| Diogo Silva Rodrigues Nunes | [Diogo-Rodrigues00](https://github.com/Diogo-Rodrigues00) |
+| Guilherme Primo | [guilherme508](https://github.com/guilherme508) |
 
 ## 9. Aprovação
 
